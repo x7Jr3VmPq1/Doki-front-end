@@ -89,8 +89,7 @@ import {
 import router from "../router/index.js";
 import {useNotificationsStore} from "../store/notificationsStore.js";
 import {useWebSocketStore} from "../store/websocketStore.js";
-import SockJS from "sockjs-client";
-import Stomp from "stompjs";
+
 // 侧边栏选中项
 const selectedKeys = ref(['1']);
 const isLoggedIn = ref(false);
@@ -100,40 +99,16 @@ const notificationsStore = useNotificationsStore();
 const username = ref(localStorage.getItem('username'));
 const avatarUrl = ref(localStorage.getItem('avatar'));
 
-onMounted(() => {
+onMounted(async () => {
   // 根据 localStorage 中是否存在 token 来设置登录状态
   isLoggedIn.value = !!localStorage.getItem('token');
-
-  /*if (isLoggedIn.value) {
-    const socket = new SockJS('http://localhost:8080/ws'); // WebSocket 端点，要跟后端配置一致
-    const stompClient = Stomp.over(socket);
-
-    stompClient.connect({}, frame => {
-      console.log('WebSocket connected: ' + frame);
-      // 设置心跳机制，保持连接
-      stompClient.heartbeat.outgoing = 10000;  // 每10秒发送一个心跳包
-      stompClient.heartbeat.incoming = 10000;  // 每10秒检查一次连接是否仍然活跃
-      // 订阅用户私有通知队列
-      stompClient.subscribe("/queue/notifications/" + localStorage.getItem('id'), message => {
-        if (message.body === '10000') {
-          notificationsStore.likeUnreadCount++;
-        } else if (message.body === '10001') {
-          notificationsStore.commentUnreadCount++;
-        } else if (message.body === '20000'){
-          notificationsStore.messageUnreadCount++;
-        }
-      });
-    }, error => {
-      console.error('WebSocket 连接失败:', error);
-    });
-  }*/
-
 
   const websocketStore = useWebSocketStore();
   const userId = localStorage.getItem('id');
   if (userId) {
     websocketStore.connect(userId);
   }
+
 });
 
 // 退出登录处理函数

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 
+import Player from "../../components/Player.vue";
 </script>
 
 <template>
   <div class="friends">
-
+    <Player></Player>
   </div>
 </template>
 
@@ -12,7 +13,7 @@
 .friends {
   width: 100%;
   height: 100%;
-  background-color: pink;
+  background-color: #ffffff;
 }
 
 

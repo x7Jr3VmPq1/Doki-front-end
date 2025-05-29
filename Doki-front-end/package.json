@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
+    "@arco-design/web-vue": "^2.57.0",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.8.2",
     "dayjs": "^1.11.13",
     "emoji-picker-vue": "^1.0.1",
+    "openai": "^4.96.2",
     "pinia": "^3.0.1",
     "sockjs-client": "^1.6.1",
     "stompjs": "^2.3.3",
