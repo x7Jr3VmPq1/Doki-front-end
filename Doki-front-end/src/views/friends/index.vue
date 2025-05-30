@@ -4,16 +4,18 @@ import Player from "../../components/Player.vue";
 </script>
 
 <template>
-  <div class="friends">
-    <Player></Player>
+  <div v-for="(item,index) in 3">
+    <div v-if="index == 0" class="friends">
+      <Player></Player>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .friends {
-  width: 100%;
-  height: 100%;
-  background-color: #ffffff;
+  width: 90vw;
+  height: 90vh;
+  overflow-y: hidden;
 }
 
 

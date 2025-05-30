@@ -15,13 +15,18 @@ import {
   IconSound,
   IconSoundFill,
   IconFullscreen,
-  IconFullscreenExit
+  IconFullscreenExit,
 } from '@arco-design/web-vue/es/icon';
+import {Like, Dislike, ShareTwo, Message, Close} from '@icon-park/vue-next';
+
+import {getVideoCommentsByVideoId} from "../api/commentService.js";
+import {dayUtils} from "../utils/dayUtils.ts";
 
 // 获取视频标签HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
+const comments = ref([]);
 
-onMounted(() => {
+onMounted(async () => {
   if (videoRef.value) {
     videoRef.value.addEventListener('loadedmetadata', () => {
       durationTime.value = videoRef.value?.duration ?? 0;
@@ -35,15 +40,16 @@ onMounted(() => {
     };
     videoRef.value.addEventListener('timeupdate', updateHandler);
   }
+
+  const videoCommentsByVideoId = await getVideoCommentsByVideoId(3);
+  comments.value = videoCommentsByVideoId.data;
+  console.log(comments);
 })
 
 // 评论区抽屉控制
 const open = ref(false)
 const showDrawer = () => {
   open.value = !open.value;
-}
-const onClose = () => {
-  open.value = false;
 }
 
 // 播放暂停控制
@@ -120,71 +126,161 @@ const setVideoTime = (time: number) => {
   }
 }
 
-// 时间格式化函数
-function formatTime(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
 
-  const pad = (n: number) => n.toString().padStart(2, '0');
+// 控制清屏标记
+const clearScreen = ref(false);
 
-  return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+// 拓展面板key
+const activeKey = ref('2');
+
+// 打开用户信息选项卡
+const openUserPage = () => {
+  // TODO 后续在这里发异步请求获取用户信息
+  if (open.value && activeKey.value == '2') {
+    activeKey.value = '1';
+    return;
+  }
+  activeKey.value = '1';
+  showDrawer();
 }
+// 打开评论选项卡
+const openComments = () => {
+  //TODO 后续在这里发异步请求获取评论
+  if (open.value && activeKey.value == '1') {
+    activeKey.value = '2';
+    return;
+  }
+  activeKey.value = '2';
+  showDrawer();
+}
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+
+  const paddedMins = String(mins).padStart(2, '0')
+  const paddedSecs = String(secs).padStart(2, '0')
+
+  return `${paddedMins}:${paddedSecs}`
+}
+
 </script>
 
 
 <template>
-  <div class="player-container" tabindex="-1" @keydown.space="onPlay">
+  <div class="player-container" tabindex="-1"
+       @keyup.space="onPlay"
+       @keyup.x="openComments"
+       @keyup.f="openUserPage"
+  >
     <!-- 视频区域绑定动态 class 控制宽度 -->
     <div :class="['player-video', { shrink: open }]" @click="onPlay">
-      <!--      <video src="http://localhost:8081/videos/f832ca6f-f659-44eb-bf20-b79735f1d757.mp4" ref="videoRef" loop></video>-->
-      <video src="http://localhost:8081/videos/BigBuckBunny.mp4" ref="videoRef"></video>
-      <!-- 交互按钮 -->
-      <div class="interaction-buttons" @click.stop>
-        <a-tooltip placement="left" color="grey">
-          <template #title>
-            <div style="display: flex;line-height: 1.2em">
-              进入作者首页
-              <div
-                  style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
-                F
+      <div class="video-wrapper">
+        <video src="http://localhost:8081/videos/BigBuckBunny.mp4" ref="videoRef"></video>
+        <!--                    <video src="http://localhost:8081/videos/f832ca6f-f659-44eb-bf20-b79735f1d757.mp4" ref="videoRef"-->
+        <!--                           loop></video>-->
+        <!-- 交互按钮 -->
+        <div class="interaction-buttons" @click.stop>
+          <a-tooltip placement="left" color="grey">
+            <template #title>
+              <div style="display: flex;line-height: 1.2em;padding: 8px">
+                进入作者首页
+                <div
+                    style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 30%;text-align: center;line-height: 1.2em;margin-left: 5px">
+                  F
+                </div>
               </div>
+            </template>
+            <div class="user-avatar">
+              <div class="follow-button">
+                <PlusCircleFilled/>
+              </div>
+              <a-avatar
+                  src="http://localhost:8081/avatars/4b1028ef-0863-4516-bfe8-987707d0721b.jpg"
+                  size="large"
+                  class="bounce-on-click"
+              >
+              </a-avatar>
             </div>
-          </template>
-          <div class="user-avatar">
-            <div class="follow-button">
-              <PlusCircleFilled/>
+          </a-tooltip>
+          <a-tooltip placement="left" color="grey">
+            <template #title>
+              <div style="display: flex;line-height: 1.2em;padding: 8px">
+                点赞
+                <div
+                    style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 30%;text-align: center;line-height: 1.2em;margin-left: 5px">
+                  Z
+                </div>
+              </div>
+            </template>
+            <div class="like bounce-on-click">
+              <heart-filled/>
+              <div style="font-size: 20px;padding-top: 5px">999</div>
             </div>
-            <a-avatar
-                src="http://localhost:8081/avatars/4b1028ef-0863-4516-bfe8-987707d0721b.jpg"
-                size="large"
-                class="bounce-on-click"
-            >
-            </a-avatar>
-          </div>
-        </a-tooltip>
-        <a-tooltip></a-tooltip>
-        <div class="like bounce-on-click">
-          <heart-filled/>
-          <div style="font-size: 20px">999</div>
-        </div>
-        <div class="star bounce-on-click">
-          <star-filled/>
-          <div style="font-size: 20px">999</div>
-        </div>
-        <div class="comment bounce-on-click" @click="showDrawer">
-          <message-filled/>
-          <div style="font-size: 20px">999</div>
-        </div>
-        <div class="share bounce-on-click">
-          <icon-share-internal/>
-        </div>
-        <div class="more bounce-on-click">
-          <icon-more/>
+          </a-tooltip>
+          <a-tooltip placement="left" color="grey">
+            <template #title>
+              <div style="display: flex;line-height: 1.2em;padding: 8px">
+                评论
+                <div
+                    style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
+                  X
+                </div>
+              </div>
+            </template>
+            <div class="comment bounce-on-click" @click="showDrawer">
+              <message-filled/>
+              <div style="font-size: 20px;padding-top: 5px">999</div>
+            </div>
+          </a-tooltip>
+          <a-tooltip placement="left" color="grey">
+            <template #title>
+              <div style="display: flex;line-height: 1.2em;padding: 8px">
+                收藏
+                <div
+                    style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 30%;text-align: center;line-height: 1.2em;margin-left: 5px">
+                  X
+                </div>
+              </div>
+            </template>
+            <div class="star bounce-on-click">
+              <star-filled/>
+              <div style="font-size: 20px;padding-top: 5px">999</div>
+            </div>
+          </a-tooltip>
+          <a-tooltip placement="left" color="grey">
+            <template #title>
+              <div style="display: flex;line-height: 1.2em;padding: 8px">
+                进入作者首页
+                <div
+                    style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
+                  F
+                </div>
+              </div>
+            </template>
+            <div class="share bounce-on-click">
+              <icon-share-internal/>
+            </div>
+          </a-tooltip>
+          <a-tooltip placement="left" color="grey">
+            <template #title>
+              <div style="display: flex;line-height: 1.2em;padding: 8px">
+                进入作者首页
+                <div
+                    style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
+                  F
+                </div>
+              </div>
+            </template>
+            <div class="more bounce-on-click">
+              <icon-more/>
+            </div>
+          </a-tooltip>
         </div>
       </div>
+
       <!-- 视频主信息 -->
-      <div class="video-info">
+      <div v-if="!clearScreen" class="video-info">
         <div style="display: flex">
           <div class="user-name">用户123</div>
           <div class="upload-time">2020年11月11日</div>
@@ -194,35 +290,46 @@ function formatTime(seconds: number): string {
           <div class="video-tags" @click.stop>#若干标签...</div>
         </div>
       </div>
-      <!--  进度条  -->
-      <div class="player-progress" @click.stop>
-        <a-slider
-            :max="videoRef?.duration"
-            :step="0.1"
-            :trackStyle="{ backgroundColor: '#fff' }"
-            :handleStyle="{ backgroundColor: '#fff' }"
-            :dotStyle="{ backgroundColor: '#fff' }"
-            :activeDotStyle="{ backgroundColor: '#fff' }"
-            :tooltipOpen="false"
-            @afterChange="setVideoTime"
-            v-model:value="currentTime"
-        ></a-slider>
-        <div class="handle"></div>
-      </div>
+      <!--  遮罩层    -->
+      <div v-if="!clearScreen" class="cover"></div>
       <!--  控件  -->
-      <div class="player-controls" @click.stop>
-        <div class="play-and-time(danmaku)" style="display: flex">
+      <div class="player-controls" :class="['player-controls', { shrink: open }]" @click.stop>
+        <!--  进度条  -->
+        <div class="player-progress" @click.stop>
+          <a-slider
+              :max="videoRef?.duration"
+              :step="0.1"
+              :trackStyle="{ backgroundColor: '#fff' }"
+              :handleStyle="{ backgroundColor: '#fff' }"
+              :dotStyle="{ backgroundColor: '#fff' }"
+              :activeDotStyle="{ backgroundColor: '#fff' }"
+              :tooltipOpen="false"
+              @afterChange="setVideoTime"
+              v-model:value="currentTime"
+          ></a-slider>
+          <div class="handle"></div>
+        </div>
+        <!-- 播放按钮&播放时间 -->
+        <div class="play-and-time-danmaku" style="display: flex">
           <!-- 播放按钮 -->
           <div class="play-button bounce-on-click" @click="onPlay">
             <icon-pause v-if="isPlaying"></icon-pause>
             <icon-play-arrow-fill v-else></icon-play-arrow-fill>
           </div>
-          <!-- 时间 -->
           <div class="time">
             {{ formatTime(currentTime) }} / {{ formatTime(durationTime) }}
           </div>
         </div>
+
+        <!-- 其它功能 -->
         <div class="player-others">
+
+          <!-- 清屏按钮 -->
+          <div class="clear-screen-button" style="user-select: none">
+            <div>清屏</div>
+            <a-switch size="small" v-model:checked="clearScreen"/>
+          </div>
+          <!-- 倍速控制按钮 -->
           <div class="speed-control bounce-on-click" style="font-size: 15px"
           >
             <a-popover
@@ -238,16 +345,17 @@ function formatTime(seconds: number): string {
                   </div>
                 </div>
               </template>
-              {{ currentSpeed == 1 ? '倍速' : currentSpeed + 'x' }}
+              <div style="user-select: none"> {{ currentSpeed == 1 ? '倍速' : currentSpeed + 'x' }}</div>
             </a-popover>
           </div>
-          <div class="volume-control" @click="toggleMute">
+          <!-- 音量控制按钮 -->
+          <div class="volume-control" style="user-select: none" @click="toggleMute">
             <a-popover
                 :arrow=false
                 :overlayInnerStyle="{backgroundColor:'grey'}"
             >
               <template #content>
-                <div style="display: inline-block;height: 100px;">
+                <div style="display: flex;flex-direction: column;height: 120px;">
                   <a-slider v-model:value="volume" vertical="true" :min="0" :max="100"
                             @change="handleVolumeChange"
                   ></a-slider>
@@ -264,94 +372,188 @@ function formatTime(seconds: number): string {
               </div>
             </a-popover>
           </div>
-
+          <!-- 全屏按钮 -->
           <div class="fullScreen-control" @click="toggleFullScreen">
             <icon-fullscreen-exit v-if="isFullScreen"></icon-fullscreen-exit>
             <icon-fullscreen v-else></icon-fullscreen>
           </div>
-
         </div>
       </div>
-
     </div>
-    <a-drawer
-        v-model:open="open"
-        class="custom-class"
-        root-class-name="root-class-name"
-        :root-style="{ color: 'blue' }"
-        :style="{ backgroundColor: 'transparent', boxShadow: 'none' }"
-        title="评论区"
-        placement="right"
-        :get-container="false"
-        width="30%"
-        :mask="false"
-        @close="onClose"
-    >
-      <div class="player-comments">
+    <div class="comments-area" :class="['comments-area',{ shrink: open }]">
+      <a-tabs v-model:activeKey="activeKey" size="large">
+        <a-tab-pane key="1" tab="TA的作品">Content of Tab Pane 1</a-tab-pane>
+        <a-tab-pane key="2" :tab='`评论 (${comments.length})`' force-render>
+          <div style="overflow-y: auto;height: 70vh">
+            <a-list
+                class="comment-list"
+                item-layout="horizontal"
+                :data-source="comments"
+                v-if="comments.length > 0"
+            >
+              <template #renderItem="{ item }">
+                <a-list-item>
+                  <a-comment :author="item.username" :avatar="item.avatarUrl">
+                    <template #actions>
+                    </template>
+                    <template #content>
+                      <p>{{ item.content }}</p>
+                      <p style="color:#bbbfc6;margin-bottom: 5px">{{ dayUtils.formatDate(item.createdAt) }}</p>
+                      <p style="display: flex;gap: 10px;line-height: 1;text-align: center">
+                        <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><message
+                            style="margin-right: 3px"></message>回复</span>
+                        <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><share-two
+                            style="margin-right: 3px"></share-two>分享</span>
+                        <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><like></like>
+                          {{ item.likeCount }}
+                        </span>
+                        <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><dislike></dislike></span>
+                      </p>
+                    </template>
+                  </a-comment>
+                </a-list-item>
+              </template>
+            </a-list>
+          </div>
+        </a-tab-pane>
+        <a-tab-pane key="3" tab="相关推荐">Content of Tab Pane 3</a-tab-pane>
+      </a-tabs>
+      <!-- 关闭按钮 -->
+      <div class="close-button" @click="showDrawer">
+        <close></close>
       </div>
-    </a-drawer>
-
+    </div>
   </div>
-
 </template>
 
-
 <style scoped>
+::v-deep(.ant-list-item) {
+  padding: 6px 12px;
+  border-block-end: 0;
+  p {
+    text-align: left !important;
+    color: white;
+  }
 
+  span {
+    color: white;
+  }
+}
+::v-deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: white; /*按钮文字*/
+}
+::v-deep(.ant-tabs-tab-btn:hover) {
+  color: white;
+}
+
+::v-deep(.ant-tabs-tab) {
+  color: #403d3d; /*按钮文字*/
+}
+
+::v-deep(.ant-tabs-ink-bar) {
+  background-color: red; /*按钮背景*/
+}
+
+::v-deep(.ant-tabs-nav-wrap) {
+  padding-left: 10px;
+}
+
+::v-deep(.ant-comment-inner) {
+  padding: 0;
+}
+
+::v-deep(.ant-switch-checked) {
+  background-color: #ff0000;
+}
 
 .player-container {
-  width: 95%;
-  height: 95%;
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
   position: relative;
   border-radius: 15px;
   z-index: 0;
   display: flex;
-  flex-direction: column;
-
+  align-items: center;
+  overflow: hidden;
 
   .player-video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0; /* 让容器撑满父级 */
     width: 100%;
     height: 100%;
     transition: width 0.32s ease;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* 水平居中 */
-    align-items: center; /* 垂直居中 */
 
-    video {
-      object-fit: contain;
-      max-width: 100%;
-      max-height: 100%;
-    }
+    .video-wrapper {
+      height: calc(100% - 40px);
+      position: relative;
 
-    .player-progress {
-      line-height: 1;
-      position: absolute;
-      width: 100%;
-      left: 0;
-      bottom: 20px;
-      z-index: 5;
+      .interaction-buttons {
+        user-select: none;
+        display: flex;
+        flex-direction: column; /* 垂直排列 */
+        gap: 20px;
+        line-height: 1;
+        font-size: 25px;
+        color: white;
+        position: absolute;
+        z-index: 100;
+        bottom: 10%;
+        right: 3%;
+        text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+
+
+        .user-avatar {
+          position: relative;
+
+          .follow-button {
+            cursor: pointer;
+            color: rgba(254, 44, 85);
+            font-size: 20px;
+            position: absolute;
+            bottom: -8px;
+            right: 10px;
+            z-index: 1;
+          }
+        }
+      }
+
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
     }
 
     .player-controls {
-      text-align: center;
-      display: flex;
-      line-height: 1;
-      color: white;
-      background-color: rgba(0, 0, 0, 0.70);
       position: absolute;
+      text-align: center;
       bottom: 0;
       left: 0;
+      display: flex;
+      color: white;
+      background-color: rgba(0, 0, 0, 1);
+      transition: width 0.32s ease;
       height: 40px;
       width: 100%;
 
+      .player-progress {
+        line-height: 1;
+        position: absolute;
+        width: 100%;
+        left: 0;
+
+        bottom: 20px;
+        z-index: 5;
+      }
+
       .play-button {
+        line-height: 1;
         display: flex;
         cursor: pointer;
         margin-left: 10px;
@@ -360,54 +562,45 @@ function formatTime(seconds: number): string {
       }
 
       .time {
-        margin-left: 10px;
+        margin: 15px 20px;
+        line-height: 1;
+        color: white;
         font-size: 15px;
-        margin-top: 10px;
       }
 
       .player-others {
         flex: 1;
         display: flex;
-        gap: 15px;
+        line-height: 1;
+        gap: 20px;
         margin-right: 15px;
         justify-content: flex-end;
         align-items: center;
 
+        .clear-screen-button {
+          font-size: 1.1em;
+          gap: 5px;
+
+          div {
+            display: flex;
+            align-items: center;
+          }
+
+          display: flex;
+        }
+
         svg {
           cursor: pointer;
-          width: 30px;
-          height: 30px;
+          width: 20px;
+          height: 20px;
         }
       }
     }
 
-    .interaction-buttons {
-      user-select: none;
-      display: flex;
-      flex-direction: column; /* 垂直排列 */
-      gap: 20px;
-      line-height: 1;
-      font-size: 25px;
-      color: white;
-      position: absolute;
-      z-index: 100;
-      bottom: 10%;
-      right: 3%;
-
-      .user-avatar {
-        position: relative;
-
-        .follow-button {
-          cursor: pointer;
-          color: rgba(255, 0, 0);
-          font-size: 20px;
-          position: absolute;
-          bottom: -8px;
-          right: 10px;
-          z-index: 1;
-        }
-      }
+    .player-controls.shrink {
+      width: 70%;
     }
+
 
     .video-info {
       user-select: none;
@@ -417,6 +610,7 @@ function formatTime(seconds: number): string {
       position: absolute;
       left: 3%;
       bottom: 10%;
+      z-index: 0;
 
       .user-name {
         font-size: 1.5em;
@@ -442,18 +636,57 @@ function formatTime(seconds: number): string {
         color: orange;
       }
     }
+
+    .cover {
+      height: 15%;
+      width: 100%;
+      position: absolute;
+      overflow: hidden;
+      z-index: -1;
+      left: 0;
+      bottom: 0;
+      background-image: linear-gradient(180deg, rgba(137, 137, 137, 0.00) 0%, rgba(0, 0, 0, 0.90) 100%);
+    }
   }
 
   /* 抽屉打开时缩小视频 */
 
   .player-video.shrink {
     width: 70%;
+    height: 100%;
   }
 
+  /* 强制覆盖抽屉的padding */
 
   .player-comments {
-    background-color: grey;
+    width: 100%;
+    height: 100%;
   }
+
+  .comments-area {
+    height: 100%;
+    position: absolute;
+    transition: right 0.32s ease;
+    z-index: 5;
+    width: 30%;
+    top: 0;
+    right: -30%;
+    background-color: rgba(0, 0, 0, 0.4); /* 半透明黑色 */
+
+    .close-button {
+      cursor: pointer;
+      position: absolute;
+      color: #ffffff;
+      font-size: 25px;
+      top: -25px;
+      right: 30px;
+    }
+  }
+
+  .comments-area.shrink {
+    right: 0;
+  }
+
 }
 
 .player-container::before {
