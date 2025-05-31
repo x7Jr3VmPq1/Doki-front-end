@@ -1,26 +1,25 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue'
+import {HeartFilled, MessageFilled, PlusCircleFilled, StarFilled} from "@ant-design/icons-vue";
 import {
-  HeartFilled,
-  MessageFilled,
-  StarFilled,
-  PlusCircleFilled
-} from "@ant-design/icons-vue";
-import {
-  IconShareInternal,
-  IconMore,
-  IconPause,
-  IconPlayArrowFill,
-  IconMuteFill,
-  IconSound,
-  IconSoundFill,
   IconFullscreen,
   IconFullscreenExit,
+  IconMore,
+  IconMuteFill,
+  IconPause,
+  IconPlayArrowFill,
+  IconShareInternal,
+  IconSound,
+  IconSoundFill,
+  IconCloseCircleFill
 } from '@arco-design/web-vue/es/icon';
-import {Like, Dislike, ShareTwo, Message, Close} from '@icon-park/vue-next';
+import {Close, Dislike, Like, Message, ShareTwo, GrinningFace, AtSign, Picture} from '@icon-park/vue-next';
 
 import {getVideoCommentsByVideoId} from "../api/commentService.js";
 import {dayUtils} from "../utils/dayUtils.ts";
+import EmojiPicker from 'vue3-emoji-picker'
+import 'vue3-emoji-picker/css'
+
 
 // 获取视频标签HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
@@ -164,6 +163,31 @@ function formatTime(seconds: number): string {
   return `${paddedMins}:${paddedSecs}`
 }
 
+// 处理上传图片逻辑
+const fileInput = ref(null)
+const previewUrl = ref('')
+// 点击图标时触发选择文件
+const triggerFileSelect = () => {
+  fileInput.value?.click()
+}
+const handlePictureUpload = (event: Event) => {
+  if (!event.target) {
+    return;
+  }
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewUrl.value = e.target?.result as string;
+      console.log(previewUrl.value)
+    }
+    reader.readAsDataURL(file);
+  } else {
+    alert('请选择图片文件');
+  }
+}
+
 </script>
 
 
@@ -177,8 +201,8 @@ function formatTime(seconds: number): string {
     <div :class="['player-video', { shrink: open }]" @click="onPlay">
       <div class="video-wrapper">
         <video src="http://localhost:8081/videos/BigBuckBunny.mp4" ref="videoRef"></video>
-        <!--                    <video src="http://localhost:8081/videos/f832ca6f-f659-44eb-bf20-b79735f1d757.mp4" ref="videoRef"-->
-        <!--                           loop></video>-->
+        <!--        <video src="http://localhost:8081/videos/f832ca6f-f659-44eb-bf20-b79735f1d757.mp4" ref="videoRef"-->
+        <!--               loop></video>-->
         <!-- 交互按钮 -->
         <div class="interaction-buttons" @click.stop>
           <a-tooltip placement="left" color="grey">
@@ -380,43 +404,95 @@ function formatTime(seconds: number): string {
         </div>
       </div>
     </div>
-    <div class="comments-area" :class="['comments-area',{ shrink: open }]">
+    <div class="other-draw" :class="['other-draw',{ shrink: open }]">
       <a-tabs v-model:activeKey="activeKey" size="large">
         <a-tab-pane key="1" tab="TA的作品">Content of Tab Pane 1</a-tab-pane>
         <a-tab-pane key="2" :tab='`评论 (${comments.length})`' force-render>
-          <div style="overflow-y: auto;height: 70vh">
-            <a-list
-                class="comment-list"
-                item-layout="horizontal"
-                :data-source="comments"
-                v-if="comments.length > 0"
-            >
-              <template #renderItem="{ item }">
-                <a-list-item>
-                  <a-comment :author="item.username" :avatar="item.avatarUrl">
-                    <template #actions>
-                    </template>
-                    <template #content>
-                      <p>{{ item.content }}</p>
-                      <p style="color:#bbbfc6;margin-bottom: 5px">{{ dayUtils.formatDate(item.createdAt) }}</p>
-                      <p style="display: flex;gap: 10px;line-height: 1;text-align: center">
+          <div class="comments" style="height: 100%; display: flex;flex-direction: column">
+            <div style="flex: 1;overflow-y: auto">
+              <a-list
+                  class="comment-list"
+                  item-layout="horizontal"
+                  :data-source="comments"
+                  v-if="comments.length > 0"
+              >
+                <template #renderItem="{ item }">
+                  <a-list-item>
+                    <a-comment :author="item.username" :avatar="item.avatarUrl">
+                      <template #actions>
+                      </template>
+                      <template #content>
+                        <p>{{ item.content }}</p>
+                        <p style="color:#bbbfc6;margin-bottom: 5px">{{ dayUtils.formatDate(item.createdAt) }}</p>
+                        <p style="display: flex;gap: 10px;line-height: 1;text-align: center">
                         <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><message
                             style="margin-right: 3px"></message>回复</span>
-                        <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><share-two
-                            style="margin-right: 3px"></share-two>分享</span>
-                        <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><like></like>
+                          <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><share-two
+                              style="margin-right: 3px"></share-two>分享</span>
+                          <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><like></like>
                           {{ item.likeCount }}
                         </span>
-                        <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><dislike></dislike></span>
-                      </p>
+                          <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><dislike></dislike></span>
+                        </p>
+                      </template>
+                    </a-comment>
+                  </a-list-item>
+                </template>
+              </a-list>
+            </div>
+            <div class="comment-input" style="max-height: 50%;display: flex;flex-direction: column">
+              <div style="flex: 1">
+                <a-textarea :auto-size="{ minRows: 1, maxRows: 8 }"
+                            @keyup.stop
+                            style="background-color: transparent;color: white;border: none"
+                            placeholder="留下你的评论吧~"
+                ></a-textarea>
+              </div>
+              <div class="functions">
+                <div class="emoji-picker">
+                  <a-popover trigger="click">
+                    <template #content>
+                      <EmojiPicker
+                          :hide-search="true"
+                          :hide-group-names="true"
+                          :disable-skin-tones="true"
+                          :picker-type="'emoji'"
+                          :theme="'auto'"
+                          @select="onEmojiSelect"
+                      ></EmojiPicker>
                     </template>
-                  </a-comment>
-                </a-list-item>
-              </template>
-            </a-list>
+                    <GrinningFace></GrinningFace>
+                  </a-popover>
+                </div>
+                <AtSign></AtSign>
+                <div @click="triggerFileSelect">
+                  <Picture></Picture>
+                  <input
+                      type="file"
+                      ref="fileInput"
+                      accept="image/*"
+                      @change="handlePictureUpload"
+                      style="display: none"
+                  />
+                </div>
+                <!-- 发送图片预览区域 -->
+                <div class="upload-picture" v-if="previewUrl!=''">
+                  <a-image
+                      :src=previewUrl
+                      :height="80"
+                      :width="80"
+                      preview-mask="false"
+                      style="object-fit: cover;border-radius: 10px;"
+                  ></a-image>
+                  <div class="delete-btn" @click="previewUrl=''">
+                    <icon-close-circle-fill></icon-close-circle-fill>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </a-tab-pane>
-        <a-tab-pane key="3" tab="相关推荐">Content of Tab Pane 3</a-tab-pane>
+        <a-tab-pane key="3" tab="相关推荐">Content...</a-tab-pane>
       </a-tabs>
       <!-- 关闭按钮 -->
       <div class="close-button" @click="showDrawer">
@@ -430,6 +506,7 @@ function formatTime(seconds: number): string {
 ::v-deep(.ant-list-item) {
   padding: 6px 12px;
   border-block-end: 0;
+
   p {
     text-align: left !important;
     color: white;
@@ -439,15 +516,29 @@ function formatTime(seconds: number): string {
     color: white;
   }
 }
+
 ::v-deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
   color: white; /*按钮文字*/
 }
+
 ::v-deep(.ant-tabs-tab-btn:hover) {
   color: white;
 }
 
 ::v-deep(.ant-tabs-tab) {
   color: #403d3d; /*按钮文字*/
+}
+
+::v-deep(.ant-tabs) {
+  height: 100%;
+
+  .ant-tabs-content-holder {
+    flex: 1;
+  }
+
+  .ant-tabs-content-top {
+    height: 100%;
+  }
 }
 
 ::v-deep(.ant-tabs-ink-bar) {
@@ -464,6 +555,16 @@ function formatTime(seconds: number): string {
 
 ::v-deep(.ant-switch-checked) {
   background-color: #ff0000;
+}
+
+::v-deep(.ant-input:focus) {
+  box-shadow: 0 0 0 0;
+
+}
+
+::v-deep(.ant-input::placeholder) {
+  color: grey;
+  font-style: italic;
 }
 
 .player-container {
@@ -663,7 +764,7 @@ function formatTime(seconds: number): string {
     height: 100%;
   }
 
-  .comments-area {
+  .other-draw {
     height: 100%;
     position: absolute;
     transition: right 0.32s ease;
@@ -671,10 +772,61 @@ function formatTime(seconds: number): string {
     width: 30%;
     top: 0;
     right: -30%;
-    background-color: rgba(0, 0, 0, 0.4); /* 半透明黑色 */
+    background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色 */
+
+    .comments {
+      padding: 15px;
+
+      .comment-input {
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+
+        .functions {
+          user-select: none;
+          display: flex;
+          align-items: flex-end;
+          flex-direction: row-reverse;
+          gap: 10px;
+          font-size: 20px;
+          margin-right: 10px;
+
+          .upload-picture {
+            display: flex;
+            position: relative;
+            padding-left: 10px;
+            padding-bottom: 10px;
+            flex: 1;
+
+            .delete-btn {
+              cursor: pointer;
+              width: 20px;
+              height: 20px;
+              position: absolute;
+              left: 80px;
+              top: -10px;
+              color: white;
+            }
+          }
+
+          span {
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.5);
+          }
+
+          span:hover {
+            color: white;
+          }
+        }
+      }
+
+      .comment-input:hover {
+        border: 2px solid rgba(255, 255, 255, 0.2);
+      }
+    }
 
     .close-button {
       cursor: pointer;
+      height: 25px;
       position: absolute;
       color: #ffffff;
       font-size: 25px;
@@ -683,7 +835,7 @@ function formatTime(seconds: number): string {
     }
   }
 
-  .comments-area.shrink {
+  .other-draw.shrink {
     right: 0;
   }
 

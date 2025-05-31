@@ -1,138 +1,76 @@
 <template>
-  <div class="following-page-center">
-    <div class="following-container">
-      <h2>关注中</h2>
-      <!-- 暂无数据提示 -->
-      <div v-if="followingList.length === 0" class="empty-message">
-        <a-empty description="你还没有关注任何人哦！"/>
-      </div>
-      <!-- 关注列表 -->
-      <a-list v-else
-        item-layout="horizontal"
-        :data-source="followingList"
-        :locale="{ emptyText: ' ' }"
-      >
-        <template #renderItem="{ item }">
-          <a-list-item>
-            <a-list-item-meta
-              :description="item.bio || '暂无个人简介'"
-              style="text-align: left"
-            >
-              <template #title>
-                <router-link :to="{ name: 'UserProfile', params: { username: item.userName } }">
-                  {{ item.userName }}
-                </router-link>
-              </template>
-              <template #avatar>
-                <a-avatar :src="item.avatarUrl" />
-              </template>
-            </a-list-item-meta>
-            <template #extra>
-              <a-button @click="unfollowUser(item.id)">取消关注</a-button>
-            </template>
-          </a-list-item>
-        </template>
-      </a-list>
-    </div>
-  </div>
+  <swiper
+      ref="swiperRef"
+      direction="vertical"
+      :modules="[Pagination,Virtual]"
+      :allowTouchMove="false"
+      virtual
+      class="video-swiper"
+      @keyup="handleChange"
+      @wheel="handleWheel"
+      @swiper="onSwiperInit"
+  >
+    <swiper-slide v-for="(video, index) in 3" :key="index" :virtualIndex="index"
+    >
+      <Player></Player>
+    </swiper-slide>
+  </swiper>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { message } from 'ant-design-vue';
-import axiosInstance from '../../api/axiosInstance';
+import {ref, onMounted, nextTick} from 'vue'
+import {Swiper, SwiperSlide} from 'swiper/vue'
+import {Pagination, Virtual} from 'swiper/modules'
 
-interface FollowingUser {
-  id: number;
-  userName: string;
-  avatarUrl: string;
-  bio: string;
+import "swiper/css"
+import "swiper/css/pagination"
+import Player from "../../components/Player.vue";
+
+const swiperInstance = ref(null)  // 保存 swiper 实例
+function onSwiperInit(swiper) {
+  swiperInstance.value = swiper
 }
 
-// 模拟数据
-const mockFollowingUsers: FollowingUser[] = [
-  {
-    id: 1,
-    userName: '小明',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-    bio: '热爱生活，热爱分享'
-  },
-  {
-    id: 2,
-    userName: '小红',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka',
-    bio: '喜欢旅行和美食，记录生活中的点滴'
-  },
-  {
-    id: 3,
-    userName: '小刚',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dusty',
-    bio: '数码科技爱好者，分享最新科技资讯'
-  },
-  {
-    id: 4,
-    userName: '小丽',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Coco',
-    bio: '舞蹈爱好者，每天分享舞蹈视频'
-  },
-  {
-    id: 5,
-    userName: '小华',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mittens',
-    bio: '美妆博主，分享最新美妆技巧'
+
+const videoRefs = ref([])
+
+const currentIndex = ref(0);
+const handleChange = (event) => {
+  const swiper = swiperInstance.value;
+  if (!swiper) return
+  console.log(event.key)
+  if (event.key === 'ArrowDown') {
+    swiper.slideNext()
+    currentIndex.value++;
+  } else if (event.key === 'ArrowUp') {
+    swiper.slidePrev()
+    currentIndex.value--;
   }
-];
+}
 
-const followingList = ref<FollowingUser[]>(mockFollowingUsers);
-
-// 获取关注列表 (模拟API调用)
-const getFollowingList = async () => {
-  try {
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 500));
-    // 使用模拟数据
-    followingList.value = mockFollowingUsers;
-  } catch (error) {
-    message.error('获取关注列表失败');
+function handleWheel(event) {
+  // event.deltaY > 0 表示向下滚动， < 0 表示向上滚动
+  if (event.deltaY > 0) {
+    console.log('向下滚动了')
+  } else {
+    console.log('向上滚动了')
   }
-};
-
-// 取消关注 (模拟API调用)
-const unfollowUser = async (userId: number) => {
-  try {
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 500));
-    // 从列表中移除被取消关注的用户
-    followingList.value = followingList.value.filter(user => user.id !== userId);
-    message.success('取消关注成功');
-  } catch (error) {
-    message.error('取消关注失败');
-  }
-};
-
-onMounted(() => {
-  getFollowingList();
-});
+}
 </script>
 
 <style scoped>
-.following-page-center {
+.video-swiper,
+.swiper-slide {
+  height: 80vh;
+  width: 80vw;
   display: flex;
+  align-items: center;
   justify-content: center;
-  width: 100vw;
-  min-height: 100vh;
-  background: #f5f6fa;
 }
-.following-container {
-  width: 480px;
-  padding: 24px;
-  background: #fff;
-  border-radius: 8px;
-  min-height: 400px;
-  margin-top: 40px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-.empty-message {
-  margin-top: 100px;
+
+.video {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
 }
 </style>

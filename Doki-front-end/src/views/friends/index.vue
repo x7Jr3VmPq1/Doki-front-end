@@ -13,7 +13,7 @@ import Player from "../../components/Player.vue";
 
 <style scoped>
 .friends {
-  width: 90vw;
+  width: 80vw;
   height: 90vh;
   overflow-y: hidden;
 }
