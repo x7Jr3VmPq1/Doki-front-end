@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref} from 'vue'
+import {onMounted, type Ref, ref} from 'vue'
 import {HeartFilled, MessageFilled, PlusCircleFilled, StarFilled} from "@ant-design/icons-vue";
 import {
   IconFullscreen,
@@ -13,7 +13,19 @@ import {
   IconSoundFill,
   IconCloseCircleFill
 } from '@arco-design/web-vue/es/icon';
-import {Close, Dislike, Like, Message, ShareTwo, GrinningFace, AtSign, Picture} from '@icon-park/vue-next';
+import {
+  Close,
+  Dislike,
+  Like,
+  Message,
+  ShareTwo,
+  GrinningFace,
+  AtSign,
+  Picture,
+  ArrowCircleUp,
+  Search,
+  More
+} from '@icon-park/vue-next';
 
 import {getVideoCommentsByVideoId} from "../api/commentService.js";
 import {dayUtils} from "../utils/dayUtils.ts";
@@ -23,26 +35,24 @@ import 'vue3-emoji-picker/css'
 
 // 获取视频标签HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
+// 视频评论
 const comments = ref([]);
-
 onMounted(async () => {
   if (videoRef.value) {
+    // 获取视频时长
     videoRef.value.addEventListener('loadedmetadata', () => {
       durationTime.value = videoRef.value?.duration ?? 0;
       currentTime.value = videoRef.value?.currentTime ?? 0;
-      videoRef.value?.play(); // 可以开始播放
-      isPlaying.value = true;
     });
-    const updateHandler = () => {
+    // 监听进度，获得更新的视频时间
+    videoRef.value.addEventListener('timeupdate', () => {
       currentTime.value = videoRef.value?.currentTime ?? 0;
       progressPercent.value = (currentTime.value / durationTime.value) * 100;
-    };
-    videoRef.value.addEventListener('timeupdate', updateHandler);
+    });
   }
 
   const videoCommentsByVideoId = await getVideoCommentsByVideoId(3);
   comments.value = videoCommentsByVideoId.data;
-  console.log(comments);
 })
 
 // 评论区抽屉控制
@@ -59,6 +69,17 @@ const onPlay = () => {
     isPlaying.value ? videoRef.value.play() : videoRef.value.pause();
   }
 }
+// 向外暴露播放器的播放和暂停方法
+defineExpose({
+  play: () => {
+    videoRef.value?.play();
+    isPlaying.value = true;
+  },
+  pause: () => {
+    videoRef.value?.pause();
+    isPlaying.value = false;
+  }
+});
 
 // 时长
 const durationTime = ref(0);
@@ -121,7 +142,6 @@ const setVideoTime = (time: number) => {
   if (videoRef.value) {
     videoRef.value.currentTime = time;
     currentTime.value = time;
-    console.log(time);
   }
 }
 
@@ -180,14 +200,67 @@ const handlePictureUpload = (event: Event) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       previewUrl.value = e.target?.result as string;
-      console.log(previewUrl.value)
     }
     reader.readAsDataURL(file);
   } else {
     alert('请选择图片文件');
   }
 }
-
+// 评论输入内容
+const commentContent = ref('');
+// 提交评论
+const submitComment = async () => {
+  console.log(commentContent.value)
+}
+// 正在回复的目标对象的dom引用，用于回复评论时高亮显示
+const replyTargetDOM: Ref<HTMLElement | null> = ref(null);
+// 正在回复的目标对象的评论对象
+const replyTargetObject: any = ref(null);
+// 是否正在激活回复状态
+const isReplying = ref(false);
+// 点击回复按钮时的逻辑
+const handleClickComments = (event: Event, targetComment: any) => {
+  // 获取点击目标，转换为HTMLElement对象
+  const target = event.target as HTMLElement;
+  // 如果点击的是回复按钮，进行高亮
+  if (target?.classList.contains('reply-btn')) {
+    // 如果现在已经是回复状态，说明用户点击了其它的回复按钮，这时需要先把之前在其它评论上添加的高亮移除
+    if (isReplying.value) {
+      replyTargetDOM.value?.classList.remove('comment-highlight');
+      // 把replyTargetDOM和replyTargetObject置为null
+      replyTargetDOM.value = null;
+      replyTargetObject.value = null;
+    }
+    // 激活正在回复状态
+    isReplying.value = true;
+    // 拿到点击目标所在的评论的DOM
+    const currentTarget = event.currentTarget as HTMLElement;
+    // 存储这个DOM用作之后的操作
+    replyTargetDOM.value = currentTarget;
+    // 存储目标评论的对象，用于后续的回复逻辑使用
+    replyTargetObject.value = targetComment;
+    // 设置高亮
+    currentTarget.classList.add('comment-highlight');
+    // 覆盖.ant-comment类的默认样式
+    const comment: HTMLElement = currentTarget.querySelector('.ant-comment') as HTMLElement;
+    if (comment) {
+      comment.style.backgroundColor = 'transparent';
+    }
+  } else {
+    // 用户点击的不是回复按钮，移除高亮
+    removeHighlight();
+    return;
+  }
+}
+// 移除高亮方法
+const removeHighlight = () => {
+  replyTargetDOM.value?.classList.remove('comment-highlight');
+  // 把replyTargetDOM和replyTargetObject置为null
+  replyTargetDOM.value = null;
+  replyTargetObject.value = null;
+  // 还原正在回复状态
+  isReplying.value = false;
+}
 </script>
 
 
@@ -200,9 +273,9 @@ const handlePictureUpload = (event: Event) => {
     <!-- 视频区域绑定动态 class 控制宽度 -->
     <div :class="['player-video', { shrink: open }]" @click="onPlay">
       <div class="video-wrapper">
-        <video src="http://localhost:8081/videos/BigBuckBunny.mp4" ref="videoRef"></video>
-        <!--        <video src="http://localhost:8081/videos/f832ca6f-f659-44eb-bf20-b79735f1d757.mp4" ref="videoRef"-->
-        <!--               loop></video>-->
+                <video src="http://localhost:8081/videos/BigBuckBunny.mp4" ref="videoRef"></video>
+<!--        <video src="http://localhost:8081/videos/f832ca6f-f659-44eb-bf20-b79735f1d757.mp4" ref="videoRef"-->
+<!--               loop></video>-->
         <!-- 交互按钮 -->
         <div class="interaction-buttons" @click.stop>
           <a-tooltip placement="left" color="grey">
@@ -302,7 +375,6 @@ const handlePictureUpload = (event: Event) => {
           </a-tooltip>
         </div>
       </div>
-
       <!-- 视频主信息 -->
       <div v-if="!clearScreen" class="video-info">
         <div style="display: flex">
@@ -417,23 +489,61 @@ const handlePictureUpload = (event: Event) => {
                   v-if="comments.length > 0"
               >
                 <template #renderItem="{ item }">
-                  <a-list-item>
+                  <a-list-item @click="handleClickComments($event,item)" class="comment-content">
                     <a-comment :author="item.username" :avatar="item.avatarUrl">
                       <template #actions>
                       </template>
                       <template #content>
-                        <p>{{ item.content }}</p>
-                        <p style="color:#bbbfc6;margin-bottom: 5px">{{ dayUtils.formatDate(item.createdAt) }}</p>
-                        <p style="display: flex;gap: 10px;line-height: 1;text-align: center">
-                        <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><message
-                            style="margin-right: 3px"></message>回复</span>
-                          <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><share-two
-                              style="margin-right: 3px"></share-two>分享</span>
-                          <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><like></like>
+                        <div style="width: 100%">
+                          <p>{{ item.content }}</p>
+                          <p style="color:#bbbfc6;margin-bottom: 5px">{{ dayUtils.formatDate(item.createdAt) }}</p>
+                          <p style="display: flex;gap: 10px;line-height: 1;text-align: center">
+                            <span style="cursor: pointer;user-select: none;" class="bounce-on-click reply-btn"><message
+                                style="margin-right: 3px"></message>回复</span>
+                            <a-popover trigger="click"
+                                       :arrow=false
+                                       :overlayInnerStyle="{backgroundColor:'#252632'}"
+                                       style="user-select: none"
+                                       :destroyTooltipOnHide="true"
+                            >
+                              <template #content>
+                                <div style="color: white">
+                                  <div
+                                      style="display: flex;text-align: center;background-color: grey;padding: 5px;border-radius: 10px">
+                                    <div
+                                        style="display: flex;flex-direction: column; justify-content: center;padding: 2px">
+                                      <Search></Search>
+                                    </div>
+                                    <a-input
+                                        style="outline: none;border: none;background-color: transparent;color: white"
+                                        placeholder="搜索"></a-input>
+                                  </div>
+                                  <div style="margin-top: 10px;padding-bottom: 10px; color: grey">分享给朋友</div>
+                                  <div class="share-targets">
+                                    <div style="display: flex;gap: 10px;padding-bottom: 10px" v-for="item in 3">
+                                      <a-avatar src="https://joeschmoe.io/api/v1/random"></a-avatar>
+                                      <div style="height: 32px;line-height: 32px;flex: 1">昵称1</div>
+                                      <div style="height: 32px;line-height: 32px">分享</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </template>
+                              <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><share-two
+                                  style="margin-right: 3px"></share-two>分享</span>
+                            </a-popover>
+                            <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><like></like>
                           {{ item.likeCount }}
                         </span>
-                          <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><dislike></dislike></span>
-                        </p>
+                            <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><dislike></dislike></span>
+                          </p>
+                        </div>
+                        <div class="report-delete-btn">
+                          <!-- 举报/删除评论按钮 -->
+                          <a-popover>
+                            <template #content>举报/删除</template>
+                            <More></More>
+                          </a-popover>
+                        </div>
                       </template>
                     </a-comment>
                   </a-list-item>
@@ -441,14 +551,24 @@ const handlePictureUpload = (event: Event) => {
               </a-list>
             </div>
             <div class="comment-input" style="max-height: 50%;display: flex;flex-direction: column">
+              <div class="reply-target" v-if="replyTargetObject">
+                <div class="reply-target-content">
+                  {{ '回复@' + replyTargetObject.username + ': ' + replyTargetObject.content }}
+                </div>
+                <icon-close-circle-fill class="delete-btn" @click="removeHighlight"></icon-close-circle-fill>
+              </div>
               <div style="flex: 1">
                 <a-textarea :auto-size="{ minRows: 1, maxRows: 8 }"
                             @keyup.stop
                             style="background-color: transparent;color: white;border: none"
                             placeholder="留下你的评论吧~"
+                            v-model:value="commentContent"
                 ></a-textarea>
               </div>
               <div class="functions">
+                <div class="send-button" @click="submitComment" v-if="commentContent || previewUrl">
+                  <arrow-circle-up></arrow-circle-up>
+                </div>
                 <div class="emoji-picker">
                   <a-popover trigger="click">
                     <template #content>
@@ -481,7 +601,7 @@ const handlePictureUpload = (event: Event) => {
                       :src=previewUrl
                       :height="80"
                       :width="80"
-                      preview-mask="false"
+                      :preview-mask="false"
                       style="object-fit: cover;border-radius: 10px;"
                   ></a-image>
                   <div class="delete-btn" @click="previewUrl=''">
@@ -780,6 +900,36 @@ const handlePictureUpload = (event: Event) => {
       .comment-input {
         border: 2px solid rgba(255, 255, 255, 0.1);
         border-radius: 10px;
+        overflow: hidden;
+
+        .reply-target {
+          background-color: rgba(255, 255, 255, 0.1);
+          display: flex;
+          text-indent: 1em;
+          position: relative;
+          color: #bbbfc6;
+
+          .reply-target-content {
+            text-align: left;
+            width: 80%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+          }
+
+          .delete-btn {
+            color: grey;
+            cursor: pointer;
+            width: 15px;
+            position: absolute;
+            right: 10px;
+            top: 3px;
+          }
+
+          .delete-btn:hover {
+            color: white;
+          }
+        }
 
         .functions {
           user-select: none;
@@ -790,11 +940,16 @@ const handlePictureUpload = (event: Event) => {
           font-size: 20px;
           margin-right: 10px;
 
+          .send-button {
+            .arrow-circle-up {
+              color: red;
+            }
+          }
+
           .upload-picture {
             display: flex;
             position: relative;
-            padding-left: 10px;
-            padding-bottom: 10px;
+            padding: 10px;
             flex: 1;
 
             .delete-btn {
@@ -803,7 +958,7 @@ const handlePictureUpload = (event: Event) => {
               height: 20px;
               position: absolute;
               left: 80px;
-              top: -10px;
+              top: -2px;
               color: white;
             }
           }
@@ -821,6 +976,20 @@ const handlePictureUpload = (event: Event) => {
 
       .comment-input:hover {
         border: 2px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .report-delete-btn {
+        cursor: pointer;
+        position: absolute;
+        pointer-events: none;
+        right: 10px;
+        top: 0;
+        opacity: 0;
+      }
+
+      .comment-content:hover .report-delete-btn {
+        opacity: 1;
+        pointer-events: auto;
       }
     }
 
@@ -863,6 +1032,11 @@ const handlePictureUpload = (event: Event) => {
 
 .bounce-on-click:active {
   transform: scale(0.9);
+}
+
+.comment-highlight {
+  /* 评论高亮样式 */
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));
 }
 </style>
 
