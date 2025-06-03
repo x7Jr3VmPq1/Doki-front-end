@@ -11,7 +11,7 @@
       @swiper="onSwiperInit"
   >
     <swiper-slide v-for="(video, index) in videos" :key="index" :virtualIndex="index">
-      <Player :ref="el => setPlayerRef(el, index)"></Player>
+      <Player :ref="el => setPlayerRef(el, index)" :video="video"></Player>
     </swiper-slide>
   </swiper>
 </template>
@@ -68,7 +68,7 @@ const lockSlide = () => {
   clearTimeout(throttleId);
   throttleId = setTimeout(() => {
     slideLocked.value = false;
-  }, 1000);
+  }, 500);
 }
 // 翻页方法
 const handleChange = (event: KeyboardEvent | MouseEvent) => {
@@ -115,8 +115,8 @@ const handleChange = (event: KeyboardEvent | MouseEvent) => {
 <style scoped>
 .video-swiper,
 .swiper-slide {
-  height: 80vh;
-  width: 80vw;
+  height: 85vh;
+  width: 85vw;
   display: flex;
   align-items: center;
   justify-content: center;

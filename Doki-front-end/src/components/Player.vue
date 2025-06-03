@@ -27,12 +27,21 @@ import {
   More
 } from '@icon-park/vue-next';
 
-import {getVideoCommentsByVideoId} from "../api/commentService.js";
+import {
+  getVideoCommentsByVideoId,
+  likeCommentByCommentId,
+  deleteVideoComment,
+  addVideoComment
+} from "../api/commentService.js";
+import {likeVideoByVideoId, favoriteVideoByVideoId} from "../api/videoService.ts";
 import {dayUtils} from "../utils/dayUtils.ts";
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
-
-
+import type {Video} from '../store/videoStore.ts'
+// 获取视频数据
+const {video} = defineProps<{
+  video: Video
+}>()
 // 获取视频标签HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
 // 视频评论
@@ -51,7 +60,7 @@ onMounted(async () => {
     });
   }
 
-  const videoCommentsByVideoId = await getVideoCommentsByVideoId(3);
+  const videoCommentsByVideoId = await getVideoCommentsByVideoId(video.id);
   comments.value = videoCommentsByVideoId.data;
 })
 
@@ -208,10 +217,7 @@ const handlePictureUpload = (event: Event) => {
 }
 // 评论输入内容
 const commentContent = ref('');
-// 提交评论
-const submitComment = async () => {
-  console.log(commentContent.value)
-}
+
 // 正在回复的目标对象的dom引用，用于回复评论时高亮显示
 const replyTargetDOM: Ref<HTMLElement | null> = ref(null);
 // 正在回复的目标对象的评论对象
@@ -261,21 +267,88 @@ const removeHighlight = () => {
   // 还原正在回复状态
   isReplying.value = false;
 }
+
+// 视频交互按钮方法
+// 给视频点赞
+const likeVideo = async (videoId: number) => {
+  const res = await likeVideoByVideoId(videoId);
+  if (res.code === 200) {
+    // 修改本地状态
+    video.liked = !video.liked;
+    video.liked ? video.likeCount++ : video.likeCount--;
+  }
+}
+// 给视频收藏
+const favoriteVideo = async (videoId: number) => {
+  const res = await favoriteVideoByVideoId(videoId);
+  if (res.code === 200) {
+    // 修改本地状态
+    video.favorited = !video.favorited;
+    video.favorited ? video.favoriteCount++ : video.favoriteCount--;
+  }
+}
+
+// 评论区交互方法
+// 提交评论
+const submitComment = async (videoId: number, comment: string, parentCommentId: number | null) => {
+  const res = await addVideoComment(videoId, comment, parentCommentId);
+  if (res.code === 200) {
+    // 添加成功，更新本地状态
+    video.commentCount++;
+    // 构建一个评论对象，插入到本地评论数组
+    const commentobj = {
+      id: 0,
+      videoId: video.id,
+      userId: localStorage.getItem('id'),
+      username: localStorage.getItem('username'),
+      avatarUrl: localStorage.getItem('avatar'),
+      content: comment,
+      createdAt: new Date(),
+      likeCount: 0,
+      replyCount: 0,
+      liked: false,
+      replies: [],
+    };
+    if (parentCommentId) {
+      // 如果是回复，则找到对应的父级评论对象，并插入回复对象
+      const parentComment = comments.value.find(comment => comment.id === parentCommentId);
+      if (parentComment) {
+        parentComment.replies.unshift(commentobj);
+        commentContent.value = '';
+        return;
+      }
+    }
+    comments.value.unshift(commentobj);
+  }
+  // 清空输入框
+  commentContent.value = '';
+}
+// 给评论点赞
+const likeComment = async (commentId: number) => {
+  const res = await likeCommentByCommentId(commentId);
+  if (res.code === 200) {
+    // 获取评论对象
+    const comment = comments.value.find(comment => comment.id === commentId);
+    if (comment) {
+      // 评论对象存在，修改本地状态
+      comment.liked = !comment.liked;
+      comment.liked ? comment.likeCount++ : comment.likeCount--;
+    }
+  }
+}
 </script>
 
 
 <template>
   <div class="player-container" tabindex="-1"
-       @keyup.space="onPlay"
-       @keyup.x="openComments"
-       @keyup.f="openUserPage"
+       @keyup.space.stop="onPlay"
+       @keyup.x.stop="openComments"
+       @keyup.f.stop="openUserPage"
   >
     <!-- 视频区域绑定动态 class 控制宽度 -->
     <div :class="['player-video', { shrink: open }]" @click="onPlay">
       <div class="video-wrapper">
-                <video src="http://localhost:8081/videos/BigBuckBunny.mp4" ref="videoRef"></video>
-<!--        <video src="http://localhost:8081/videos/f832ca6f-f659-44eb-bf20-b79735f1d757.mp4" ref="videoRef"-->
-<!--               loop></video>-->
+        <video :src="video.videoUrl" ref="videoRef" loop preload="auto"></video>
         <!-- 交互按钮 -->
         <div class="interaction-buttons" @click.stop>
           <a-tooltip placement="left" color="grey">
@@ -293,7 +366,7 @@ const removeHighlight = () => {
                 <PlusCircleFilled/>
               </div>
               <a-avatar
-                  src="http://localhost:8081/avatars/4b1028ef-0863-4516-bfe8-987707d0721b.jpg"
+                  :src="video.avatarUrl"
                   size="large"
                   class="bounce-on-click"
               >
@@ -310,9 +383,10 @@ const removeHighlight = () => {
                 </div>
               </div>
             </template>
-            <div class="like bounce-on-click">
-              <heart-filled/>
-              <div style="font-size: 20px;padding-top: 5px">999</div>
+            <div class="like bounce-on-click" @click="likeVideo(video.id)">
+              <heart-filled v-if="video.liked" style="color: red"/>
+              <heart-filled v-else/>
+              <div style="font-size: 20px;padding-top: 5px">{{ video.likeCount }}</div>
             </div>
           </a-tooltip>
           <a-tooltip placement="left" color="grey">
@@ -327,7 +401,7 @@ const removeHighlight = () => {
             </template>
             <div class="comment bounce-on-click" @click="showDrawer">
               <message-filled/>
-              <div style="font-size: 20px;padding-top: 5px">999</div>
+              <div style="font-size: 20px;padding-top: 5px">{{ video.commentCount }}</div>
             </div>
           </a-tooltip>
           <a-tooltip placement="left" color="grey">
@@ -340,9 +414,10 @@ const removeHighlight = () => {
                 </div>
               </div>
             </template>
-            <div class="star bounce-on-click">
-              <star-filled/>
-              <div style="font-size: 20px;padding-top: 5px">999</div>
+            <div class="star bounce-on-click" @click="favoriteVideo(video.id)">
+              <star-filled v-if="video.favorited" style="color: goldenrod"/>
+              <star-filled v-else/>
+              <div style="font-size: 20px;padding-top: 5px">{{ video.favoriteCount }}</div>
             </div>
           </a-tooltip>
           <a-tooltip placement="left" color="grey">
@@ -378,11 +453,11 @@ const removeHighlight = () => {
       <!-- 视频主信息 -->
       <div v-if="!clearScreen" class="video-info">
         <div style="display: flex">
-          <div class="user-name">用户123</div>
-          <div class="upload-time">2020年11月11日</div>
+          <div class="user-name">{{ '@' + video.userName }}</div>
+          <div class="upload-time">{{ dayUtils.formatDate(video.createdAt) }}</div>
         </div>
         <div style="display: flex;flex-wrap: wrap;width: 100%">
-          <div class="video-title">可爱的兔子动画片</div>
+          <div class="video-title">{{ video.title }}</div>
           <div class="video-tags" @click.stop>#若干标签...</div>
         </div>
       </div>
@@ -476,20 +551,20 @@ const removeHighlight = () => {
         </div>
       </div>
     </div>
-    <div class="other-draw" :class="['other-draw',{ shrink: open }]">
+    <div class="other-draw" :class="['other-draw',{ shrink: open }]" @wheel.stop>
       <a-tabs v-model:activeKey="activeKey" size="large">
         <a-tab-pane key="1" tab="TA的作品">Content of Tab Pane 1</a-tab-pane>
-        <a-tab-pane key="2" :tab='`评论 (${comments.length})`' force-render>
+        <a-tab-pane key="2" :tab='`评论 (${video.commentCount})`' force-render>
           <div class="comments" style="height: 100%; display: flex;flex-direction: column">
             <div style="flex: 1;overflow-y: auto">
               <a-list
                   class="comment-list"
                   item-layout="horizontal"
                   :data-source="comments"
-                  v-if="comments.length > 0"
+                  :locale="{ emptyText: '暂无评论' }"
               >
                 <template #renderItem="{ item }">
-                  <a-list-item @click="handleClickComments($event,item)" class="comment-content">
+                  <a-list-item class="comment-content" @click="handleClickComments($event,item)" :key="item.id">
                     <a-comment :author="item.username" :avatar="item.avatarUrl">
                       <template #actions>
                       </template>
@@ -531,8 +606,10 @@ const removeHighlight = () => {
                               <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><share-two
                                   style="margin-right: 3px"></share-two>分享</span>
                             </a-popover>
-                            <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><like></like>
-                          {{ item.likeCount }}
+                            <span style="cursor: pointer;user-select: none;" class="bounce-on-click">
+                              <like v-if="item.liked" theme="filled" fill="#ff0000"></like>
+                              <like v-else/>
+                          {{ item.likeCount ? item.likeCount : '' }}
                         </span>
                             <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><dislike></dislike></span>
                           </p>
@@ -545,6 +622,79 @@ const removeHighlight = () => {
                           </a-popover>
                         </div>
                       </template>
+                      <a-list
+                          class="comment-list"
+                          item-layout="horizontal"
+                          :data-source="item.replies"
+                          v-if="item.replies.length > 0"
+                      >
+                        <template #renderItem="{ item }">
+                          <a-list-item @click.stop="handleClickComments($event,item)" class="comment-content"
+                                       :key="item.id">
+                            <a-comment :author="item.username" :avatar="item.avatarUrl">
+                              <template #actions>
+                              </template>
+                              <template #content>
+                                <div style="width: 100%">
+                                  <p>{{ item.content }}</p>
+                                  <p style="color:#bbbfc6;margin-bottom: 5px">{{
+                                      dayUtils.formatDate(item.createdAt)
+                                    }}</p>
+                                  <p style="display: flex;gap: 10px;line-height: 1;text-align: center">
+                            <span style="cursor: pointer;user-select: none;" class="bounce-on-click reply-btn"><message
+                                style="margin-right: 3px"></message>回复</span>
+                                    <a-popover trigger="click"
+                                               :arrow=false
+                                               :overlayInnerStyle="{backgroundColor:'#252632'}"
+                                               style="user-select: none"
+                                               :destroyTooltipOnHide="true"
+                                    >
+                                      <template #content>
+                                        <div style="color: white">
+                                          <div
+                                              style="display: flex;text-align: center;background-color: grey;padding: 5px;border-radius: 10px">
+                                            <div
+                                                style="display: flex;flex-direction: column; justify-content: center;padding: 2px">
+                                              <Search></Search>
+                                            </div>
+                                            <a-input
+                                                style="outline: none;border: none;background-color: transparent;color: white"
+                                                placeholder="搜索"></a-input>
+                                          </div>
+                                          <div style="margin-top: 10px;padding-bottom: 10px; color: grey">分享给朋友
+                                          </div>
+                                          <div class="share-targets">
+                                            <div style="display: flex;gap: 10px;padding-bottom: 10px" v-for="item in 3">
+                                              <a-avatar src="https://joeschmoe.io/api/v1/random"></a-avatar>
+                                              <div style="height: 32px;line-height: 32px;flex: 1">昵称1</div>
+                                              <div style="height: 32px;line-height: 32px">分享</div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </template>
+                                      <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><share-two
+                                          style="margin-right: 3px"></share-two>分享</span>
+                                    </a-popover>
+                                    <span style="cursor: pointer;user-select: none;" class="bounce-on-click">
+                                        <like v-if="item.liked" theme="filled" fill="#ff0000"/>
+                                        <like v-else></like>
+                                      {{ item.likeCount ? item.likeCount : '' }}
+                                     </span>
+                                    <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><dislike></dislike></span>
+                                  </p>
+                                </div>
+                                <div class="report-delete-btn">
+                                  <!-- 举报/删除评论按钮 -->
+                                  <a-popover>
+                                    <template #content>举报/删除</template>
+                                    <More></More>
+                                  </a-popover>
+                                </div>
+                              </template>
+                            </a-comment>
+                          </a-list-item>
+                        </template>
+                      </a-list>
                     </a-comment>
                   </a-list-item>
                 </template>
@@ -566,7 +716,10 @@ const removeHighlight = () => {
                 ></a-textarea>
               </div>
               <div class="functions">
-                <div class="send-button" @click="submitComment" v-if="commentContent || previewUrl">
+                <!-- 提交评论需要判断是不是回复，如果是回复，还要判断回复目标是不是二级回复 -->
+                <div class="send-button"
+                     @click="submitComment(video.id,commentContent,(replyTargetObject?.id ? (replyTargetObject.parentCommentId ? replyTargetObject.parentCommentId : replyTargetObject.id) : null))"
+                     v-if="commentContent || previewUrl">
                   <arrow-circle-up></arrow-circle-up>
                 </div>
                 <div class="emoji-picker">
@@ -1036,7 +1189,7 @@ const removeHighlight = () => {
 
 .comment-highlight {
   /* 评论高亮样式 */
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0)) !important;
 }
 </style>
 

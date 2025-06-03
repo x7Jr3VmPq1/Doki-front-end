@@ -33,7 +33,7 @@ onMounted(async () => {
 
 <style scoped>
 .friends {
-  width: 80vw;
+  width: 90vw;
   height: 90vh;
   overflow-y: hidden;
 }
