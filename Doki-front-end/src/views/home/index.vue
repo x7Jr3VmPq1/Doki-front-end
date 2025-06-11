@@ -1,21 +1,27 @@
 <template>
-  <div class="swiper-container">
-    <swiper
-        ref="swiperRef"
-        direction="vertical"
-        :modules="[Pagination,Virtual]"
-        :allowTouchMove="false"
-        virtual
-        class="video-swiper"
-        @keyup="handleChange"
-        @wheel="handleChange"
-        @swiper="onSwiperInit"
-    >
-      <swiper-slide v-for="(video, index) in videos" :key="index" :virtualIndex="index">
-        <Player :ref="el => setPlayerRef(el, index)" :video="video"></Player>
-      </swiper-slide>
-    </swiper>
+  <div style="display: flex;flex-direction: column;width: 100%;height: 100%;">
+    <div style="flex: 1;">
+      <TitleBar></TitleBar>
+    </div>
+    <div class="swiper-container">
+      <swiper
+          ref="swiperRef"
+          direction="vertical"
+          :modules="[Pagination,Virtual]"
+          :allowTouchMove="false"
+          virtual
+          class="video-swiper"
+          @keyup="handleChange"
+          @wheel="handleChange"
+          @swiper="onSwiperInit"
+      >
+        <swiper-slide v-for="(video, index) in videos" :key="index" :virtualIndex="index">
+          <Player :ref="el => setPlayerRef(el, index)" :video="video"></Player>
+        </swiper-slide>
+      </swiper>
+    </div>
   </div>
+
 
 </template>
 
@@ -28,6 +34,7 @@ import "swiper/css"
 import "swiper/css/pagination"
 import Player from "../../components/Player.vue";
 import axios from "../../api/axiosInstance.ts";
+import TitleBar from "../../components/TitleBar.vue";
 
 defineEmits(['_virtualUpdated'])
 
@@ -125,18 +132,17 @@ const handleChange = (event: KeyboardEvent | MouseEvent) => {
 </script>
 
 <style scoped>
+.swiper-container {
+  height: 90%;
+  width: 100%;
+}
+
 .video-swiper,
 .swiper-slide {
-  height: 85vh;
-  width: 85vw;
+  height: 100%;
+  width: 95%;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.video {
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
 }
 </style>

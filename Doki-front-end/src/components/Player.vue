@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import {onMounted, type Ref, ref} from 'vue'
+import {nextTick, onMounted, type Ref, ref, watch} from 'vue'
 import {HeartFilled, MessageFilled, PlusCircleFilled, StarFilled} from "@ant-design/icons-vue";
+import {Modal} from 'ant-design-vue';
+
 import {
   IconFullscreen,
   IconFullscreenExit,
@@ -34,18 +36,34 @@ import {
   addVideoComment
 } from "../api/commentService.js";
 import {likeVideoByVideoId, favoriteVideoByVideoId} from "../api/videoService.ts";
+import {getUserInfo} from "../api/userService.ts";
 import {dayUtils} from "../utils/dayUtils.ts";
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
 import type {Video} from '../store/videoStore.ts'
+// 当前登录用户ID
+const userId = ref(localStorage.getItem('id'));
 // 获取视频数据
 const {video} = defineProps<{
   video: Video
 }>()
 // 获取视频标签HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
+// TA的作品集合
+const userItems = ref<Video[]>([]);
+// 初始作品集合加载完毕标志
+const isInitUserItemsLoaded = ref(false);
 // 视频评论
 const comments = ref([]);
+// 初始评论加载完毕标志
+const isInitCommentsLoaded = ref(false);
+
+// 评论区盒子DOM引用
+const commentsArea = ref<HTMLElement | null>(null);
+// loadMoreDOM引用
+const loadMore = ref<HTMLElement | null>(null);
+
+// 播放器初始化钩子
 onMounted(async () => {
   if (videoRef.value) {
     // 获取视频时长
@@ -59,9 +77,34 @@ onMounted(async () => {
       progressPercent.value = (currentTime.value / durationTime.value) * 100;
     });
   }
+});
 
-  const videoCommentsByVideoId = await getVideoCommentsByVideoId(video.id);
-  comments.value = videoCommentsByVideoId.data;
+// 无限滚动加载评论
+const isCommentLoading = ref(false);
+const InnerCommentsArea = ref<HTMLDivElement | null>(null);
+watch(isInitCommentsLoaded, () => {
+  nextTick(() => {
+    let options = {
+      root: commentsArea.value,
+      rootMargin: '0px 0px 0px 0px',
+      threshold: 0,
+    };
+    const observer = new IntersectionObserver(async ([entry]) => {
+      if (entry.isIntersecting) {
+        if (InnerCommentsArea.value!.scrollHeight < commentsArea.value!.scrollHeight) {
+          return;
+        }
+        isCommentLoading.value = true;
+        // 延迟一秒钟
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        // TODO 根据游标加载后续评论
+        const videoCommentsByVideoId = await getVideoCommentsByVideoId(video.id, comments.value[comments.value.length - 1].id);
+        comments.value.push(...videoCommentsByVideoId.data);
+        isCommentLoading.value = false;
+      }
+    }, options);
+    observer.observe(loadMore.value!);
+  });
 })
 
 // 评论区抽屉控制
@@ -117,7 +160,7 @@ const toggleMute = () => {
 // 切换全屏显示方法
 const isFullScreen = ref(false);
 const toggleFullScreen = () => {
-  const element = document.querySelector('.player-container');
+  const element = document.querySelector('.swiper-container');
 
   if (!document.fullscreenElement) {
     // 进入全屏
@@ -160,6 +203,17 @@ const clearScreen = ref(false);
 
 // 拓展面板key
 const activeKey = ref('2');
+// 处理选项卡切换时的逻辑
+const handleTabChange = async (key: string) => {
+  if (key === '1' && !isInitUserItemsLoaded.value) {
+    // 获取用户作品
+    const res = await getUserInfo(video.userName);
+    userItems.value.push(...res.data.videos);
+    isInitUserItemsLoaded.value = true;
+  } else if (key === '2' && !isInitCommentsLoaded.value) {
+    // TODO 获取评论信息
+  }
+}
 
 // 打开用户信息选项卡
 const openUserPage = () => {
@@ -172,16 +226,25 @@ const openUserPage = () => {
   showDrawer();
 }
 // 打开评论选项卡
-const openComments = () => {
-  //TODO 后续在这里发异步请求获取评论
+const openComments = async () => {
+
   if (open.value && activeKey.value == '1') {
     activeKey.value = '2';
     return;
   }
   activeKey.value = '2';
   showDrawer();
+  // 打开评论区，判断comment数组是不是空数组
+  if (comments.value.length == 0 && !isInitCommentsLoaded.value) {
+    // 延迟一秒钟
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const videoCommentsByVideoId = await getVideoCommentsByVideoId(video.id);
+    comments.value.push(...videoCommentsByVideoId.data);
+    isInitCommentsLoaded.value = true;
+  }
 }
 
+// 格式化时间方法
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
@@ -290,24 +353,43 @@ const favoriteVideo = async (videoId: number) => {
 
 // 评论区交互方法
 // 提交评论
-const submitComment = async (videoId: number, comment: string, parentCommentId: number | null) => {
-  const res = await addVideoComment(videoId, comment, parentCommentId);
+const submitComment = async () => {
+
+  let parentCommentId;
+  // 如果评论内容为空，则返回
+  if (commentContent.value.trim() === '' && previewUrl.value == '') {
+    return;
+  }
+  // 如果没有正在回复的目标对象，则parentCommentId为null
+  if (replyTargetObject.value == null) {
+    parentCommentId = null;
+  }// 否则，如果正在回复的目标对象有parentCommentId，说明回复目标是次级评论
+  // 那么parentCommentId为正在回复的目标对象的parentCommentId
+  else if (replyTargetObject.value && replyTargetObject.value.parentCommentId) {
+    parentCommentId = replyTargetObject.value.parentCommentId;
+  }
+  // 否则，说明回复的是顶级评论，parentCommentId为正在回复的目标对象的id
+  else {
+    parentCommentId = replyTargetObject.value.id;
+  }
+  const res = await addVideoComment(video.id, commentContent.value, parentCommentId, previewUrl.value ?? null);
   if (res.code === 200) {
     // 添加成功，更新本地状态
     video.commentCount++;
     // 构建一个评论对象，插入到本地评论数组
     const commentobj = {
-      id: 0,
+      id: res.data.id,
       videoId: video.id,
       userId: localStorage.getItem('id'),
       username: localStorage.getItem('username'),
       avatarUrl: localStorage.getItem('avatar'),
-      content: comment,
+      content: commentContent.value,
       createdAt: new Date(),
       likeCount: 0,
       replyCount: 0,
       liked: false,
       replies: [],
+      imgUrl: res.data.imgUrl
     };
     if (parentCommentId) {
       // 如果是回复，则找到对应的父级评论对象，并插入回复对象
@@ -315,6 +397,7 @@ const submitComment = async (videoId: number, comment: string, parentCommentId: 
       if (parentComment) {
         parentComment.replies.unshift(commentobj);
         commentContent.value = '';
+        previewUrl.value = '';
         return;
       }
     }
@@ -322,19 +405,50 @@ const submitComment = async (videoId: number, comment: string, parentCommentId: 
   }
   // 清空输入框
   commentContent.value = '';
+  previewUrl.value = '';
 }
 // 给评论点赞
-const likeComment = async (commentId: number) => {
-  const res = await likeCommentByCommentId(commentId);
+const likeComment = async (comment: object) => {
+  const res = await likeCommentByCommentId(comment.id);
   if (res.code === 200) {
     // 获取评论对象
-    const comment = comments.value.find(comment => comment.id === commentId);
     if (comment) {
       // 评论对象存在，修改本地状态
       comment.liked = !comment.liked;
       comment.liked ? comment.likeCount++ : comment.likeCount--;
     }
   }
+}
+// 删除评论
+const handleDeleteComment = async (comment: object) => {
+  Modal.confirm({
+    title: '确认要删除这条评论吗?',
+    okText: '确认',
+    cancelText: '取消',
+    maskClosable: true,
+    async onOk() {
+      const res = await deleteVideoComment(comment.id);
+      // 删除成功，更新本地状态
+      if (res.code === 200) {
+        // 如果是次级评论，找到对应的父级评论对象，并删除回复对象
+        if (comment.parentCommentId) {
+          const parentComment = comments.value.find(c => c.id === comment.parentCommentId);
+          parentComment.replies = parentComment.replies.filter(reply => reply.id !== comment.id);
+          // 减少对应的数量
+          parentComment.replyCount--;
+          video.commentCount--;
+        } else {
+          // 否则，说明是顶级评论，直接从评论数组中删除该评论对象
+          const find = comments.value.find(c => c.id === comment.id);
+          comments.value = comments.value.filter(c => c.id !== comment.id);
+          // 减少对应的数量
+          video.commentCount -= find.replies.length + 1;
+        }
+      }
+    },
+    onCancel() {
+    },
+  });
 }
 </script>
 
@@ -399,7 +513,7 @@ const likeComment = async (commentId: number) => {
                 </div>
               </div>
             </template>
-            <div class="comment bounce-on-click" @click="showDrawer">
+            <div class="comment bounce-on-click" @click="openComments">
               <message-filled/>
               <div style="font-size: 20px;padding-top: 5px">{{ video.commentCount }}</div>
             </div>
@@ -552,16 +666,47 @@ const likeComment = async (commentId: number) => {
       </div>
     </div>
     <div class="other-draw" :class="['other-draw',{ shrink: open }]" @wheel.stop>
-      <a-tabs v-model:activeKey="activeKey" size="large">
-        <a-tab-pane key="1" tab="TA的作品">Content of Tab Pane 1</a-tab-pane>
+      <a-tabs v-model:activeKey="activeKey" size="large" @change="handleTabChange(activeKey)">
+        <a-tab-pane key="1" tab="TA的作品">
+          <div style="display: flex;flex-direction: column;width: 100%;height: 100%" v-if="isInitUserItemsLoaded">
+            <div class="title" style="display: flex">
+              <div class="user-info" style="flex: 1">
+                <div class="user-name" style="font-size: 20px;display: flex;margin-left: 10%">
+                  <a style="color: white">@admin</a>
+                </div>
+                <div class="user-like-number" style="font-size: 15px;display: flex;margin-left: 10%;color: white">
+                  <span>1000粉丝 | </span>
+                  <span>1000获赞</span>
+                </div>
+              </div>
+              <div class="follow-button"
+                   style="margin-right: 10%;display: flex;flex-direction: column;justify-content: center;">
+                <a-button type="primary" style="width: 100%">关注</a-button>
+              </div>
+            </div>
+            <div class="user-videos">
+              <div class="user-video-item" v-for="(item) in userItems">
+                <img style="object-fit: cover;width: 100%;height: 100%"
+                     :src="item.thumbnailUrl ?? 'http://localhost:8081/videos/defaultCover.jpg'" alt="http://localhost:8081/videos/defaultCover.jpg">
+                <div class="like-number">
+                  <like></like>
+                  <span style="margin-left: 5px">{{ item.likeCount }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </a-tab-pane>
         <a-tab-pane key="2" :tab='`评论 (${video.commentCount})`' force-render>
-          <div class="comments" style="height: 100%; display: flex;flex-direction: column">
-            <div style="flex: 1;overflow-y: auto">
+          <div class="comments" ref="commentsArea" style="height: 100%; display: flex;flex-direction: column">
+            <div style="flex: 1;overflow-y: auto" ref="InnerCommentsArea">
+              <a-skeleton v-if="!isInitCommentsLoaded" avatar :paragraph="{ rows: 4 }"/>
+              <a-skeleton v-if="!isInitCommentsLoaded" avatar :paragraph="{ rows: 4 }"/>
               <a-list
                   class="comment-list"
                   item-layout="horizontal"
                   :data-source="comments"
-                  :locale="{ emptyText: '暂无评论' }"
+                  :locale="{ emptyText: ' ' }"
               >
                 <template #renderItem="{ item }">
                   <a-list-item class="comment-content" @click="handleClickComments($event,item)" :key="item.id">
@@ -571,10 +716,22 @@ const likeComment = async (commentId: number) => {
                       <template #content>
                         <div style="width: 100%">
                           <p>{{ item.content }}</p>
+                          <p>
+                            <a-image
+                                v-if="item.imgUrl"
+                                :src=item.imgUrl
+                                :height="80"
+                                :width="80"
+                                :preview-mask="false"
+                                style="object-fit: cover;border-radius: 10px;"
+                            ></a-image>
+                          </p>
                           <p style="color:#bbbfc6;margin-bottom: 5px">{{ dayUtils.formatDate(item.createdAt) }}</p>
                           <p style="display: flex;gap: 10px;line-height: 1;text-align: center">
                             <span style="cursor: pointer;user-select: none;" class="bounce-on-click reply-btn"><message
-                                style="margin-right: 3px"></message>回复</span>
+                                style="margin-right: 3px"></message>{{
+                                replyTargetObject == null ? '回复' : (replyTargetObject.id == item.id ? '回复中' : '回复')
+                              }}</span>
                             <a-popover trigger="click"
                                        :arrow=false
                                        :overlayInnerStyle="{backgroundColor:'#252632'}"
@@ -606,7 +763,8 @@ const likeComment = async (commentId: number) => {
                               <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><share-two
                                   style="margin-right: 3px"></share-two>分享</span>
                             </a-popover>
-                            <span style="cursor: pointer;user-select: none;" class="bounce-on-click">
+                            <span style="cursor: pointer;user-select: none;" class="bounce-on-click"
+                                  @click="likeComment(item)">
                               <like v-if="item.liked" theme="filled" fill="#ff0000"></like>
                               <like v-else/>
                           {{ item.likeCount ? item.likeCount : '' }}
@@ -616,8 +774,19 @@ const likeComment = async (commentId: number) => {
                         </div>
                         <div class="report-delete-btn">
                           <!-- 举报/删除评论按钮 -->
-                          <a-popover>
-                            <template #content>举报/删除</template>
+                          <a-popover
+                              :arrow=false
+                              :overlayInnerStyle="{backgroundColor:'#252632'}"
+                              :destroyTooltipOnHide="true"
+                          >
+                            <template #content>
+                              <div style="color: white;cursor: pointer"
+                                   v-if="item.userId != userId">举报
+                              </div>
+                              <div style="color: white;cursor: pointer" v-else @click="handleDeleteComment(item)">
+                                删除
+                              </div>
+                            </template>
                             <More></More>
                           </a-popover>
                         </div>
@@ -642,7 +811,9 @@ const likeComment = async (commentId: number) => {
                                     }}</p>
                                   <p style="display: flex;gap: 10px;line-height: 1;text-align: center">
                             <span style="cursor: pointer;user-select: none;" class="bounce-on-click reply-btn"><message
-                                style="margin-right: 3px"></message>回复</span>
+                                style="margin-right: 3px"></message>{{
+                                replyTargetObject == null ? '回复' : (replyTargetObject.id == item.id ? '回复中' : '回复')
+                              }}</span>
                                     <a-popover trigger="click"
                                                :arrow=false
                                                :overlayInnerStyle="{backgroundColor:'#252632'}"
@@ -675,7 +846,8 @@ const likeComment = async (commentId: number) => {
                                       <span style="cursor: pointer;user-select: none;" class="bounce-on-click"><share-two
                                           style="margin-right: 3px"></share-two>分享</span>
                                     </a-popover>
-                                    <span style="cursor: pointer;user-select: none;" class="bounce-on-click">
+                                    <span style="cursor: pointer;user-select: none;" class="bounce-on-click"
+                                          @click="likeComment(item)">
                                         <like v-if="item.liked" theme="filled" fill="#ff0000"/>
                                         <like v-else></like>
                                       {{ item.likeCount ? item.likeCount : '' }}
@@ -685,8 +857,20 @@ const likeComment = async (commentId: number) => {
                                 </div>
                                 <div class="report-delete-btn">
                                   <!-- 举报/删除评论按钮 -->
-                                  <a-popover>
-                                    <template #content>举报/删除</template>
+                                  <a-popover
+                                      :arrow=false
+                                      :overlayInnerStyle="{backgroundColor:'#252632'}"
+                                      :destroyTooltipOnHide="true"
+                                  >
+                                    <template #content>
+                                      <div style="color: white;cursor: pointer"
+                                           v-if="item.userId != userId">举报
+                                      </div>
+                                      <div style="color: white;cursor: pointer" v-else
+                                           @click="handleDeleteComment(item)">
+                                        删除
+                                      </div>
+                                    </template>
                                     <More></More>
                                   </a-popover>
                                 </div>
@@ -699,11 +883,18 @@ const likeComment = async (commentId: number) => {
                   </a-list-item>
                 </template>
               </a-list>
+              <span v-if="comments.length==0 && isInitCommentsLoaded"
+                    style="color: white">还没有评论哦~快来发一条吧！</span>
+              <div ref="loadMore"></div>
+              <a-spin spinning v-if="isCommentLoading"></a-spin>
             </div>
             <div class="comment-input" style="max-height: 50%;display: flex;flex-direction: column">
               <div class="reply-target" v-if="replyTargetObject">
                 <div class="reply-target-content">
-                  {{ '回复@' + replyTargetObject.username + ': ' + replyTargetObject.content }}
+                  {{
+                    '回复@' + (replyTargetObject.username + ': ' + replyTargetObject.content) +
+                    (replyTargetObject.imgUrl ? '[图片]' : '')
+                  }}
                 </div>
                 <icon-close-circle-fill class="delete-btn" @click="removeHighlight"></icon-close-circle-fill>
               </div>
@@ -718,7 +909,7 @@ const likeComment = async (commentId: number) => {
               <div class="functions">
                 <!-- 提交评论需要判断是不是回复，如果是回复，还要判断回复目标是不是二级回复 -->
                 <div class="send-button"
-                     @click="submitComment(video.id,commentContent,(replyTargetObject?.id ? (replyTargetObject.parentCommentId ? replyTargetObject.parentCommentId : replyTargetObject.id) : null))"
+                     @click="submitComment"
                      v-if="commentContent || previewUrl">
                   <arrow-circle-up></arrow-circle-up>
                 </div>
@@ -779,6 +970,7 @@ const likeComment = async (commentId: number) => {
 ::v-deep(.ant-list-item) {
   padding: 6px 12px;
   border-block-end: 0;
+  width: 100%;
 
   p {
     text-align: left !important;
@@ -822,8 +1014,26 @@ const likeComment = async (commentId: number) => {
   padding-left: 10px;
 }
 
+::v-deep(.ant-comment) {
+  width: 100%;
+}
+
 ::v-deep(.ant-comment-inner) {
+  width: 100%;
   padding: 0;
+}
+
+::v-deep(.ant-comment-content) {
+  width: 100%;
+}
+
+::v-deep(.ant-comment-content:hover) {
+  .report-delete-btn {
+    opacity: 1 !important;
+    display: block;
+    z-index: 99;
+    pointer-events: auto;
+  }
 }
 
 ::v-deep(.ant-switch-checked) {
@@ -841,6 +1051,7 @@ const likeComment = async (commentId: number) => {
 }
 
 .player-container {
+  color: white;
   width: 100%;
   height: 100%;
   position: relative;
@@ -1047,8 +1258,45 @@ const likeComment = async (commentId: number) => {
     right: -30%;
     background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色 */
 
+    .user-videos {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      overflow-y: auto;
+      margin-top: 5%;
+      margin-left: 5%;
+      justify-content: flex-start;
+      gap: 10px;
+
+      .user-video-item {
+        overflow: hidden;
+        width: 30%;
+        height: 25%;
+        background-color: #fff;
+        border-radius: 20px;
+        position: relative;
+
+        .like-number {
+          font-size: 20px;
+          color: white;
+          position: absolute;
+          left: 20px;
+          bottom: 10px;
+        }
+      }
+
+      .user-video-item:hover {
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        transform: scale(1.05);
+        transition: all 0.3s ease-in-out;
+      }
+    }
+
     .comments {
       padding: 15px;
+      width: 100%;
+
 
       .comment-input {
         border: 2px solid rgba(255, 255, 255, 0.1);
@@ -1134,16 +1382,12 @@ const likeComment = async (commentId: number) => {
       .report-delete-btn {
         cursor: pointer;
         position: absolute;
-        pointer-events: none;
         right: 10px;
         top: 0;
         opacity: 0;
       }
 
-      .comment-content:hover .report-delete-btn {
-        opacity: 1;
-        pointer-events: auto;
-      }
+
     }
 
     .close-button {

@@ -1,17 +1,22 @@
 import instance from './axiosInstance'; // 引入axios实例
 // 获取视频评论
-const getVideoCommentsByVideoId = async (videoId: number) => {
-    const response = await instance.get(`/video/comments/${videoId}`);
+const getVideoCommentsByVideoId = async (videoId: number, cursor: number) => {
+    const response = await instance.get(`/video/comments/${videoId}`, {
+        params: {
+            cursor: cursor ? cursor : 0,
+        }
+    });
     return response.data;
 }
 
 // 添加视频评论
-const addVideoComment = async (videoId: number, comment: string, parentCommentId: number | null) => {
+const addVideoComment = async (videoId: number, comment: string, parentCommentId: number | null, imgUrl: string) => {
     const response = await instance.post(`/video/comments/add`, {
         userId: localStorage.getItem('id'),
         videoId: videoId,
         content: comment,
-        parentCommentId: parentCommentId
+        parentCommentId: parentCommentId,
+        imgUrl: imgUrl
     });
     return response.data;
 }

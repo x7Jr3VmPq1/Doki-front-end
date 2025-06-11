@@ -7,7 +7,7 @@ const routes = [
     },
     {
         path: '/home',
-        component: () => import('../views/video/player.vue'),
+        component: () => import('../views/home/index.vue'),
     },
     {
         path: '/friends',

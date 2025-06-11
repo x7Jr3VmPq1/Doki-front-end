@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import {h, ref} from 'vue';
-import {InboxOutlined, PlusOutlined, SmileOutlined} from '@ant-design/icons-vue';
+import {InboxOutlined, PlusOutlined, SmileOutlined, UploadOutlined} from '@ant-design/icons-vue';
 import {message, notification} from 'ant-design-vue';
 import {uploadVideo, publishVideo} from "../../api/videoService.ts";
 import type {UploadRequestOption} from "ant-design-vue/es/vc-upload/interface";
 import type {AxiosProgressEvent} from "axios";
+import {Picture} from "@icon-park/vue-next";
 
 const fileList = ref([]);
 // 进度条百分比
@@ -21,6 +22,7 @@ const formData = ref({
   videoDesc: '',
   category: '日常',
   tags: [],
+  cover: '',
 });
 const handleChange = () => {
   // 让表单输入区域显示
@@ -122,6 +124,7 @@ const handleSubmit = async () => {
   // 模拟一小段延迟
   await new Promise(resolve => setTimeout(resolve, 3000));
   if (allowSubmit.value) {
+    formData.value.cover = previewUrl.value;
     const result = await publishVideo(formData.value);
     if (result.code === 200) {
       notification.open({
@@ -138,6 +141,31 @@ const handleSubmit = async () => {
   }
   submitLoading.value = false;
 };
+
+// 点击图标时触发选择文件
+const previewUrl = ref('')
+const fileInput = ref(null)
+
+const triggerFileSelect = () => {
+  fileInput.value?.click()
+}
+
+const handlePictureUpload = (event: Event) => {
+  if (!event.target) {
+    return;
+  }
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewUrl.value = e.target?.result as string;
+    }
+    reader.readAsDataURL(file);
+  } else {
+    alert('请选择图片文件');
+  }
+}
 </script>
 <template>
   <div v-if="!isSuccess" class="uploadArea">
@@ -162,8 +190,6 @@ const handleSubmit = async () => {
     </div>
   </div>
   <div v-else class="previewArea">
-    <video autoplay muted controls :src="previewVideoUrl"
-    ></video>
     <div class="progress">
       <a-progress
           :percent="uploadPercent"
@@ -243,6 +269,30 @@ const handleSubmit = async () => {
                 <plus-outlined/>
                 新增标签(按Enter确认，最多5个)
               </a-tag>
+            </a-form-item>
+            <a-form-item label="封面图" name="cover">
+              <div @click="triggerFileSelect" v-if="previewUrl === ''">
+                <a-button>
+                  <upload-outlined></upload-outlined>
+                  upload
+                </a-button>
+                <input
+                    type="file"
+                    ref="fileInput"
+                    accept="image/*"
+                    @change="handlePictureUpload"
+                    style="display: none"
+                />
+              </div>
+              <div v-else>
+                <a-image
+                    :src=previewUrl
+                    :height="80"
+                    :width="80"
+                    :preview-mask="false"
+                    style="object-fit: cover;border-radius: 10px;"
+                ></a-image>
+              </div>
             </a-form-item>
           </div>
           <div style="display: flex; align-items: flex-end; padding-bottom: 40px">
