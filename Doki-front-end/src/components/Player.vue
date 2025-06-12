@@ -86,8 +86,8 @@ watch(isInitCommentsLoaded, () => {
   nextTick(() => {
     let options = {
       root: commentsArea.value,
-      rootMargin: '0px 0px 0px 0px',
       threshold: 0,
+      rootMargin: '100px'
     };
     const observer = new IntersectionObserver(async ([entry]) => {
       if (entry.isIntersecting) {
@@ -687,7 +687,8 @@ const handleDeleteComment = async (comment: object) => {
             <div class="user-videos">
               <div class="user-video-item" v-for="(item) in userItems">
                 <img style="object-fit: cover;width: 100%;height: 100%"
-                     :src="item.thumbnailUrl ?? 'http://localhost:8081/videos/defaultCover.jpg'" alt="http://localhost:8081/videos/defaultCover.jpg">
+                     :src="item.thumbnailUrl ?? 'http://localhost:8081/videos/defaultCover.jpg'"
+                     alt="http://localhost:8081/videos/defaultCover.jpg">
                 <div class="like-number">
                   <like></like>
                   <span style="margin-left: 5px">{{ item.likeCount }}</span>
@@ -885,7 +886,7 @@ const handleDeleteComment = async (comment: object) => {
               </a-list>
               <span v-if="comments.length==0 && isInitCommentsLoaded"
                     style="color: white">还没有评论哦~快来发一条吧！</span>
-              <div ref="loadMore"></div>
+              <div ref="loadMore" style="height: 5px"></div>
               <a-spin spinning v-if="isCommentLoading"></a-spin>
             </div>
             <div class="comment-input" style="max-height: 50%;display: flex;flex-direction: column">
@@ -1086,6 +1087,12 @@ const handleDeleteComment = async (comment: object) => {
         right: 3%;
         text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
 
+        .like, .comment, .star, .share {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
 
         .user-avatar {
           position: relative;

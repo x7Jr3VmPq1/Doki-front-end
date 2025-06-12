@@ -1,28 +1,19 @@
 <template>
-  <div style="display: flex;flex-direction: column;width: 100%;height: 100%;">
-    <div style="flex: 1;">
-      <TitleBar></TitleBar>
-    </div>
-    <div class="swiper-container">
-      <swiper
-          ref="swiperRef"
-          direction="vertical"
-          :modules="[Pagination,Virtual]"
-          :allowTouchMove="false"
-          virtual
-          class="video-swiper"
-          @keyup="handleChange"
-          @wheel="handleChange"
-          @swiper="onSwiperInit"
-      >
-        <swiper-slide v-for="(video, index) in videos" :key="index" :virtualIndex="index">
-          <Player :ref="el => setPlayerRef(el, index)" :video="video"></Player>
-        </swiper-slide>
-      </swiper>
-    </div>
-  </div>
-
-
+  <swiper
+      ref="swiperRef"
+      direction="vertical"
+      :modules="[Pagination,Virtual]"
+      :allowTouchMove="false"
+      virtual
+      class="video-swiper"
+      @keyup="handleChange"
+      @wheel="handleChange"
+      @swiper="onSwiperInit"
+  >
+    <swiper-slide v-for="(video, index) in videos" :key="index" :virtualIndex="index">
+      <Player :ref="el => setPlayerRef(el, index)" :video="video"></Player>
+    </swiper-slide>
+  </swiper>
 </template>
 
 <script setup lang="ts">
@@ -34,9 +25,8 @@ import "swiper/css"
 import "swiper/css/pagination"
 import Player from "../../components/Player.vue";
 import axios from "../../api/axiosInstance.ts";
-import TitleBar from "../../components/TitleBar.vue";
 
-defineEmits(['_virtualUpdated'])
+defineEmits(['_virtualUpdated']);
 
 const videos = ref<Video[]>([]);
 const playerRefs = ref([]);
@@ -59,9 +49,6 @@ onMounted(async () => {
           videoUrl: item.videoUrl.replace(/^"|"$/g, '').replace(/\\/g, '/')
         }));
       })
-      .catch(Error => console.dir(Error));
-
-
 })
 
 const swiperInstance = ref(null)  // 保存 swiper 实例
@@ -132,15 +119,10 @@ const handleChange = (event: KeyboardEvent | MouseEvent) => {
 </script>
 
 <style scoped>
-.swiper-container {
-  height: 90%;
-  width: 100%;
-}
-
 .video-swiper,
 .swiper-slide {
-  height: 100%;
   width: 95%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
