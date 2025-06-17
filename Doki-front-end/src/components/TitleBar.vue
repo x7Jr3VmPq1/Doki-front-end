@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {Message, Remind, AddMusic, Search} from '@icon-park/vue-next';
-import {ref, onMounted} from "vue";
+import {ref, onMounted, nextTick} from "vue";
 import {useSharedState} from "../store/useSharedState.ts";
 import {getHotSearchList} from "../api/searchService.ts";
 import router from "../router";
@@ -29,16 +29,27 @@ const onSearch = async (content: string) => {
 }
 import {getNotifications} from '../api/notificationService.ts'
 import {dayUtils} from "../utils/dayUtils.ts";
+import MyDirectMessage from "./direct-message/MyDirectMessage.vue";
+import MyPopover from "./MyPopover.vue";
 
-const notificationListAll = ref([]);
+// 通知列表
+const notificationList = ref([]);
 // 通知类型选择回调
 const handleChange: SelectProps['onChange'] = async (value) => {
   if (value === '0') {
     const res = await getNotifications('all');
     console.log(res.data);
-    notificationListAll.value.push(...res.data);
+    notificationList.value.push(...res.data);
   }
 };
+
+// 点击私信按钮回调
+const directMessage = ref<InstanceType<typeof MyDirectMessage> | null>(null)
+const handleClickDirectMessage = () => {
+  nextTick(() => {
+    directMessage?.value?.getConversations();
+  })
+}
 </script>
 
 <template>
@@ -111,20 +122,34 @@ const handleChange: SelectProps['onChange'] = async (value) => {
         <add-music theme="outline" size="30" fill="#AAABAF"/>
         <div style="text-align: center">投稿</div>
       </div>
-
-
-      <a-popover
-          :arrow="false"
-          :overlayStyle="{paddingTop: '10px'}"
-      >
-        <template #content>
-          消息
+      <!--            <a-popover
+                      :destroyTooltipOnHide="true"
+                      :arrow="false"
+                      :overlayStyle="{paddingTop: '10px',width: '500px'}"
+                      trigger="click"
+                      placement="bottomRight"
+                      @openChange="handleClickDirectMessage"
+                      overlayClassName="my-popover"
+                  >
+                    <template #content>
+                      <MyDirectMessage ref="directMessage"></MyDirectMessage>
+                    </template>
+                    <div class="function">
+                      <Message theme="outline" size="30" fill="#AAABAF"/>
+                      <div style="text-align: center">消息</div>
+                    </div>
+                  </a-popover>-->
+      <my-popover>
+        <template #trigger>
+          <div class="function">
+            <Message theme="outline" size="30" fill="#AAABAF"/>
+            <div style="text-align: center">消息</div>
+          </div>
         </template>
-        <div class="function">
-          <Message theme="outline" size="30" fill="#AAABAF"/>
-          <div style="text-align: center">消息</div>
-        </div>
-      </a-popover>
+        <template #content>
+          <MyDirectMessage></MyDirectMessage>
+        </template>
+      </my-popover>
 
       <a-popover
           :arrow="false"
@@ -152,7 +177,7 @@ const handleChange: SelectProps['onChange'] = async (value) => {
               </div>
             </div>
             <div class="message-items" style="overflow-y: auto;height: 95%;padding-top: 15px">
-              <div v-for="item in notificationListAll" style="margin-bottom: 5px">
+              <div v-for="item in notificationList" style="margin-bottom: 5px">
                 <div style="display: flex;">
                   <div class="avatar-wrapper"
                        style="width: 40px;height: 40px;">

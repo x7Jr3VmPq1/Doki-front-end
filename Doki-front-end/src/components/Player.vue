@@ -807,6 +807,16 @@ const handleDeleteComment = async (comment: object) => {
                               <template #content>
                                 <div style="width: 100%">
                                   <p>{{ item.content }}</p>
+                                  <p>
+                                    <a-image
+                                        v-if="item.imgUrl"
+                                        :src=item.imgUrl
+                                        :height="80"
+                                        :width="80"
+                                        :preview-mask="false"
+                                        style="object-fit: cover;border-radius: 10px;"
+                                    ></a-image>
+                                  </p>
                                   <p style="color:#bbbfc6;margin-bottom: 5px">{{
                                       dayUtils.formatDate(item.createdAt)
                                     }}</p>
@@ -902,7 +912,7 @@ const handleDeleteComment = async (comment: object) => {
               <div style="flex: 1">
                 <a-textarea :auto-size="{ minRows: 1, maxRows: 8 }"
                             @keyup.stop
-                            style="background-color: transparent;color: white;border: none"
+                            style="background-color: transparent;color: white;border: none;outline: none;box-shadow: none;"
                             placeholder="留下你的评论吧~"
                             v-model:value="commentContent"
                 ></a-textarea>
