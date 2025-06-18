@@ -1,10 +1,13 @@
 <script setup lang="ts">
 
-import {ref, watch, onMounted} from "vue";
-import {ArrowCircleUp, Picture, MenuFold, MenuUnfold, MoreOne} from "@icon-park/vue-next";
+import {ref, watch, onMounted, nextTick} from "vue";
+import {ArrowCircleUp, Picture, MenuFold, MenuUnfold, More} from "@icon-park/vue-next";
 import {IconCloseCircleFill} from "@arco-design/web-vue/es/icon";
-import {getConversations, getMessages, sendMessage} from "../../api/messsageService.ts";
+import {getConversations, getMessages, sendMessage, delMessage} from "../../api/messsageService.ts";
 import {dayUtils} from "../../utils/dayUtils.ts";
+import {Modal} from 'ant-design-vue';
+import {createVNode} from 'vue';
+import {ExclamationCircleOutlined} from '@ant-design/icons-vue';
 
 // 页面加载后，获取聊天列表
 const isConversationsLoading = ref(false);
@@ -26,12 +29,18 @@ const messagesList = ref([]);
 // 是否进入会话详情
 const conversationsShow = ref(false);
 const isHidden = ref(false);
+// 聊天区域盒子引用
+const messageItems = <HTMLElement | null>ref(null);
+
 const handleClickConversation = async (conversationId: string, activeIndex: number) => {
   activeConversationIndex.value = activeIndex;
   const res = await getMessages(conversationId);
   messagesList.value = res.data;
   conversationsShow.value = true;
   isHidden.value = true;
+  await nextTick(() => {
+    messageItems.value.scrollTop = messageItems.value.scrollHeight;
+  })
 };
 const isExpansion = ref(false);
 const isMessageContentShow = ref(false);
@@ -114,26 +123,54 @@ const handleSendMessage = async () => {
     errorToll.error('发送失败，请检查网络或稍后再试');
   }
 }
-const open = ref(false)
-const menuRef = ref(null)
+const more = ref(null);
+
+const handleDeleteConversation = () => {
+  Modal.confirm({
+    title: '确认删除对话吗？这将会删除历史聊天记录。',
+    icon: createVNode(ExclamationCircleOutlined),
+    okText: '确认',
+    okType: 'danger',
+    cancelText: '取消',
+    maskClosable: true,
+    getContainer: () => more.value,
+    async onOk() {
+      await delMessage(conversations.value[activeConversationIndex.value].conversationId)
+      // 更新会话列表
+      conversations.value.splice(activeConversationIndex.value, 1);
+      // 如果没有任何会话了，就退出会话详情界面
+      if (conversations.value.length == 0) {
+        handleExitClick();
+      } else {
+        // 把当前会话重置回第一个
+        await handleClickConversation(conversations.value[0].conversationId, 0);
+      }
+    }
+  });
+}
 </script>
 
 <template>
   <!-- 标题区域 -->
   <div class="title">
-    <div>私信</div>
+    <div v-if="isExpansion" style="font-size: 20px">私信</div>
+    <div v-if="!conversationsShow" style="font-size: 20px">私信</div>
+    <div v-if="conversationsShow" class="unfold-button" @click.stop="handleHideClick">
+      <menu-unfold theme="outline" size="35" fill="#c7c8ca" v-if="isExpansion"/>
+      <menu-fold theme="outline" size="35" fill="#c7c8ca" v-else/>
+    </div>
+
     <div style="display: flex;margin-left: auto" v-show="conversationsShow">
-      <div class="more">
-        <more-one size="30"></more-one>
-        <div class="menu" ref="menuRef">
-          <div>举报用户</div>
-          <div @click="open=!open">删除会话</div>
-          <a-modal v-model:open="open" title="Basic Modal" @ok="handleOk" :get-container="() => menuRef">
-            <p>Some contents...</p>
-            <p>Some contents...</p>
-            <p>Some contents...</p>
-          </a-modal>
-        </div>
+      <div class="more" ref="more">
+        <a-popover :getPopupContainer="() => more" placement="bottom">
+          <template #content>
+            <div class="menu">
+              <div class="menu-item">举报用户</div>
+              <div class="menu-item" @click="handleDeleteConversation">删除会话</div>
+            </div>
+          </template>
+          <More size="30"></More>
+        </a-popover>
       </div>
       <div class="exit-button" @click="handleExitClick">
         退出会话
@@ -148,26 +185,26 @@ const menuRef = ref(null)
            @click="handleClickConversation(item.conversationId,index)">
         <a-avatar :src="item.avatarUrl" size="large"></a-avatar>
         <div style="margin-left: 10px">
-          <div class="user-name">{{ item.username }}</div>
+          <div class="user-name" style="margin-bottom: 5px">{{ item.username }}</div>
           <div class="last-message">{{ item.lastMessage }}</div>
         </div>
       </div>
       <div v-else style="text-align: center">
         <a-spin></a-spin>
       </div>
+      <!-- 空盒子 -->
+      <div class="empty-box" v-if="conversations.length === 0 && !isConversationsLoading">
+        <a-empty description="还没有消息，找个人聊聊吧！"></a-empty>
+      </div>
     </div>
     <div class="conversation-details" v-show="conversationsShow">
       <div class="chat-list" :class="{expansion: isExpansion }">
-        <div class="unfold-button" @click.stop="handleHideClick">
-          <menu-unfold theme="outline" size="40" fill="#333" v-if="isExpansion"/>
-          <menu-fold theme="outline" size="40" fill="#333" v-else/>
-        </div>
         <div class="message">
           <div class="message-item" :class="{active:index ==activeConversationIndex}"
                v-for="(item,index) in conversations"
                @click="handleClickConversation(item.conversationId,index)">
             <a-avatar size="large" :src="item.avatarUrl"></a-avatar>
-            <div class="message-content" v-if="isMessageContentShow">
+            <div class="message-content" style="margin-left: 10px" v-if="isMessageContentShow">
               <div class="message-user-name">{{ item.username }}</div>
               <div class="message-text">{{ item.lastMessage }}</div>
             </div>
@@ -175,7 +212,7 @@ const menuRef = ref(null)
         </div>
       </div>
       <div class="chat-area">
-        <div class="message-items">
+        <div class="message-items" ref="messageItems">
           <div v-for="(item,index) in messagesList">
             <div class="time" v-if="shouldShowTime(index)">{{ dayUtils.formatDate(item.sentAt) }}</div>
             <div class="message-item" :class="{me: item.senderId == userId}">
@@ -265,27 +302,42 @@ const menuRef = ref(null)
     display: flex;
     font-size: 25px;
     padding: 10px;
+    position: relative;
+
+    .unfold-button {
+      cursor: pointer;
+      position: absolute;
+      top: 10px;
+      right: 425px;
+    }
+
 
     .more {
-      position: relative;
-
       .menu {
-        display: none;
-        position: absolute;
-        font-size: 15px;
-        width: 60px;
-        background-color: #ffffff;
-      }
+        width: auto;
 
-      &:hover {
-        .menu {
-          display: block;
+        .menu-item {
+          cursor: pointer;
+
+          &:hover {
+            background-color: #f5f5f5;
+          }
         }
       }
     }
 
     .exit-button {
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      font-size: 15px;
       margin-left: auto;
+
+      &:hover {
+        color: red;
+      }
     }
   }
 
@@ -320,19 +372,11 @@ const menuRef = ref(null)
     display: flex;
 
     .chat-list {
-      padding-top: 40px;
       position: relative;
       height: 100%;
       width: 75px;
       /* 缓动 */
       transition: width 0.2s ease-in-out;
-
-      .unfold-button {
-        cursor: pointer;
-        position: absolute;
-        top: 0;
-        right: 10px;
-      }
 
       .message {
         height: 100%;
@@ -414,7 +458,7 @@ const menuRef = ref(null)
 
       .message-input {
         display: flex;
-        border: 2px solid rgba(0, 0, 0, 0.77);
+        border: 2px solid rgba(199, 200, 201, 0.77);
         border-radius: 10px;
 
         .upload-picture {
@@ -437,6 +481,7 @@ const menuRef = ref(null)
           flex-direction: row-reverse;
           font-size: 30px;
           gap: 5px;
+          color: #c7c8ca;
 
           .send.picture {
             display: flex;

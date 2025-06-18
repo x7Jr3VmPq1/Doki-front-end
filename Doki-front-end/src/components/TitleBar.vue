@@ -31,6 +31,7 @@ import {getNotifications} from '../api/notificationService.ts'
 import {dayUtils} from "../utils/dayUtils.ts";
 import MyDirectMessage from "./direct-message/MyDirectMessage.vue";
 import MyPopover from "./MyPopover.vue";
+import Profiles from "./profiles/Profiles.vue";
 
 // 通知列表
 const notificationList = ref([]);
@@ -109,7 +110,7 @@ const handleClickDirectMessage = () => {
           :overlayStyle="{paddingTop: '10px'}"
       >
         <template #content>
-          个人资料
+          <Profiles></Profiles>
         </template>
         <div style="width: 40px;height: 40px">
           <div class="avatar-wrapper">
@@ -118,7 +119,7 @@ const handleClickDirectMessage = () => {
           </div>
         </div>
       </a-popover>
-      <div class="function">
+      <div class="function" @click="router.push('/upload')">
         <add-music theme="outline" size="30" fill="#AAABAF"/>
         <div style="text-align: center">投稿</div>
       </div>

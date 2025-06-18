@@ -12,3 +12,7 @@ export const sendMessage = async (messageDTO: any) => {
     const res = await instance.post('/messages', messageDTO);
     return res.data;
 }
+export const delMessage = async (conversationId: string) => {
+    const res = await instance.delete('/messages', {params: {conversationId}});
+    return res.data;
+}

@@ -46,9 +46,10 @@ onUnmounted(() => {
   border-radius: 15px;
   background-color: #fff;
   position: absolute;
-  top: 50px;
+  top: 60px;
   right: 0;
   z-index: 100;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 /* 进入动画 */
