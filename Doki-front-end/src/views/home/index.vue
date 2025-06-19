@@ -1,19 +1,21 @@
 <template>
-  <swiper
-      ref="swiperRef"
-      direction="vertical"
-      :modules="[Pagination,Virtual]"
-      :allowTouchMove="false"
-      virtual
-      class="video-swiper"
-      @keyup="handleChange"
-      @wheel="handleChange"
-      @swiper="onSwiperInit"
-  >
-    <swiper-slide v-for="(video, index) in videos" :key="index" :virtualIndex="index">
-      <Player :ref="el => setPlayerRef(el, index)" :video="video"></Player>
-    </swiper-slide>
-  </swiper>
+  <div class="video-container">
+    <swiper
+        ref="swiperRef"
+        direction="vertical"
+        :modules="[Pagination,Virtual]"
+        :allowTouchMove="false"
+        virtual
+        class="video-swiper"
+        @keyup="handleChange"
+        @wheel="handleChange"
+        @swiper="onSwiperInit"
+    >
+      <swiper-slide v-for="(video, index) in videos" :key="index" :virtualIndex="index">
+        <Player :ref="el => setPlayerRef(el, index)" :video="video"></Player>
+      </swiper-slide>
+    </swiper>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -126,5 +128,9 @@ const handleChange = (event: KeyboardEvent | MouseEvent) => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.video-container {
+  width: 100%;
+  height: 100%;
 }
 </style>

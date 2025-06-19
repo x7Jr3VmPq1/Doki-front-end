@@ -42,24 +42,20 @@ onUnmounted(() => {
 }
 
 .content {
-  padding: 10px;
-  border-radius: 15px;
-  background-color: #fff;
   position: absolute;
   top: 60px;
   right: 0;
   z-index: 100;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 /* 进入动画 */
 .slide-down-enter-from {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateY(-10%);
 }
 
 .slide-down-enter-active {
-  transition: all 0.3s ease;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .slide-down-enter-to {
@@ -74,11 +70,12 @@ onUnmounted(() => {
 }
 
 .slide-down-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.3s ease-in;
 }
 
 .slide-down-leave-to {
   opacity: 0;
   transform: translateY(-20px);
 }
+
 </style>

@@ -1,0 +1,580 @@
+<template>
+  <div class="profile-card">
+    <div class="profile-header">
+      <img :src="user.avatarUrl" alt="User Avatar" class="user-avatar"/>
+      <div class="user-details">
+        <div class="username">{{ user.userName }}</div>
+        <div class="follow-info">
+          <follow-modal v-model:visible="openFollowingList"></follow-modal>
+          <span class="follow-item" @click="handleFollowList">关注 {{ user.followingCount }}</span>
+          <span class="follow-divider">|</span>
+          <span class="follow-item" @click="handleFansList">粉丝 {{ user.followerCount }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section my-likes"
+         @mouseenter="expandSection('likes')">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="icon red-heart"></span>
+          我的喜欢
+        </div>
+        <div class="section-count">
+          {{ 123 }}
+          <span class="arrow-right" :class="{ 'rotated': expandedSection === 'likes' }"></span>
+        </div>
+      </div>
+      <transition name="expand">
+        <div v-if="expandedSection === 'likes'" class="likes-grid-wrapper">
+          <div class="likes-grid">
+            <div v-for="item in placeholderItems" :key="item.id" class="like-item">
+              <img :src="item.image" :alt="item.title" class="like-item-image"/>
+              <div class="like-item-title">{{ item.title }}</div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+
+    <div class="section-list">
+      <div class="section-item-wrapper">
+        <div class="section-item"
+             @mouseenter="expandSection('collections')">
+          <div class="section-title">
+            <span class="icon yellow-star"></span>
+            我的收藏
+          </div>
+          <div class="section-count">
+            {{ user.collectionsCount }}
+            <span class="arrow-right" :class="{ 'rotated': expandedSection === 'collections' }"></span>
+          </div>
+        </div>
+        <transition name="expand">
+          <div v-if="expandedSection === 'collections'" class="likes-grid-wrapper">
+            <div class="likes-grid">
+              <div v-for="item in placeholderItems" :key="item.id" class="like-item">
+                <img :src="item.image" :alt="item.title" class="like-item-image"/>
+                <div class="like-item-title">{{ item.title }}</div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+      <div class="section-item-wrapper">
+        <div class="section-item"
+             @mouseenter="expandSection('watchHistory')">
+          <div class="section-title">
+            <span class="icon green-history"></span>
+            观看历史
+          </div>
+          <div class="section-count">
+            {{ "30天内" }}
+            <span class="arrow-right" :class="{ 'rotated': expandedSection === 'watchHistory' }"></span>
+          </div>
+        </div>
+        <transition name="expand">
+          <div v-if="expandedSection === 'watchHistory'" class="likes-grid-wrapper">
+            <div class="likes-grid">
+              <div v-for="item in placeholderItems" :key="item.id" class="like-item">
+                <img :src="item.image" :alt="item.title" class="like-item-image"/>
+                <div class="like-item-title">{{ item.title }}</div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+      <div class="section-item-wrapper">
+        <div class="section-item"
+             @mouseenter="expandSection('watchLater')">
+          <div class="section-title">
+            <span class="icon purple-watch-later"></span>
+            稍后再看
+          </div>
+          <div class="section-count">
+            {{ user.watchLaterCount }}
+            <span class="arrow-right" :class="{ 'rotated': expandedSection === 'watchLater' }"></span>
+          </div>
+        </div>
+        <transition name="expand">
+          <div v-if="expandedSection === 'watchLater'" class="likes-grid-wrapper">
+            <div class="likes-grid">
+              <div v-for="item in placeholderItems" :key="item.id" class="like-item">
+                <img :src="item.image" :alt="item.title" class="like-item-image"/>
+                <div class="like-item-title">{{ item.title }}</div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+      <div class="section-item-wrapper">
+        <div class="section-item"
+             @mouseenter="expandSection('myWorks')">
+          <div class="section-title">
+            <span class="icon blue-my-works"></span>
+            我的作品
+          </div>
+          <div class="section-count">
+            {{ user.myWorksCount }}
+            <span class="arrow-right" :class="{ 'rotated': expandedSection === 'myWorks' }"></span>
+          </div>
+        </div>
+        <transition name="expand">
+          <div v-if="expandedSection === 'myWorks'" class="likes-grid-wrapper">
+            <div class="likes-grid">
+              <div v-for="item in placeholderItems" :key="item.id" class="like-item">
+                <img :src="item.image" :alt="item.title" class="like-item-image"/>
+                <div class="like-item-title">{{ item.title }}</div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
+    </div>
+
+    <div class="logout-section">
+      <div class="logout-button">
+        <span class="icon red-logout"></span>
+        退出登录
+      </div>
+      <div class="remember-login">
+        <span>保存登录信息</span>
+        <label class="switch">
+          <input type="checkbox" v-model="rememberLogin"/>
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import {ref} from 'vue';
+import FollowModal from "./follow-modal.vue";
+import {useUserStore} from "../store/userInfoStore.ts";
+
+interface LikedItem {
+  id: number;
+  image: string;
+  title: string;
+}
+
+interface UserProfile {
+  avatar: string;
+  username: string;
+  followingCount: number;
+  followerCount: number;
+  likesCount: number;
+  likedItems: LikedItem[];
+  collectionsCount: number;
+  watchHistoryRange: string;
+  watchLaterCount: number;
+  myWorksCount: number;
+}
+
+const userStore = useUserStore();
+const followingList = ref([]); // 如果这里的数据是通过 API 获取的，需要异步加载
+
+const openFollowingList = ref(false); // 控制 FollowModal 的显示/隐藏
+
+const handleFollowList = async () => {
+  // 实际项目中，这里会调用 API 获取关注列表数据，然后可能传递给 FollowModal
+  // const data = await getFollowList();
+  // followingList.value = data; // 假设 FollowModal 内部有处理传入数据的逻辑
+  openFollowingList.value = true;
+}
+
+const handleFansList = async () => {
+  // 实际项目中，这里会调用 API 获取粉丝列表数据
+  // const data = await getFansList();
+  // fansList.value = data; // 如果 FollowModal 需要区分展示粉丝或关注，可能需要调整其props
+  openFollowingList.value = true;
+}
+
+const user = userStore.userInfo!;
+// const user = ref<UserProfile>({
+//   avatar: 'https://via.placeholder.com/80/A7EDFF/000000?text=%F0%9F%91%BB', // Placeholder monster avatar
+//   username: '用户6747527098721',
+//   followingCount: 2,
+//   followerCount: 0,
+//   likesCount: 6,
+//   likedItems: [
+//     {id: 1, image: 'https://via.placeholder.com/100/FF5733/FFFFFF?text=Item1', title: '释放双缸的咆…'},
+//     {id: 2, image: 'https://via.placeholder.com/100/33FF57/FFFFFF?text=Item2', title: '#穿搭'},
+//     {id: 3, image: 'https://via.placeholder.com/100/5733FF/FFFFFF?text=Item3', title: '#穿搭 #完美身…'},
+//   ],
+//   collectionsCount: 0,
+//   watchHistoryRange: '30天内',
+//   watchLaterCount: 0,
+//   myWorksCount: 1,
+// });
+
+const rememberLogin = ref(false);
+const expandedSection = ref<string | null>(null); // State to track which section is expanded
+
+// Placeholder items for other expandable sections
+const placeholderItems: LikedItem[] = [
+  {id: 101, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容一'},
+  {id: 102, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容二'},
+  {id: 103, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容三'},
+];
+
+const expandSection = (sectionName: string) => {
+  // 检查鼠标是否在当前的 expandedSection 上，如果是，则不改变
+  // 否则，如果是一个新的 section，就展开它
+  // 如果是同一个 section，这行代码不会改变 expandedSection.value
+  // 如果你需要点击同一个 section 来关闭它，这里需要额外的逻辑
+  // 比如：expandedSection.value = expandedSection.value === sectionName ? null : sectionName;
+  expandedSection.value = sectionName;
+};
+
+// 你之前注释的这段逻辑很关键，如果你希望鼠标移出整个卡片时关闭所有展开的菜单，
+// 需要在父元素（例如 .user-profile-card）上添加 @mouseleave="expandedSection = null"
+// const collapseSection = () => {
+//   expandedSection.value = null;
+// };
+
+</script>
+<style scoped>
+.profile-card {
+  width: 375px; /* Standard mobile width, adjust as needed */
+  background-color: #f8f8f8;
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  color: #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  background-color: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.user-avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  margin-right: 15px;
+  object-fit: cover;
+  border: 2px solid #fff; /* White border for avatar */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.username {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.follow-info {
+  margin-top: 5px;
+  font-size: 14px;
+  color: #666;
+}
+
+.follow-item {
+  cursor: pointer;
+  margin-right: 8px;
+
+  &:hover {
+    color: #fe2c55;
+  }
+}
+
+.follow-divider {
+  margin: 0 4px;
+  color: #ccc;
+}
+
+/* Section Styling */
+.section {
+  background-color: #fff;
+  margin-top: 10px;
+  /* padding: 15px 20px; Removed padding from here for expandable sections */
+  border-bottom: 1px solid #eee;
+  cursor: pointer; /* Indicate interactivity */
+}
+
+/* Base style for all section items (including those in section-list and additional-options) */
+.section-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #fff; /* Ensure background for transition */
+}
+
+/* Remove bottom border for section-item if it's within a section-item-wrapper */
+.section-item-wrapper .section-item {
+  border-bottom: none;
+}
+
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* margin-bottom: 15px; Removed for dynamic expansion */
+  padding: 15px 20px; /* Add padding here for consistent click area */
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.section-count {
+  font-size: 14px;
+  color: #999;
+  display: flex;
+  align-items: center;
+}
+
+.arrow-right {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-top: 1.5px solid #ccc;
+  border-right: 1.5px solid #ccc;
+  transform: rotate(45deg);
+  margin-left: 8px;
+  transition: transform 0.3s ease; /* Transition for rotation */
+}
+
+.arrow-right.rotated {
+  transform: rotate(135deg); /* Point down when expanded */
+}
+
+/* Icons */
+.icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Specific icon styles (from previous code) */
+.red-heart {
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FE2C55"%3e%3cpath d="M12 21.35l-1.84-1.69C4.04 15.36 2 13.05 2 10.5 2 7.42 4.42 5 7.5 5c1.74 0 3.41.81 4.5 2.09C13.09 5.81 14.76 5 16.5 5 19.58 5 22 7.42 22 10.5c0 2.55-2.04 4.86-8.16 10.16L12 21.35z"/%3e%3c/svg%3e');
+}
+
+.yellow-star {
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFC107"%3e%3cpath d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/%3e%3c/svg%3e');
+}
+
+.green-history {
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%234CAF50"%3e%3cpath d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7c0 3.87-3.13 7-7 7-1.51 0-2.91-.49-4.06-1.3l-1.42 1.42C8.36 19.9 10.04 20.5 12 20.5c4.97 0 9-4.03 9-9s-4.03-9-9-9z"/%3e%3c/svg%3e');
+}
+
+.purple-watch-later {
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%239C27B0"%3e%3cpath d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9V7h2v10zm3.5-9.5V14h-2V7.5h2z"/%3e%3c/svg%3e');
+}
+
+.blue-my-works {
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232196F3"%3e%3cpath d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-8h14V7H7v2z"/%3e%3c/svg%3e');
+}
+
+.gray-bell {
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23666"%3e%3cpath d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6V9c0-3.07-1.63-5.64-4.5-6.32V2.5h-3v.18C7.63 3.36 6 5.93 6 9v7l-2 2v1h16v-1l-2-2z"/%3e%3c/svg%3e');
+}
+
+.gray-order {
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23666"%3e%3cpath d="M16 6h-2v2h2V6zm-5 0H9v2h2V6zm-2 5H7v2h2v-2zm-2 5H3v2h2v-2zm-2-5H1v2h2v-2zm18-5v14H3V3h18l2-2H1v18h22V5h-2z"/%3e%3c/svg%3e');
+}
+
+.red-logout {
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FE2C55"%3e%3cpath d="M17 7L15.59 8.41 18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/%3e%3c/svg%3e');
+}
+
+
+/* My Likes Specific Styling */
+.my-likes {
+  margin-bottom: 0; /* Ensures it sits tightly with other sections when collapsed */
+}
+
+.likes-grid-wrapper {
+  padding: 0 20px 15px; /* Padding for the content inside the expanded section */
+}
+
+.likes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.like-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+}
+
+.like-item-image {
+  width: 100%;
+  height: 100px; /* Fixed height for images */
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.like-item-title {
+  font-size: 13px;
+  color: #555;
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%; /* Ensure title takes full width to truncate */
+}
+
+/* Wrapper for each expandable section item to manage its own border and background */
+.section-item-wrapper {
+  background-color: #fff;
+  border-bottom: 1px solid #eee;
+  /* margin-bottom: 10px; Removed as we want these to be contiguous like the image */
+}
+
+.section-item-wrapper:last-child {
+  border-bottom: none; /* No border for the last item in a list group */
+}
+
+.section-list,
+.additional-options {
+  margin-top: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #fff; /* Ensure continuous background */
+}
+
+/* Style for option items, which are also section-items */
+.option-item {
+  justify-content: flex-start; /* Align icon and text to the left */
+  /* Remove section-count from here if it's already in the section-item div */
+}
+
+.option-item .section-count {
+  margin-left: auto; /* Push the arrow to the right */
+}
+
+/* Logout Section */
+.logout-section {
+  background-color: #fff;
+  margin-top: 10px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px; /* Space at the bottom */
+}
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  color: #fe2c55; /* TikTok red */
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.remember-login {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  color: #333;
+}
+
+/* Toggle Switch Styling (from previous code) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #fe2c55;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #fe2c55;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(20px);
+  -ms-transform: translateX(20px);
+  transform: translateX(20px);
+}
+
+.slider.round {
+  border-radius: 24px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+
+/* Transition Styles for Expansion */
+.expand-enter-active, .expand-leave-active {
+  transition: all 0.3s ease-out;
+  max-height: 200px; /* Adjust max-height based on content height */
+  overflow: hidden;
+}
+
+.expand-enter-from, .expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+</style>

@@ -6,3 +6,4 @@ import router from "./router";
 import 'ant-design-vue/dist/reset.css';
 
 createApp(App).use(Antd).use(router).use(createPinia()).mount('#app')
+

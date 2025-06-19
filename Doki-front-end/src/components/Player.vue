@@ -160,7 +160,7 @@ const toggleMute = () => {
 // 切换全屏显示方法
 const isFullScreen = ref(false);
 const toggleFullScreen = () => {
-  const element = document.querySelector('.swiper-container');
+  const element = document.querySelector('.video-container');
 
   if (!document.fullscreenElement) {
     // 进入全屏

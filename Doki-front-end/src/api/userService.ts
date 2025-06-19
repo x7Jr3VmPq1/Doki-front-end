@@ -1,5 +1,10 @@
 import instance from './axiosInstance'; // 引入axios实例
 
+// 拉取当前登录用户的个人信息
+const getUserInfoByToken = async () => {
+    const response = await instance.get('/userInfoByToken');
+    return response.data;
+}
 // 拉取个人信息
 const getUserInfo = async (userName: string) => {
     const response = await instance.get(`/user/profiles/${userName}`);
@@ -62,6 +67,7 @@ const getFansList = async (userId: number, page?: number, lastUserId?: number) =
     return response.data.data;
 }
 export {
+    getUserInfoByToken,
     getUserInfo,
     followUser,
     updateUserInfo,

@@ -26,11 +26,7 @@
             <span v-if="notificationsStore.totalUnreadCount>0">({{ notificationsStore.totalUnreadCount }})</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item key="upload">
-          <router-link to="/upload"></router-link>
-          <UploadOutlined/>
-          <span>上传</span>
-        </a-menu-item>
+
         <a-menu-item key="following">
           <router-link to="/following"></router-link>
           <HeartOutlined/>
@@ -41,35 +37,6 @@
           <span>设置</span>
         </a-menu-item>
       </a-menu>
-      <!-- 用户信息展示区域 -->
-      <div class="user-info">
-        <template v-if="isLoggedIn">
-          <a-avatar :size="32" :src="avatarUrl"/>
-          <span class="username">{{ username }}</span>
-          <a-dropdown>
-            <a-button type="link" style="margin-left: 10px;">
-              <MoreOutlined/>
-            </a-button>
-            <template #overlay>
-              <a-menu>
-                <a-menu-item key="profile" @click="handleProfile">
-                  <UserOutlined/>
-                  个人资料
-                </a-menu-item>
-                <a-menu-item key="logout" @click="handleLogout">
-                  <LogoutOutlined/>
-                  退出登录
-                </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
-        </template>
-        <template v-else>
-          <router-link to="/login">
-            <a-button type="primary">登录</a-button>
-          </router-link>
-        </template>
-      </div>
     </a-layout-sider>
   </a-layout>
 </template>

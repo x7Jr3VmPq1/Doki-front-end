@@ -1,15 +1,23 @@
 <script setup lang="ts">
 import {Message, Remind, AddMusic, Search} from '@icon-park/vue-next';
-import {ref, onMounted, nextTick} from "vue";
+import {ref, onMounted, nextTick, watch} from "vue";
 import {useSharedState} from "../store/useSharedState.ts";
 import {getHotSearchList} from "../api/searchService.ts";
 import router from "../router";
-import {useRoute} from "vue-router";
 import {CloseCircleOutlined, RestOutlined} from "@ant-design/icons-vue";
 import type {SelectProps} from "ant-design-vue";
+import profileCard from "./profile-card.vue";
+import {useUserStore} from "../store/userInfoStore.ts";
 
-const route = useRoute()
-
+const userStore = useUserStore();
+const avatarUrl = ref('');
+watch(() => userStore.userInfo, (newValue) => {
+  if (newValue) {
+    avatarUrl.value = newValue.avatarUrl;
+  } else {
+    avatarUrl.value = 'http://localhost:8081/avatars/defaultAvatar.png';
+  }
+});
 // 搜索信息区域显示
 const searchInfoBoxShow = ref(false);
 // 热搜列表
@@ -31,7 +39,8 @@ import {getNotifications} from '../api/notificationService.ts'
 import {dayUtils} from "../utils/dayUtils.ts";
 import MyDirectMessage from "./direct-message/MyDirectMessage.vue";
 import MyPopover from "./MyPopover.vue";
-import Profiles from "./profiles/Profiles.vue";
+import SearchComponent from "./searchComponent.vue";
+import Notification from "./notification.vue";
 
 // 通知列表
 const notificationList = ref([]);
@@ -39,88 +48,80 @@ const notificationList = ref([]);
 const handleChange: SelectProps['onChange'] = async (value) => {
   if (value === '0') {
     const res = await getNotifications('all');
-    console.log(res.data);
     notificationList.value.push(...res.data);
   }
 };
 
-// 点击私信按钮回调
-const directMessage = ref<InstanceType<typeof MyDirectMessage> | null>(null)
-const handleClickDirectMessage = () => {
-  nextTick(() => {
-    directMessage?.value?.getConversations();
-  })
-}
 </script>
 
 <template>
   <div class="title-bar">
     <div class="search-input-area">
-      <div class="input-wrapper">
-        <div class="input">
-          <input
-              type="text"
-              placeholder="搜索"
-              @focus="searchInfoBoxShow=true;"
-              @blur="searchInfoBoxShow=false;"
-          >
-        </div>
-        <div class="icon-wrapper" style="display: flex;">
-          <div style="display: flex;align-items: center;">
-            <search theme="outline" size="20" fill="#333"/>
-          </div>
-          <div style="display: flex;align-items: center;font-size: 20px">搜索</div>
-        </div>
-      </div>
-      <!-- 搜索信息区域 -->
-      <div class="search-info-box" v-if="searchInfoBoxShow" @mousedown.prevent>
-        <div class="search-history" v-if="sharedState.getSearchHistory().length > 0">
-          <div style="text-align: start;margin-left: 20px;margin-top: 20px;display: flex">
-            <div>历史记录</div>
-            <a style="margin-left: auto;margin-right: 20px;cursor: pointer;" @click="sharedState.clearSearchHistory()">
-              <RestOutlined/>
-              清空</a>
-          </div>
-          <div style="margin-left: 20px;margin-top: 10px">
-            <div class="history-items">
-              <div class="history-item" v-for="(item) in sharedState.getSearchHistory()">
-                <a-button type="link" @click="onSearch(item)">{{ item }}</a-button>
-                <!-- 用来做单个删除的图标 -->
-                <div class="delete-btn">
-                  <CloseCircleOutlined @click="sharedState.deleteSearchHistory(item)">
-                  </CloseCircleOutlined>
+      <!--      <div class="input-wrapper">
+              <div class="input">
+                <input
+                    type="text"
+                    placeholder="搜索"
+                    @focus="searchInfoBoxShow=true;"
+                    @blur="searchInfoBoxShow=false;"
+                >
+              </div>
+              <div class="icon-wrapper" style="display: flex;">
+                <div style="display: flex;align-items: center;">
+                  <search theme="outline" size="20" fill="#333"/>
                 </div>
+                <div style="display: flex;align-items: center;font-size: 20px">搜索</div>
               </div>
             </div>
-          </div>
-        </div>
-        <div style="display: flex;">
-          <div style="margin-left: 20px;margin-top: 20px">猜你想搜</div>
-          <div class="search-info-change">换一换</div>
-        </div>
-        <div style="text-align: start;margin-left: 20px;margin-top: 20px;margin-bottom: 5px">热搜列表</div>
-        <div class="search-info-item" v-for="(item,index) in hotSearchList" @click="onSearch(item)">
-          <div style="text-align: start;">{{ `${index + 1}.  ${item}` }}</div>
-        </div>
-      </div>
+            &lt;!&ndash; 搜索信息区域 &ndash;&gt;
+            <div class="search-info-box" v-if="searchInfoBoxShow" @mousedown.prevent>
+              <div class="search-history" v-if="sharedState.getSearchHistory().length > 0">
+                <div style="text-align: start;margin-left: 20px;margin-top: 20px;display: flex">
+                  <div>历史记录</div>
+                  <a style="margin-left: auto;margin-right: 20px;cursor: pointer;" @click="sharedState.clearSearchHistory()">
+                    <RestOutlined/>
+                    清空</a>
+                </div>
+                <div style="margin-left: 20px;margin-top: 10px">
+                  <div class="history-items">
+                    <div class="history-item" v-for="(item) in sharedState.getSearchHistory()">
+                      <a-button type="link" @click="onSearch(item)">{{ item }}</a-button>
+                      &lt;!&ndash; 用来做单个删除的图标 &ndash;&gt;
+                      <div class="delete-btn">
+                        <CloseCircleOutlined @click="sharedState.deleteSearchHistory(item)">
+                        </CloseCircleOutlined>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex;">
+                <div style="margin-left: 20px;margin-top: 20px">猜你想搜</div>
+                <div class="search-info-change">换一换</div>
+              </div>
+              <div style="text-align: start;margin-left: 20px;margin-top: 20px;margin-bottom: 5px">热搜列表</div>
+              <div class="search-info-item" v-for="(item,index) in hotSearchList" @click="onSearch(item)">
+                <div style="text-align: start;">{{ `${index + 1}.  ${item}` }}</div>
+              </div>
+            </div>-->
+      <search-component></search-component>
     </div>
     <div class="functions">
-      <a-popover
-          :arrow="false"
-          :overlayStyle="{paddingTop: '10px'}"
-      >
+      <my-popover>
         <template #content>
-          <Profiles></Profiles>
+          <profile-card></profile-card>
         </template>
-        <div style="width: 40px;height: 40px">
-          <div class="avatar-wrapper">
-            <img style="object-fit: contain;width:100%;height: 100%;"
-                 src="http://localhost:8081/avatars/3137ae21-cd4b-4b9f-8426-a2c514273dbf.jpg">
+        <template #trigger>
+          <div style="width: 40px;height: 40px">
+            <div class="avatar-wrapper">
+              <img style="object-fit: contain;width:100%;height: 100%;"
+                   :src="avatarUrl">
+            </div>
           </div>
-        </div>
-      </a-popover>
+        </template>
+      </my-popover>
       <div class="function" @click="router.push('/upload')">
-        <add-music theme="outline" size="30" fill="#AAABAF"/>
+        <add-music theme="outline" size="24"/>
         <div style="text-align: center">投稿</div>
       </div>
       <!--            <a-popover
@@ -143,7 +144,7 @@ const handleClickDirectMessage = () => {
       <my-popover>
         <template #trigger>
           <div class="function">
-            <Message theme="outline" size="30" fill="#AAABAF"/>
+            <Message theme="outline" size="24"/>
             <div style="text-align: center">消息</div>
           </div>
         </template>
@@ -152,60 +153,18 @@ const handleClickDirectMessage = () => {
         </template>
       </my-popover>
 
-      <a-popover
-          :arrow="false"
-          :overlayStyle="{paddingTop: '10px',paddingRight: '10px',minWidth: '350px'}"
-          trigger="click"
+      <my-popover
       >
         <template #content>
-          <div style="height: 400px">
-            <div style="display: flex;">
-              <div>互动消息</div>
-              <div style="margin-left: auto">
-                <a-select
-                    ref="select"
-                    style="width: 120px"
-                    @change="handleChange"
-                    defaultValue="全部消息"
-                >
-                  <a-select-option value="0">全部消息</a-select-option>
-                  <a-select-option value="1">粉丝</a-select-option>
-                  <a-select-option value="2">@我的</a-select-option>
-                  <a-select-option value="3">评论</a-select-option>
-                  <a-select-option value="4">赞</a-select-option>
-                  <a-select-option value="5">弹幕</a-select-option>
-                </a-select>
-              </div>
-            </div>
-            <div class="message-items" style="overflow-y: auto;height: 95%;padding-top: 15px">
-              <div v-for="item in notificationList" style="margin-bottom: 5px">
-                <div style="display: flex;">
-                  <div class="avatar-wrapper"
-                       style="width: 40px;height: 40px;">
-                    <div style="border-radius: 50%;overflow: hidden">
-                      <img style="object-fit: contain;width:100%;height: 100%;"
-                           :src="item.avatarUrl" alt="">
-                    </div>
-                  </div>
-                  <div style="flex: 1;padding-left: 15px">
-                    <div>{{ item.operatorName }}</div>
-                    <div>{{ item.message }}</div>
-                    <div>{{ dayUtils.formatDate(item.createdAt) }}</div>
-                  </div>
-                  <div style="width: 60px;height: 40px;">
-                    <img style="height: 100%;width: 100%;object-fit:cover"
-                         src="http://localhost:8081/avatars/3137ae21-cd4b-4b9f-8426-a2c514273dbf.jpg" alt="">
-                  </div>
-                </div>
-              </div>
-            </div>
+          <Notification></Notification>
+        </template>
+        <template #trigger>
+          <div class="function">
+            <Remind theme="outline" size="24"/>
+            <div style="text-align: center">通知</div>
           </div>
         </template>
-        <div class="function">
-          <Remind theme="outline" size="30" fill="#AAABAF"/>
-          <div style="text-align: center">通知</div>
-        </div>
-      </a-popover>
+      </my-popover>
     </div>
   </div>
 </template>
@@ -349,12 +308,16 @@ const handleClickDirectMessage = () => {
     .function {
       display: flex;
       flex-direction: column;
-      color: #AAABAF;
+      align-items: center;
+
+      div {
+        flex: 1;
+      }
     }
 
     .function:hover {
       cursor: pointer;
-      color: lightskyblue;
+      color: #fe2c55;
     }
 
     .avatar-wrapper {
