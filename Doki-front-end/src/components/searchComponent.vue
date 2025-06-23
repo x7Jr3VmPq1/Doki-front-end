@@ -78,28 +78,28 @@
           </div>
         </div>
 
-        <div class="section-header">
-          <span class="section-title">猜你想搜</span>
-          <button class="refresh-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M1 4V10H7M23 20V14H17M20.49 9A9 9 0 0 0 5.64 5.64L1 10M3.51 15A9 9 0 0 0 18.36 18.36L23 14"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            换一换
-          </button>
-        </div>
+        <!--        <div class="section-header">-->
+        <!--          <span class="section-title">猜你想搜</span>-->
+        <!--          <button class="refresh-btn">-->
+        <!--            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">-->
+        <!--              <path d="M1 4V10H7M23 20V14H17M20.49 9A9 9 0 0 0 5.64 5.64L1 10M3.51 15A9 9 0 0 0 18.36 18.36L23 14"-->
+        <!--                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>-->
+        <!--            </svg>-->
+        <!--            换一换-->
+        <!--          </button>-->
+        <!--        </div>-->
 
-        <div class="hot-grid">
-          <div
-              v-for="(topic, index) in displayHotTopics"
-              :key="index"
-              class="hot-item"
-              @click="selectSuggestion({ text: topic.text })"
-          >
-            {{ topic.text }}
-            <span v-if="topic.badge" :class="['hot-badge', topic.badge]">{{ topic.badgeText }}</span>
-          </div>
-        </div>
+        <!--        <div class="hot-grid">-->
+        <!--          <div-->
+        <!--              v-for="(topic, index) in displayHotTopics"-->
+        <!--              :key="index"-->
+        <!--              class="hot-item"-->
+        <!--              @click="selectSuggestion({ text: topic.text })"-->
+        <!--          >-->
+        <!--            {{ topic.text }}-->
+        <!--            <span v-if="topic.badge" :class="['hot-badge', topic.badge]">{{ topic.badgeText }}</span>-->
+        <!--          </div>-->
+        <!--        </div>-->
 
         <div class="trending-section">
           <div class="trending-header">
@@ -113,11 +113,10 @@
               v-for="(item, index) in trendingTopics"
               :key="index"
               class="trending-item"
-              @click="selectSuggestion({ text: item.text })"
+              @click="selectSuggestion(item)"
           >
             <span class="trending-rank">{{ index + 1 }}</span>
-            <span class="trending-text">{{ item.text }}</span>
-            <span v-if="item.warning" class="warning-icon">⚠</span>
+            <span class="trending-text">{{ item }}</span>
           </div>
         </div>
       </div>
@@ -128,6 +127,7 @@
 <script setup lang="ts">
 import {ref, computed, onMounted, onUnmounted} from 'vue'
 import router from "../router";
+import {getHotSearchList} from "../api/searchService.ts";
 
 // 类型定义
 interface Suggestion {
@@ -197,14 +197,16 @@ const hotTopicsData: HotTopic[] = [
 ]
 
 // 抖音热点数据
-const trendingTopics: TrendingTopic[] = [
+/*const trendingTopics: TrendingTopic[] = [
   {text: '推动不同文明交流对话和谐共生'},
   {text: '今年第1号台风"蝴蝶"生成', warning: true},
   {text: '国台办：重点监管台"资通电军"'},
   {text: '2025中国网络文明大会'},
   {text: '中美经贸磋商达成协议框架'},
   {text: '韩国军方停止对朝扩音广播'}
-]
+]*/
+// 热点数据
+const trendingTopics = ref(['']);
 
 // 计算属性
 const suggestions = computed(() => {
@@ -231,7 +233,8 @@ const onInput = () => {
   showSuggestions.value = true
 }
 
-const onFocus = () => {
+const onFocus = async () => {
+  trendingTopics.value = await getHotSearchList();
   showSuggestions.value = true
 }
 
@@ -268,8 +271,8 @@ const onKeyDown = (event: KeyboardEvent) => {
   }
 }
 
-const selectSuggestion = (suggestion: Suggestion) => {
-  searchQuery.value = suggestion.text
+const selectSuggestion = (suggestion: string) => {
+  searchQuery.value = suggestion;
   showSuggestions.value = false
   activeIndex.value = -1
   handleSearch();
@@ -283,6 +286,9 @@ const handleSearch = () => {
     addToHistory(searchQuery.value.trim())
     router.push({
       path: '/search',
+      query: {
+        keyword: searchQuery.value.trim()
+      }
     })
     emit('search', searchQuery.value.trim())
   }
@@ -479,6 +485,7 @@ onUnmounted(() => {
 
 .history-list {
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
 }
 

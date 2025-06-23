@@ -450,6 +450,11 @@ const handleDeleteComment = async (comment: object) => {
     },
   });
 }
+
+const handleFollowButtonClick = async (user: User) => {
+  // 模拟点击关注按钮
+  user.isFollowing = !user.isFollowing;
+};
 </script>
 
 
@@ -679,9 +684,12 @@ const handleDeleteComment = async (comment: object) => {
                   <span>1000获赞</span>
                 </div>
               </div>
-              <div class="follow-button"
-                   style="margin-right: 10%;display: flex;flex-direction: column;justify-content: center;">
-                <a-button type="primary" style="width: 100%">关注</a-button>
+              <div>
+                <div style="margin-right: 50px">
+                  <button class="followed-button" v-if="false">已关注
+                  </button>
+                  <button class="follow-button" v-else>关注</button>
+                </div>
               </div>
             </div>
             <div class="user-videos">
@@ -1274,6 +1282,27 @@ const handleDeleteComment = async (comment: object) => {
     top: 0;
     right: -30%;
     background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色 */
+
+    .followed-button,
+    .follow-button {
+      padding: 8px 15px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .followed-button {
+      background-color: #e0e0e0;
+      color: #666;
+      border: 1px solid #d0d0d0;
+    }
+
+    .follow-button {
+      background-color: #fe2c55;
+      color: #fff;
+      border: 1px solid #fe2c55;
+    }
 
     .user-videos {
       flex: 1;

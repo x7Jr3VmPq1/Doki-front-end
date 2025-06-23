@@ -5,10 +5,14 @@
       <div class="user-details">
         <div class="username">{{ user.userName }}</div>
         <div class="follow-info">
-          <follow-modal v-model:visible="openFollowingList"></follow-modal>
-          <span class="follow-item" @click="handleFollowList">关注 {{ user.followingCount }}</span>
-          <span class="follow-divider">|</span>
-          <span class="follow-item" @click="handleFansList">粉丝 {{ user.followerCount }}</span>
+          <follow-modal
+              v-model:visible="openFollowingList"
+              :fans-list="fansList"
+              :following-list="followingList">
+          </follow-modal>
+          <span class="follow-item" @click="openFollowingList = true">关注 {{ user.followingCount }}</span>
+          <span class="follow-divider">|&nbsp;</span>
+          <span class="follow-item" @click="openFollowingList = true">粉丝 {{ user.followerCount }}</span>
         </div>
       </div>
     </div>
@@ -155,6 +159,7 @@
 import {ref} from 'vue';
 import FollowModal from "./follow-modal.vue";
 import {useUserStore} from "../store/userInfoStore.ts";
+import {getFansList, getFollowList} from "../api/userService.ts";
 
 interface LikedItem {
   id: number;
@@ -176,46 +181,29 @@ interface UserProfile {
 }
 
 const userStore = useUserStore();
-const followingList = ref([]); // 如果这里的数据是通过 API 获取的，需要异步加载
+const user = userStore.userInfo!;
+
+const followingList = ref([]); // 关注列表
+const fansList = ref([]); // 粉丝列表
 
 const openFollowingList = ref(false); // 控制 FollowModal 的显示/隐藏
 
 const handleFollowList = async () => {
-  // 实际项目中，这里会调用 API 获取关注列表数据，然后可能传递给 FollowModal
-  // const data = await getFollowList();
-  // followingList.value = data; // 假设 FollowModal 内部有处理传入数据的逻辑
+  followingList.value = await getFollowList(user.userId ?? 0);
+  fansList.value = await getFansList(user.userId ?? 0);
   openFollowingList.value = true;
 }
 
 const handleFansList = async () => {
-  // 实际项目中，这里会调用 API 获取粉丝列表数据
-  // const data = await getFansList();
-  // fansList.value = data; // 如果 FollowModal 需要区分展示粉丝或关注，可能需要调整其props
+  followingList.value = await getFollowList(user.userId ?? 0);
+  fansList.value = await getFansList(user.userId ?? 0);
   openFollowingList.value = true;
 }
 
-const user = userStore.userInfo!;
-// const user = ref<UserProfile>({
-//   avatar: 'https://via.placeholder.com/80/A7EDFF/000000?text=%F0%9F%91%BB', // Placeholder monster avatar
-//   username: '用户6747527098721',
-//   followingCount: 2,
-//   followerCount: 0,
-//   likesCount: 6,
-//   likedItems: [
-//     {id: 1, image: 'https://via.placeholder.com/100/FF5733/FFFFFF?text=Item1', title: '释放双缸的咆…'},
-//     {id: 2, image: 'https://via.placeholder.com/100/33FF57/FFFFFF?text=Item2', title: '#穿搭'},
-//     {id: 3, image: 'https://via.placeholder.com/100/5733FF/FFFFFF?text=Item3', title: '#穿搭 #完美身…'},
-//   ],
-//   collectionsCount: 0,
-//   watchHistoryRange: '30天内',
-//   watchLaterCount: 0,
-//   myWorksCount: 1,
-// });
 
 const rememberLogin = ref(false);
 const expandedSection = ref<string | null>(null); // State to track which section is expanded
 
-// Placeholder items for other expandable sections
 const placeholderItems: LikedItem[] = [
   {id: 101, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容一'},
   {id: 102, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容二'},
@@ -230,12 +218,6 @@ const expandSection = (sectionName: string) => {
   // 比如：expandedSection.value = expandedSection.value === sectionName ? null : sectionName;
   expandedSection.value = sectionName;
 };
-
-// 你之前注释的这段逻辑很关键，如果你希望鼠标移出整个卡片时关闭所有展开的菜单，
-// 需要在父元素（例如 .user-profile-card）上添加 @mouseleave="expandedSection = null"
-// const collapseSection = () => {
-//   expandedSection.value = null;
-// };
 
 </script>
 <style scoped>

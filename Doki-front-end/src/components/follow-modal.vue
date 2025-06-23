@@ -36,20 +36,25 @@
         </div>
 
         <div class="user-list">
-          <div v-if="sortedAndFilteredUsers.length > 0">
-            <div v-for="user in sortedAndFilteredUsers" :key="user.id" class="user-item">
-              <img :src="user.avatar" alt="User Avatar" class="user-avatar"/>
-              <div class="user-info">
-                <div class="user-name">{{ user.name }}</div>
-                <div class="user-description">{{ user.description }}</div>
-                <div class="user-works-count">{{ user.worksCount }}个作品未看</div>
-              </div>
-              <button class="followed-button" v-if="user.isFollowed">已关注</button>
-              <button class="follow-button" v-else>关注</button>
-            </div>
+          <div v-if="isLoading" class="loading-sign">
+            <a-spin></a-spin>
           </div>
-          <div v-else class="no-more-data">
-            <p>暂时没有更多了</p>
+          <div v-else>
+            <div v-if="usersToDisplay.length > 0">
+              <div v-for="user in usersToDisplay" :key="user.id" class="user-item">
+                <img :src="user.avatarUrl" alt="User Avatar" class="user-avatar"/>
+                <div class="user-info">
+                  <div class="user-name">{{ user.userName }}</div>
+                  <div class="user-description">{{ user.bio }}</div>
+                </div>
+                <button class="followed-button" v-if="user.isFollowing" @click="handleFollowButtonClick(user)">已关注
+                </button>
+                <button class="follow-button" v-else @click="handleFollowButtonClick(user)">关注</button>
+              </div>
+            </div>
+            <div v-else class="no-more-data">
+              <p>暂时没有更多了</p>
+            </div>
           </div>
         </div>
       </div>
@@ -58,16 +63,21 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed} from 'vue';
+import {ref, computed, watch} from 'vue';
+import {getFansList, getFollowList, followUser} from "../api/userService.ts";
+import {useUserStore} from "../store/userInfoStore.ts";
+
+const userStore = useUserStore();
 
 interface User {
   id: number;
-  name: string;
-  avatar: string;
-  description: string;
-  worksCount: number;
-  isFollowed: boolean;
-  followedAt?: number;
+  userName: string;
+  bio: string;
+  avatarUrl: string;
+  followingCount: number;
+  followerCount: number;
+  likedCount: number;
+  isFollowing: boolean;
 }
 
 type SortOptionValue = 'default' | 'latest_followed' | 'earliest_followed';
@@ -77,6 +87,7 @@ interface FollowModalProps {
   visible?: boolean; // 可选的 visible 属性
 }
 
+// 定义默认值
 const props = withDefaults(defineProps<FollowModalProps>(), {
   visible: false,
 });
@@ -88,6 +99,19 @@ const activeTab = ref<'following' | 'followers'>('following');
 const searchTerm = ref('');
 const showSortMenu = ref(false); // 控制排序菜单的显示/隐藏
 const currentSort = ref<SortOptionValue>('default'); // 当前选中的排序方式
+
+const isLoading = ref(false);
+
+watch(() => props.visible, async () => {
+  if (props.visible) {
+    isLoading.value = true;
+    followingList.value = await getFollowList(10014);
+    fansList.value = await getFansList(10014);
+    // 500ms 延迟，确保数据已加载
+    await new Promise(resolve => setTimeout(resolve, 500));
+    isLoading.value = false;
+  }
+})
 
 // 定义排序选项
 const sortOptions = [
@@ -102,90 +126,20 @@ const currentSortLabel = computed(() => {
   return option ? option.label : '综合排序';
 });
 
-// Mock data for demonstration purposes
-const followingUsers = ref<User[]>([
-  {
-    id: 1,
-    name: '楚门聊电影',
-    avatar: 'https://via.placeholder.com/60',
-    description: '“如果不再相见祝你早午晚都安”',
-    worksCount: 1,
-    isFollowed: true,
-    followedAt: Date.now() - 86400000 * 5,
-  },
-  {
-    id: 2,
-    name: 'tt77',
-    avatar: 'https://via.placeholder.com/60',
-    description: '🌈二创需要艾特@tt77',
-    worksCount: 7,
-    isFollowed: true,
-    followedAt: Date.now() - 86400000 * 2,
-  },
-  {
-    id: 3,
-    name: '历史的碎片',
-    avatar: 'https://via.placeholder.com/60',
-    description: '探索尘封的历史故事',
-    worksCount: 3,
-    isFollowed: true,
-    followedAt: Date.now() - 86400000 * 10,
-  },
-  {
-    id: 4,
-    name: '美食探店小马',
-    avatar: 'https://via.placeholder.com/60',
-    description: '带你吃遍大江南北',
-    worksCount: 0,
-    isFollowed: true,
-    followedAt: Date.now() - 86400000,
-  },
-]);
-
-const followersUsers = ref<User[]>([]);
-
-const followingCount = computed(() => followingUsers.value.length);
-const followersCount = computed(() => followersUsers.value.length);
+const followingList = ref<User[]>([]);
+const fansList = ref<User[]>([]);
+const followingCount = computed(() => followingList.value.length);
+const followersCount = computed(() => fansList.value.length);
 
 // 根据当前选中的tab显示用户列表
 const usersToDisplay = computed(() => {
   if (activeTab.value === 'following') {
-    return followingUsers.value;
+    return followingList.value;
   } else {
-    return followersUsers.value;
+    return fansList.value;
   }
 });
 
-// 先根据搜索词过滤用户
-const filteredUsers = computed(() => {
-  if (!searchTerm.value) {
-    return usersToDisplay.value;
-  }
-  const lowerCaseSearchTerm = searchTerm.value.toLowerCase();
-  return usersToDisplay.value.filter(user =>
-      user.name.toLowerCase().includes(lowerCaseSearchTerm) ||
-      user.description.toLowerCase().includes(lowerCaseSearchTerm)
-  );
-});
-
-// 再根据排序方式对过滤后的用户进行排序
-const sortedAndFilteredUsers = computed(() => {
-  const users = [...filteredUsers.value]; // 创建一个副本进行排序，不改变原始数据
-
-  if (activeTab.value === 'following') { // 只有关注列表才需要关注时间排序
-    switch (currentSort.value) {
-      case 'latest_followed':
-        return users.sort((a, b) => (b.followedAt || 0) - (a.followedAt || 0));
-      case 'earliest_followed':
-        return users.sort((a, b) => (a.followedAt || 0) - (b.followedAt || 0));
-      case 'default':
-      default:
-        // 综合排序可以根据默认的 id 或其他逻辑，这里保持原始顺序
-        return users;
-    }
-  }
-  return users; // 粉丝列表或其他情况不进行特殊排序
-});
 
 // 选择排序方式并关闭菜单
 const selectSortOption = (optionValue: SortOptionValue) => {
@@ -202,9 +156,22 @@ const handleOverlayClick = () => {
   emit('update:visible', false);
 };
 
+const handleFollowButtonClick = async (user: User) => {
+  const res = await followUser(user.id);
+  if (res.code == 200) {
+    user.isFollowing = !user.isFollowing;
+  }
+};
 </script>
 
 <style scoped>
+.loading-sign {
+  /* 居中显示标记 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;

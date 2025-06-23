@@ -1,4 +1,10 @@
 <template>
+  <!-- 全屏对话框位置 -->
+  <div class="fullscreen-modal" v-if="isModalVisible">
+    <!--  左上角关闭图标  -->
+    <div class="close-icon" @click="handleClose">X</div>
+    <swiper-player :videos="videos" :index="videoIndex"></swiper-player>
+  </div>
   <div class="search-page">
     <header class="header">
       <div class="header-left">
@@ -48,17 +54,17 @@
             <button class="scroll-btn scroll-right-btn" @click="scrollTags('right')">&gt;</button>
           </div>
           <div class="video-grid">
-            <div v-for="video in videos" :key="video.id" class="video-card">
+            <div v-for="(video,index) in videos" :key="video.id" class="video-card" @click="goToVideo(index)">
               <div class="video-thumbnail">
-                <img :src="video.thumbnailUrl" :alt="video.title"/>
-                <div class="duration">{{ video.duration }}</div>
+                <img :src="video.thumbnailUrl" alt="http://localhost:8081/videos/defaultCover.jpg"/>
+                <div class="duration">{{ dayUtils.formatSecondsToHHMMSS(video.duration) }}</div>
                 <div class="views">{{ video.views }}</div>
               </div>
               <div class="video-info">
-                <p class="title">{{ video.title }}</p>
+                <p class="title" v-html="video.title"></p>
                 <div class="meta">
-                  <span class="author">@ {{ video.author }}</span>
-                  <span class="date">{{ video.uploadDate }}</span>
+                  <span class="author">@ {{ video.userName }}</span>
+                  <span class="date">{{ dayUtils.getFormattedDate(video.createdAt) }}</span>
                 </div>
               </div>
             </div>
@@ -84,8 +90,13 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onUnmounted, nextTick} from 'vue';
+import {ref, onMounted, onUnmounted, nextTick, watch} from 'vue';
 import Users from "./users.vue";
+import {searchVideos} from "../../api/videoService.ts";
+import {useRoute} from 'vue-router'
+import {dayUtils} from "../../utils/dayUtils.ts";
+import Player from "../../components/Player.vue";
+import SwiperPlayer from "../home/swiper-player.vue";
 
 // Interfaces for data types (unchanged)
 interface NavItem {
@@ -101,12 +112,23 @@ interface TagFilter {
 
 interface Video {
   id: number;
-  title: string;
+  userId: number;
+  userName: string;
+  avatarUrl: string;
+  title: string; // HTML 字符串
+  description: string;
+  tags: string[];
+  videoUrl: string;
   thumbnailUrl: string;
-  duration: string;
-  views: string;
-  author: string;
-  uploadDate: string;
+  duration: number;
+  views: number;
+  createdAt: string;
+  category: string;
+  likeCount: number;
+  commentCount: number;
+  favoriteCount: number;
+  liked: boolean;
+  favorited: boolean;
 }
 
 interface RelatedSearch {
@@ -116,6 +138,20 @@ interface RelatedSearch {
 }
 
 // Reactive state variables (unchanged)
+const route = useRoute();
+const keyword = ref(route.query.keyword as string || '');
+
+const isModalVisible = ref(false);
+
+watch(
+    () => route.query.keyword,
+    async (newKeyword) => {
+      keyword.value = newKeyword || ''
+      const res = await searchVideos(keyword.value);
+      videos.value = res.data;
+    },
+    {immediate: true}
+)
 const activeNavId = ref(1);
 const activeTagId = ref(0);
 const searchQuery = ref('');
@@ -179,146 +215,6 @@ const loadMockData = () => {
     {id: 18, name: '音乐现场'},
   ];
 
-  videos.value = [
-    {
-      id: 1,
-      title: '打宜昌',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+1',
-      duration: '00:33',
-      views: '4099',
-      author: '123',
-      uploadDate: '1天前'
-    },
-    {
-      id: 2,
-      title: '美丽的东西没梗！#抖音热歌#好歌推荐#经典老歌#百听不...',
-      thumbnailUrl: 'http://localhost:8081/avatars/202300803-ProjectSEKAI-HatsuneMiku.jpg',
-      duration: '00:56',
-      views: '8403',
-      author: '123',
-      uploadDate: '2天前'
-    },
-    {
-      id: 3,
-      title: '你站着我就问你',
-      thumbnailUrl: 'http://localhost:8081/avatars/b028a7cd-60b9-4a41-beee-94187d465685.jpg',
-      duration: '01:20',
-      views: '3.6万',
-      author: '123',
-      uploadDate: '1天前'
-    },
-    {
-      id: 4,
-      title: 'S3角洲下真季密密密勿勿猛地图实则曝光下个作品曝光...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+4',
-      duration: '06:03',
-      views: '3288',
-      author: '橘子 (提时代)',
-      uploadDate: '11小时前'
-    },
-    {
-      id: 5,
-      title: '一闻不重样早晨饭，今天我们吃鸡蛋水饺、豆蹄山药...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+5',
-      duration: '05:06',
-      views: '7.7万',
-      author: '花花的123',
-      uploadDate: '19小时前'
-    },
-    {
-      id: 6,
-      title: '新疆小朋友唱起了闽南歌，唱出了闽南一家亲#新疆是个好...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+6',
-      duration: '06:25',
-      views: '61.9万',
-      author: '白朱了',
-      uploadDate: '1天前'
-    },
-    {
-      id: 7,
-      title: '银河映像一部被很多人遗忘和忽视的佳作，也是杜琪峰最...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+7',
-      duration: '29:25',
-      views: '3.6万',
-      author: '星门聊电影',
-      uploadDate: '1天前'
-    },
-    {
-      id: 8,
-      title: '农村漂亮媳妇要娶妻七十年以前的农村大铁门翻新造成...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+8',
-      duration: '03:39',
-      views: '5.8万',
-      author: '乡情双儿',
-      uploadDate: '1天前'
-    },
-    {
-      id: 8,
-      title: '农村漂亮媳妇要娶妻七十年以前的农村大铁门翻新造成...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+8',
-      duration: '03:39',
-      views: '5.8万',
-      author: '乡情双儿',
-      uploadDate: '1天前'
-    }, {
-      id: 8,
-      title: '农村漂亮媳妇要娶妻七十年以前的农村大铁门翻新造成...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+8',
-      duration: '03:39',
-      views: '5.8万',
-      author: '乡情双儿',
-      uploadDate: '1天前'
-    }, {
-      id: 8,
-      title: '农村漂亮媳妇要娶妻七十年以前的农村大铁门翻新造成...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+8',
-      duration: '03:39',
-      views: '5.8万',
-      author: '乡情双儿',
-      uploadDate: '1天前'
-    }, {
-      id: 8,
-      title: '农村漂亮媳妇要娶妻七十年以前的农村大铁门翻新造成...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+8',
-      duration: '03:39',
-      views: '5.8万',
-      author: '乡情双儿',
-      uploadDate: '1天前'
-    }, {
-      id: 8,
-      title: '农村漂亮媳妇要娶妻七十年以前的农村大铁门翻新造成...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+8',
-      duration: '03:39',
-      views: '5.8万',
-      author: '乡情双儿',
-      uploadDate: '1天前'
-    }, {
-      id: 8,
-      title: '农村漂亮媳妇要娶妻七十年以前的农村大铁门翻新造成...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+8',
-      duration: '03:39',
-      views: '5.8万',
-      author: '乡情双儿',
-      uploadDate: '1天前'
-    }, {
-      id: 8,
-      title: '农村漂亮媳妇要娶妻七十年以前的农村大铁门翻新造成...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+8',
-      duration: '03:39',
-      views: '5.8万',
-      author: '乡情双儿',
-      uploadDate: '1天前'
-    }, {
-      id: 8,
-      title: '农村漂亮媳妇要娶妻七十年以前的农村大铁门翻新造成...',
-      thumbnailUrl: 'https://via.placeholder.com/200x120?text=Video+8',
-      duration: '03:39',
-      views: '5.8万',
-      author: '乡情双儿',
-      uploadDate: '1天前'
-    },
-  ];
-
   relatedSearches.value = [
     {id: 1, query: '123 fit健身', link: '#'},
     {id: 2, query: '123夫人', link: '#'},
@@ -363,9 +259,45 @@ const setActiveTag = (id: number) => {
 
 const performSearch = () => {
 };
+
+const videoIndex = ref(0);
+const goToVideo = (index: number) => {
+  isModalVisible.value = true;
+  nextTick(() => {
+    videoIndex.value = index;
+  });
+};
+
+const handleClose = () => {
+  isModalVisible.value = false;
+};
 </script>
 
+
 <style scoped>
+.fullscreen-modal {
+  position: fixed;
+  background-color: #fff;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+
+  .close-icon {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    cursor: pointer;
+    font-size: 20px;
+    color: black;
+    transition: color 0.3s;
+    z-index: 10000;
+  }
+}
 
 /* Base styles for .search-page - NOW FLEXBOX */
 .search-page {
@@ -572,12 +504,15 @@ const performSearch = () => {
   overflow-y: auto;
   height: 70vh;
   display: flex;
+  align-content: flex-start; /* 👈 防止内容被拉伸填满高度 */
   flex-wrap: wrap; /* Allow items to wrap to the next line */
   gap: 20px; /* Space between video cards */
 }
 
 .video-card {
   /* For 4 columns: (100% - 3 * gap) / 4 */
+  flex: 0 0 calc(25% - 15px); /* 不允许拉伸或收缩，固定宽度 */
+  height: 230px; /* 👈 设置固定高度 */
   flex-basis: calc(25% - 15px); /* (100% - 3*20px) / 4 = 25% - 15px */
   background-color: #fff;
   border-radius: 8px;
