@@ -1,3 +1,4 @@
+<!-- 顶部标题栏搜索框组件 -->
 <template>
   <div class="search-container">
     <!-- 搜索框 -->
@@ -64,7 +65,7 @@
                 v-for="(item, index) in searchHistory"
                 :key="index"
                 class="history-item"
-                @click="selectSuggestion({ text: item })"
+                @click="selectSuggestion(item)"
             >
 
               <span class="history-text">{{ item }}</span>
@@ -126,8 +127,8 @@
 
 <script setup lang="ts">
 import {ref, computed, onMounted, onUnmounted} from 'vue'
-import router from "../router";
-import {getHotSearchList} from "../api/searchService.ts";
+import router from "../../router";
+import {getHotSearchList} from "../../api/searchService.ts";
 
 // 类型定义
 interface Suggestion {
@@ -168,7 +169,7 @@ const searchQuery = ref('')
 const showSuggestions = ref(false)
 const activeIndex = ref(-1)
 const searchInputRef = ref<HTMLInputElement>()
-const searchHistory = ref<string[]>(['郭德纲单口相声', '韦东奕', '123木头人', '12306订票'])
+const searchHistory = ref<string[]>(JSON.parse(localStorage.getItem('searchHistory') || '[]'))
 
 // 模拟搜索建议数据
 const mockSuggestions: Suggestion[] = [
@@ -276,7 +277,6 @@ const selectSuggestion = (suggestion: string) => {
   showSuggestions.value = false
   activeIndex.value = -1
   handleSearch();
-  emit('select', suggestion)
 }
 
 const handleSearch = () => {
@@ -306,14 +306,19 @@ const addToHistory = (query: string) => {
   if (searchHistory.value.length > 8) {
     searchHistory.value = searchHistory.value.slice(0, 8)
   }
+
+  localStorage.setItem('searchHistory', JSON.stringify(searchHistory.value));
 }
 
 const removeHistory = (index: number) => {
   searchHistory.value.splice(index, 1)
+  localStorage.setItem('searchHistory', JSON.stringify(searchHistory.value));
+
 }
 
 const clearHistory = () => {
   searchHistory.value = []
+  localStorage.setItem('searchHistory', JSON.stringify(searchHistory.value));
 }
 
 const clearSearch = () => {

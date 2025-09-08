@@ -41,13 +41,15 @@ import {dayUtils} from "../utils/dayUtils.ts";
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
 import type {Video} from '../store/videoStore.ts'
+import {useUserStore} from "../store/userInfoStore.ts";
+const userStore = useUserStore();
 // 当前登录用户ID
-const userId = ref(localStorage.getItem('id'));
+const userId = ref(userStore.userInfo?.userId);
 // 获取视频数据
 const {video} = defineProps<{
   video: Video
 }>()
-// 获取视频标签HTML元素
+// 获取播放器HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
 // TA的作品集合
 const userItems = ref<Video[]>([]);
@@ -380,9 +382,9 @@ const submitComment = async () => {
     const commentobj = {
       id: res.data.id,
       videoId: video.id,
-      userId: localStorage.getItem('id'),
-      username: localStorage.getItem('username'),
-      avatarUrl: localStorage.getItem('avatar'),
+      userId: userStore.userInfo?.userId,
+      username: userStore.userInfo?.userName,
+      avatarUrl: userStore.userInfo?.avatarUrl,
       content: commentContent.value,
       createdAt: new Date(),
       likeCount: 0,
@@ -670,6 +672,7 @@ const handleFollowButtonClick = async (user: User) => {
         </div>
       </div>
     </div>
+    <!-- 评论区抽屉 -->
     <div class="other-draw" :class="['other-draw',{ shrink: open }]" @wheel.stop>
       <a-tabs v-model:activeKey="activeKey" size="large" @change="handleTabChange(activeKey)">
         <a-tab-pane key="1" tab="TA的作品">

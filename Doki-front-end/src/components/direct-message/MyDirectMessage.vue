@@ -8,11 +8,13 @@ import {dayUtils} from "../../utils/dayUtils.ts";
 import {Modal} from 'ant-design-vue';
 import {createVNode} from 'vue';
 import {ExclamationCircleOutlined} from '@ant-design/icons-vue';
+import {useUserStore} from "../../store/userInfoStore.ts";
 
 // 页面加载后，获取聊天列表
 const isConversationsLoading = ref(false);
 const conversations = ref([]);
 const activeConversationIndex = ref(-1);
+const userStore = useUserStore();
 onMounted(async () => {
   isConversationsLoading.value = true;
   // 延迟一秒钟
@@ -23,7 +25,7 @@ onMounted(async () => {
 })
 
 // 当前用户ID
-const userId = ref(localStorage.getItem('id'));
+const userId = userStore.userInfo?.userId!;
 // 点击聊天列表时，会进入会话详情
 const messagesList = ref([]);
 // 是否进入会话详情
@@ -227,6 +229,7 @@ const handleDeleteConversation = () => {
                       :height="80"
                       :width="80"
                       :preview-mask="false"
+                      :preview="{getContainer: () => messageItems}"
                       style="object-fit: cover;border-radius: 10px;"
                   ></a-image>
                   <div>{{ item.message }}</div>

@@ -38,8 +38,6 @@
           >
             全部
           </span>
-
-
             <div class="tag-group" ref="tagGroupRef">
             <span
                 v-for="tag in tagFilters"
@@ -56,8 +54,12 @@
           <div class="video-grid">
             <div v-for="(video,index) in videos" :key="video.id" class="video-card" @click="goToVideo(index)">
               <div class="video-thumbnail">
-                <img :src="video.thumbnailUrl" alt="http://localhost:8081/videos/defaultCover.jpg"/>
+                <img :src="video.thumbnailUrl"/>
                 <div class="duration">{{ dayUtils.formatSecondsToHHMMSS(video.duration) }}</div>
+                <div class="likes">
+                  <like></like>
+                  {{ video.likeCount }}
+                </div>
                 <div class="views">{{ video.views }}</div>
               </div>
               <div class="video-info">
@@ -95,8 +97,8 @@ import Users from "./users.vue";
 import {searchVideos} from "../../api/videoService.ts";
 import {useRoute} from 'vue-router'
 import {dayUtils} from "../../utils/dayUtils.ts";
-import Player from "../../components/Player.vue";
 import SwiperPlayer from "../home/swiper-player.vue";
+import {Like} from '@icon-park/vue-next'
 
 // Interfaces for data types (unchanged)
 interface NavItem {
@@ -560,6 +562,13 @@ const handleClose = () => {
 .views {
   top: 8px;
   left: 8px;
+}
+
+.likes {
+  position: absolute;
+  color: #fff;
+  bottom: 8px;
+  left: 20px;
 }
 
 .video-info {

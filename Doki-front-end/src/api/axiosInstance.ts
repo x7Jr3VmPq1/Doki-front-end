@@ -4,7 +4,7 @@ import {message} from "ant-design-vue";
 
 const instance = axios.create({
     baseURL: 'http://localhost:8080',
-    timeout: 3000,
+    timeout: 0,
     headers: {'X-Custom-Header': 'foobar'}
 });
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="profile-card">
+  <div class="profile-card" ref="container">
     <div class="profile-header">
       <img :src="user.avatarUrl" alt="User Avatar" class="user-avatar"/>
       <div class="user-details">
@@ -140,7 +140,7 @@
     </div>
 
     <div class="logout-section">
-      <div class="logout-button">
+      <div class="logout-button" @click="handleLogout">
         <span class="icon red-logout"></span>
         退出登录
       </div>
@@ -156,10 +156,12 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue';
+import {createVNode, ref} from 'vue';
 import FollowModal from "./follow-modal.vue";
 import {useUserStore} from "../store/userInfoStore.ts";
 import {getFansList, getFollowList} from "../api/userService.ts";
+import {Modal} from "ant-design-vue";
+import {ExclamationCircleOutlined} from "@ant-design/icons-vue";
 
 interface LikedItem {
   id: number;
@@ -182,6 +184,8 @@ interface UserProfile {
 
 const userStore = useUserStore();
 const user = userStore.userInfo!;
+
+const container = ref(null); // 卡片容器引用，用于指定对话框的挂载点
 
 const followingList = ref([]); // 关注列表
 const fansList = ref([]); // 粉丝列表
@@ -217,6 +221,25 @@ const expandSection = (sectionName: string) => {
   // 如果你需要点击同一个 section 来关闭它，这里需要额外的逻辑
   // 比如：expandedSection.value = expandedSection.value === sectionName ? null : sectionName;
   expandedSection.value = sectionName;
+};
+
+const handleLogout = () => {
+  // 退出登录逻辑
+  // 清除用户信息、重定向到登录页面等
+  Modal.confirm({
+    title: '确认退出登录吗？',
+    icon: createVNode(ExclamationCircleOutlined),
+    okText: '确认',
+    okType: 'danger',
+    getContainer: container.value,
+    cancelText: '取消',
+    maskClosable: true,
+    async onOk() {
+      localStorage.clear();
+      window.location.reload();
+    }
+  });
+
 };
 
 </script>

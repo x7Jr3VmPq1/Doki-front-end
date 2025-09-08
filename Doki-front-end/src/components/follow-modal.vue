@@ -105,8 +105,8 @@ const isLoading = ref(false);
 watch(() => props.visible, async () => {
   if (props.visible) {
     isLoading.value = true;
-    followingList.value = await getFollowList(10014);
-    fansList.value = await getFansList(10014);
+    followingList.value = await getFollowList(userStore.userInfo?.userId);
+    fansList.value = await getFansList(userStore.userInfo?.userId);
     // 500ms 延迟，确保数据已加载
     await new Promise(resolve => setTimeout(resolve, 500));
     isLoading.value = false;
@@ -324,7 +324,6 @@ const handleFollowButtonClick = async (user: User) => {
   padding: 8px 0;
   min-width: 120px;
   z-index: 10;
-  /* margin-top: 5px; 已移除，确保没有间隙 */
 }
 
 .sort-menu-item {

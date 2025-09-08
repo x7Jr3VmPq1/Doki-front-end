@@ -1,4 +1,9 @@
 <script setup lang="ts">
+
+/*
+
+ 不知道这个组件是做什么的，先不要动
+* */
 import {createVNode, ref} from 'vue';
 import {Power} from '@icon-park/vue-next'
 import {Modal} from "ant-design-vue";
@@ -105,7 +110,7 @@ const handleFansList = async () => {
     </div>
     <div class="exit-button" @click="handleExitClick">
       <div class="text">
-        退出登录
+        退出登录123
       </div>
       <div class="icon">
         <power></power>

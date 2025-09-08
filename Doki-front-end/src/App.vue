@@ -17,7 +17,7 @@
 <script lang="ts" setup>
 import {onMounted} from "vue";
 import {useUserStore} from "./store/userInfoStore.ts";
-import TitleBar from "./components/TitleBar.vue";
+import TitleBar from "./components/titleBar/TitleBar.vue";
 import {getUserInfoByToken} from './api/userService.ts'
 import SidebarMenu from "./components/SidebarMenu.vue";
 

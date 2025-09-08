@@ -1,4 +1,8 @@
 import instance from './axiosInstance'; // 引入axios实例
+
+import {useUserStore} from "../store/userInfoStore.ts";
+
+const userStore = useUserStore()
 // 获取视频评论
 const getVideoCommentsByVideoId = async (videoId: number, cursor: number) => {
     const response = await instance.get(`/video/comments/${videoId}`, {
@@ -12,7 +16,7 @@ const getVideoCommentsByVideoId = async (videoId: number, cursor: number) => {
 // 添加视频评论
 const addVideoComment = async (videoId: number, comment: string, parentCommentId: number | null, imgUrl: string) => {
     const response = await instance.post(`/video/comments/add`, {
-        userId: localStorage.getItem('id'),
+        userId: userStore.userInfo?.userId,
         videoId: videoId,
         content: comment,
         parentCommentId: parentCommentId,
