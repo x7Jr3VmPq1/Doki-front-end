@@ -1,6 +1,6 @@
 <template>
   <div v-if="visible" class="dialog-overlay">
-    <div class="dialog-card">
+    <div class="dialog-card" v-if="hasPassword">
       <div class="dialog-header">
         <h2>{{ isLogin ? '登录' : '注册' }}</h2>
         <button @click="closeDialog" class="close-btn">&times;</button>
@@ -36,7 +36,7 @@
         <form v-if="loginMethod === 'password'" @submit.prevent="handleLoginWithPassword">
           <div class="form-group">
             <label for="username">用户名/手机号</label>
-            <input type="text" id="username" v-model="loginForm.username" required>
+            <input type="text" id="username" v-model="loginForm.phone" required>
           </div>
           <div class="form-group">
             <label for="password">密码</label>
@@ -48,48 +48,44 @@
         </form>
 
       </div>
+    </div>
 
-      <div v-else>
-        <form @submit.prevent="handleRegister">
-          <div class="form-group">
-            <label for="reg-username">用户名</label>
-            <input type="text" id="reg-username" v-model="registerForm.username" required>
-          </div>
-          <div class="form-group">
-            <label for="reg-phone">手机号</label>
-            <input type="tel" id="reg-phone" v-model="registerForm.phone" required>
-          </div>
-          <div class="form-group">
-            <label for="reg-password">密码</label>
-            <input type="password" id="reg-password" v-model="registerForm.password" required>
-          </div>
-          <div class="form-group">
-            <label for="reg-code">验证码</label>
-            <div class="code-input-group">
-              <input type="text" id="reg-code" v-model="registerForm.code" required>
-              <button type="button" @click="sendSmsCode" :disabled="isSendingCode || countdown > 0">{{
-                  codeBtnText
-                }}
-              </button>
-            </div>
-          </div>
-          <button type="submit" class="submit-btn">注册</button>
-        </form>
-
-        <p class="switch-link">
-          已有账号？<a href="#" @click.prevent="isLogin = true">返回登录</a>
-        </p>
+    <div class="dialog-card" v-else>
+      <div class="form-group">
+        <h3>设置密码，下次登录更方便~</h3>
+        <label>密码</label>
+        <input type="password" v-model="passwordForm.newPassword" required>
       </div>
+      <div class="form-group">
+        <label for="code-sms">确认密码</label>
+        <div class="code-input-group">
+          <input type="password" v-model="passwordForm.confirmPassword" required>
+        </div>
+      </div>
+
+      <div style="display: flex;gap: 10px">
+
+        <button type="submit" class="submit-btn" @click="confirmSetPassword">确认</button>
+
+        <button type="button" class="cancel-btn" @click="cancelSetPassword">下次再说</button>
+
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
 import {ref, reactive, computed} from 'vue';
-import {getSmsCode, loginByPhone} from "../api/loginAndRegister.js";
+import {getSmsCode, loginByPhone, loginByPassword, setPassword} from "../api/loginAndRegister.js";
+import passwordChecker from "../utils/passwordChecker.js";
 import {message} from 'ant-design-vue';
 
+const hasPassword = ref(true);
 
+const cancelSetPassword = () => {
+  location.reload();
+};
 const props = defineProps({
   visible: {
     type: Boolean,
@@ -106,10 +102,8 @@ const isSendingCode = ref(false); // 正在发送验证码
 
 // 表单数据
 const loginForm = reactive({
-  username: '',
   password: '',
   phone: '',
-  code: '',
 });
 
 const registerForm = reactive({
@@ -151,7 +145,12 @@ const sendSmsCode = async () => {
   try {
     // 发送验证码
     const result = await getSmsCode(loginForm.phone);
-    console.log(result);
+    if (result.code == 200) {
+      message.success("发送验证码成功！请注意查收");
+    } else {
+      message.warning("发送太频繁，请稍后再试！");
+      return;
+    }
     countdown.value = 60; // 倒计时60秒
     const timer = setInterval(() => {
       countdown.value--;
@@ -167,11 +166,18 @@ const sendSmsCode = async () => {
 };
 
 // 处理账号密码登录
-const handleLoginWithPassword = () => {
-  console.log('账号密码登录提交:', loginForm);
-  // 在这里调用登录 API
-  alert('账号密码登录成功！(模拟)');
-  closeDialog();
+const handleLoginWithPassword = async () => {
+  // 调用密码登录接口
+  const response = await loginByPassword(loginForm.phone, loginForm.password);
+  if (response.code == 200) {
+    // 登陆成功，设置token
+    localStorage.setItem('token', response.data);
+    // 刷新页面重新获取信息
+    location.reload();
+  } else {
+    message.warning("手机号或密码错误");
+    return;
+  }
 };
 
 // 处理短信验证码登录
@@ -182,7 +188,11 @@ const handleLoginWithSms = async () => {
       content: "登陆成功！",
     });
     // 设置token
-    localStorage.setItem('token', result.data);
+    localStorage.setItem('token', result.data.token);
+    if (result.data.hasPassword == "0") {
+      hasPassword.value = false;
+      return;
+    }
     // 刷新页面重新获取用户信息
     location.reload();
   } else {
@@ -192,9 +202,47 @@ const handleLoginWithSms = async () => {
     });
     return;
   }
-  // 在这里调用登录 API
   closeDialog();
 };
+
+
+const showSetPasswordDialog = ref(false);
+
+
+// ----------------- 设置密码相关 -----------------
+const passwordForm = reactive({
+  newPassword: '',
+  confirmPassword: ''
+});
+
+// 设置密码处理方法
+const confirmSetPassword = async () => {
+  // 两个密码不一致，直接返回
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    message.warning({content: "两次输入的密码不一致"});
+    return;
+  }
+  // 校验密码是否符合一定的规则
+  const validationResult = passwordChecker.validatePassword(passwordForm.newPassword);
+
+  // 不符合，直接返回
+  if (!validationResult.valid) {
+    message.warning(validationResult.message);
+    return;
+  }
+
+  // 调用设置密码接口
+  const response = await setPassword(passwordForm.newPassword);
+
+  if (response.code == 200) {
+    // 成功，直接刷新页面
+    location.reload();
+  } else {
+    message.warning("未知错误");
+  }
+};
+// ---------------------------------------------------
+
 </script>
 
 <style scoped>
@@ -311,7 +359,7 @@ const handleLoginWithSms = async () => {
   color: #aaa;
 }
 
-.submit-btn {
+.submit-btn, .cancel-btn {
   width: 100%;
   padding: 12px;
   background-color: #ff4d4f;
@@ -325,6 +373,12 @@ const handleLoginWithSms = async () => {
 
 .submit-btn:hover {
   background-color: #ff4d4f;
+}
+
+.cancel-btn {
+  background-color: white;
+  color: black;
+  border: 1px solid black;
 }
 
 .switch-link {
