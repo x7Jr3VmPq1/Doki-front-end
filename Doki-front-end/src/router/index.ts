@@ -41,36 +41,9 @@ const routes = [
         meta: {requiresAuth: true}
     },
     {
-        path: '/message',
-        component: () => import('../views/message/index.vue'),
-        children: [
-            {
-                path: 'my',
-                name: 'my',
-                component: () => import('../views/message/my.vue'),
-            },
-            {
-                path: 'reply',
-                name: 'reply',
-                component: () => import('../views/message/reply.vue'),
-            },
-            {
-                path: 'like',
-                name: 'like',
-                component: () => import('../views/message/like.vue'),
-            },
-            {
-                path: 'mention',
-                name: 'mention',
-                component: () => import('../views/message/mention.vue'),
-            },
-            {
-                path: 'system',
-                name: 'system',
-                component: () => import('../views/message/system.vue'),
-            }
-        ],
-        redirect: '/message/my'
+        path: '/my',
+        name: 'my',
+        component: () => import('../views/profiles/ProfilePage.vue'),
     },
     {
         path: '/404',
