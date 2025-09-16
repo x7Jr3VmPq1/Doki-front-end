@@ -469,7 +469,7 @@ const handleFollowButtonClick = async (user: User) => {
     <!-- 视频区域绑定动态 class 控制宽度 -->
     <div :class="['player-video', { shrink: open }]" @click="onPlay">
       <div class="video-wrapper">
-        <video :src="video.videoUrl" ref="videoRef" loop preload="auto"></video>
+        <video src="http://localhost:10010/video/play/5f7e385c-8676-4d45-827e-515f3d9f0238" ref="videoRef" loop preload="auto"></video>
         <!-- 交互按钮 -->
         <div class="interaction-buttons" @click.stop>
           <a-tooltip placement="left" color="grey">

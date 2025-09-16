@@ -11,8 +11,13 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 
-const handleTrigger = () => {
+const handleEnter = () => {
+
   contentShow.value = !contentShow.value;
+}
+const handleLeave = () => {
+
+  contentShow.value = false;
 }
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
@@ -25,7 +30,7 @@ onUnmounted(() => {
 
 <template>
   <div class="container" ref="containerRef">
-    <div @click="handleTrigger">
+    <div @click="handleEnter">
       <slot name="trigger"></slot>
     </div>
     <transition name="slide-down">

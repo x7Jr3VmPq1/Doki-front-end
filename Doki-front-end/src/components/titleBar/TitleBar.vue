@@ -62,6 +62,10 @@ const showDialog = ref(false);
 const showLoginDialog = () => {
   showDialog.value = true;
 }
+const toCreator = () => {
+  const url = '/creator';
+  window.open(url, '_blank'); //
+}
 </script>
 
 <template>
@@ -92,7 +96,7 @@ const showLoginDialog = () => {
       <LoginRegisterDialog :visible="showDialog" @close="showDialog = false"/>
 
       <!-- 投稿按钮 -->
-      <div class="function" @click="router.push('/upload')">
+      <div class="function" @click="toCreator">
         <add-music theme="outline" size="24"/>
         <div style="text-align: center">投稿</div>
       </div>

@@ -20,12 +20,6 @@ const routes = [
         meta: {fullPage: true}
     },
     {
-        path: "/@:username", // 这里的 `@:username` 让 Vue Router 匹配'@'开头的用户名
-        name: "UserProfile",
-        component: () => import('../views/profiles/index.vue'),
-        props: true, // 让 `username` 作为组件的 prop 传递
-    },
-    {
         path: '/upload',
         component: () => import('../views/upload/index.vue'),
     },
@@ -46,10 +40,16 @@ const routes = [
         component: () => import('../views/profiles/ProfilePage.vue'),
     },
     {
+        path: '/creator',
+        name: 'creator',
+        component: () => import('../views/creator/index.vue')
+    },
+    {
         path: '/404',
         component: () => import('../views/404/index.vue'),
         meta: {fullPage: true}
     },
+
     {
         // 捕获所有未知路由并跳转到 404
         path: '/:pathMatch(.*)*',
