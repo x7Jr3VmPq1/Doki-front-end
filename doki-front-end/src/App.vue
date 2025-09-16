@@ -7,7 +7,7 @@
     <!--  顶部工具栏和路由出口  -->
     <div style="width: 90%;display: flex;flex-direction: column">
       <TitleBar></TitleBar>
-      <!-- 一级路由出口-->
+      <!-- 一级路由出口!-->
       <div style="height: 90%">
         <router-view></router-view>
       </div>
