@@ -1,22 +1,28 @@
 <script setup lang="ts">
 import Sidebar from "./components/sidebar.vue";
+import Titlebar from "./components/titlebar.vue";
 </script>
 
 <template>
-  <Sidebar></Sidebar>
+  <div style="display: flex;">
+    <Sidebar></Sidebar>
+    <div style="flex:1; background-color: #f9f9fa;">
+      <div style="display: flex;flex-direction: column;">
+        <div class="title-bar">
+          <Titlebar></Titlebar>
+        </div>
+        <div class="content">
+          <router-view></router-view>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+
+.content {
+  height: calc(100vh - 50px);
+  overflow-y: auto;
 }
 </style>

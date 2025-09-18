@@ -69,7 +69,7 @@ const menuItemsMiddle: MenuItem[] = [
 
 // 底部菜单项
 const menuItemsBottom: MenuItem[] = [
-  {key: 'live-stream', label: '直播', icon: Tv},
+  // {key: 'live-stream', label: '直播', icon: Tv},
 ];
 
 // 默认选中的菜单项，这里设置为 'my' 以匹配图片

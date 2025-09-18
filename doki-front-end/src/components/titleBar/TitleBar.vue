@@ -6,7 +6,6 @@ import {Message, Remind, AddMusic} from '@icon-park/vue-next';
 import {ref, onMounted, watch, computed} from "vue";
 import {useSharedState} from "../../store/useSharedState.ts";
 import {getHotSearchList} from "../../api/searchService.ts";
-import router from "../../router";
 import type {SelectProps} from "ant-design-vue";
 import profileCard from "../profile-card.vue";
 import {useUserStore} from "../../store/userInfoStore.ts";
@@ -63,7 +62,7 @@ const showLoginDialog = () => {
   showDialog.value = true;
 }
 const toCreator = () => {
-  const url = '/creator';
+  const url = 'http://localhost:5174';
   window.open(url, '_blank'); //
 }
 </script>

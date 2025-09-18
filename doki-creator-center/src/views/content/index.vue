@@ -3,7 +3,7 @@
 </script>
 
 <template>
-
+  内容管理
 </template>
 
 <style scoped>

@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  社交关系
+
 </template>
 
 <style scoped>

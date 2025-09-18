@@ -14,7 +14,7 @@
       <div v-for="item in menuItems" :key="item.name">
         <div
             :class="['menu-item', { 'has-children': item.children}]"
-            @click="toggleMenu(item)"
+            @click="item.children? toggleMenu(item): route.push(item.path)"
         >
           <component :is="item.icon" size="20"></component>
           <span>{{ item.name }}</span>
@@ -30,7 +30,9 @@
 
         <Transition name="slide-fade">
           <ul v-if="item.children && item.isExpanded" class="sub-menu-list">
-            <li v-for="child in item.children" :key="child.name" class="sub-menu-item">
+            <li v-for="child in item.children" :key="child.name"
+                @click="route.push(child.path)"
+                class="sub-menu-item">
               {{ child.name }}
             </li>
           </ul>
@@ -41,9 +43,9 @@
 </template>
 
 <script setup>
-import {ref} from 'vue';
+import {ref, shallowRef} from 'vue';
 import {Down, Home, Monitor, Analysis, Peoples, AddFour} from '@icon-park/vue-next';
-
+import route from '../router/router.js';
 // 菜单数据结构
 // name: 菜单项名称
 // isExpanded: 是否展开，用于控制子菜单的显示与隐藏
@@ -51,32 +53,33 @@ import {Down, Home, Monitor, Analysis, Peoples, AddFour} from '@icon-park/vue-ne
 const menuItems = ref([
   {
     name: '首页',
-    icon: Home,
+    icon: shallowRef(Home),
+    path: '/home'
   },
   {
     name: '内容管理',
-    icon: Monitor,
+    icon: shallowRef(Monitor),
     isExpanded: false,
     children: [
-      {name: '作品管理'},
+      {name: '作品管理', path: '/content/manage'},
     ]
   },
   {
     name: '互动管理',
-    icon: Peoples,
+    icon: shallowRef(Peoples),
     isExpanded: false,
     children: [
-      {name: '关注管理'},
-      {name: '粉丝管理'},
-      {name: '评论管理'},
-      {name: '弹幕管理'},
-      {name: '私信管理'}]
+      {name: '关注管理', path: '/social/follow'},
+      {name: '粉丝管理', path: '/social/fans'},
+      {name: '评论管理', path: '/social/comments'},
+      {name: '弹幕管理', path: '/social/danmaku'},
+      {name: '私信管理', path: '/social/message'}]
   },
   {
     name: '数据中心',
-    icon: Analysis,
+    icon: shallowRef(Analysis),
     isExpanded: false,
-    children: [{name: '数据总览'}, {name: '内容数据'}]
+    children: [{name: '账号总览', path: '/stats/views'}, {name: '作品分析', path: '/stats/analytics'}]
   },
 ]);
 
