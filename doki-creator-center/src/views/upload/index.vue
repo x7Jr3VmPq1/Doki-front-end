@@ -1,29 +1,78 @@
 <script setup lang="ts">
 import draftService from '../../api/draftService.ts'
-import {ref, reactive, computed} from 'vue';
+import type {VideoDraft} from '../../api/draftService.ts'
+import {ref, reactive, computed, onMounted} from 'vue';
 import DButton from "../../components/d-button.vue";
 import {dayjs} from "@arco-design/web-vue/es/_utils/date";
 import {Message} from '@arco-design/web-vue';
+import {useRoute} from 'vue-router'
+import {handleRequest} from "../../api/handleRequest.ts";
 
+const route = useRoute();
+
+// 是否创建了草稿
 const draftCreated = ref(false);
+
+// 草稿表单
+const draftForm = ref<VideoDraft>(
+    {
+      id: 0,
+      title: '',
+      description: '',
+      tags: '',
+      coverImage: '',
+      permission: 0,
+      scheduledTime: 0,
+    }
+)
+
+// 如果是从继续编辑而来，直接显示草稿表单
+onMounted(async () => {
+  if (route.query.enter_from == 'draft') {
+    draftCreated.value = true;
+  }
+  // 获取草稿
+  await handleRequest(draftService.getDraft,
+      {
+        onSuccess(data) {
+          draftForm.value = data;
+        }
+      }
+  )
+})
 
 // 视频上传服务器路径
 const videoUploadPath = ref("http://localhost:10010/video/upload?draft_id=");
+
+// 上传视频前的钩子方法
 const handleBeforeUpload = async (file: File) => {
   if (file.size > 10 * 1024 ** 3) {
     // 文件大于 10GB
     Message.error("上传文件太大了哦？")
     return false;
   }
-  const result = await draftService.createDraft();
-  if (result.isSuccess()) {
-    videoUploadPath.value = videoUploadPath.value + result.data.id;
-    draftCreated.value = true;
-    return true;
-  }
-  Message.error(result.msg);
-  return false;
+  let result = false;
+  // 创建草稿
+  await handleRequest(draftService.createDraft, {
+    onSuccess(data) {
+      draftForm.value = data;
+      // 拼接视频上传路径
+      videoUploadPath.value = videoUploadPath.value + data.id;
+      draftCreated.value = true;
+      result = true;
+    }
+  })
+  return result;
 };
+// 保存草稿方法
+const handleSaveDraft = async () => {
+  await handleRequest(draftService.updateDraft, {
+    params: draftForm.value,
+    onSuccess() {
+      Message.info("保存成功");
+    },
+  })
+}
 
 const permissionItems = reactive(
     [{
@@ -64,7 +113,7 @@ const isShowCalender = computed(() => {
 });
 
 
-function onSelect(dateString:string) {
+function onSelect(dateString: string) {
   console.log('onSelect', dateString);
   const date1 = new Date(dateString);
   const timestamp = Math.floor(date1.getTime() / 1000); // 秒级时间戳
@@ -78,6 +127,8 @@ function onChange(dateString, date) {
 function onOk(dateString, date) {
   console.log('onOk: ', dateString, date);
 }
+
+
 </script>
 
 <template>
@@ -93,6 +144,7 @@ function onOk(dateString, date) {
       </div>
     </div>
     <a-upload
+        v-show="!draftCreated"
         accept="video/*"
         draggable
         :limit=1
@@ -106,10 +158,10 @@ function onOk(dateString, date) {
           <h3>作品描述</h3>
           <div class="input-area">
             <div class="video-title">
-              <input type="text" placeholder="作品标题">
+              <input type="text" placeholder="作品标题" v-model="draftForm.title">
             </div>
             <div class="video-description">
-              <textarea class="plain-textarea" placeholder="添加作品简介"></textarea>
+              <textarea class="plain-textarea" placeholder="添加作品简介" v-model="draftForm.description"></textarea>
               <div>
                 <span>#添加话题</span>
                 <span>@好友</span>
@@ -168,7 +220,7 @@ function onOk(dateString, date) {
       </div>
       <div class="operation">
         <d-button button-type="confirm">发布</d-button>
-        <d-button button-type="cancel">暂存离开</d-button>
+        <d-button button-type="cancel" @click="handleSaveDraft">暂存离开</d-button>
       </div>
     </div>
   </div>

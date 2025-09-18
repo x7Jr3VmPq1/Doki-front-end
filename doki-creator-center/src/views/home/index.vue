@@ -3,16 +3,19 @@ import {Right} from '@icon-park/vue-next'
 import router from '../../router/router'
 import draftService from '../../api/draftService.ts'
 import {Message} from '@arco-design/web-vue';
+import type {VideoDraft} from '../../api/draftService.ts'
 
 import {onMounted, ref} from "vue";
 
 const hasUnPublish = ref(false);
+const UnPublishDraft = ref<VideoDraft | null>(null);
 onMounted(async () => {
   // 获取用户未发布的草稿信息
   const response = await draftService.getDraft();
   if (response.isSuccess()) {
     // 如果获取到，提示用户有未发布的作品
     if (response.data) {
+      UnPublishDraft.value = response.data;
       hasUnPublish.value = true;
     }
     return;
@@ -20,8 +23,26 @@ onMounted(async () => {
   Message.error(response.msg);
 })
 
-const handleDeleteDraft = () => {
-  await draftService.
+const handleDeleteDraft = async () => {
+  if (UnPublishDraft.value?.id) {
+    const response = await draftService.deleteDraft(UnPublishDraft.value?.id);
+    if (response.isSuccess()) {
+      hasUnPublish.value = false;
+      Message.info("删除成功~");
+      return;
+    }
+  }
+
+  Message.error("删除失败，请稍后再试！");
+}
+
+const handleContinueEdit = () => {
+  router.push({
+    path: '/upload',
+    query: {
+      enter_from: 'draft'
+    }
+  })
 }
 </script>
 
@@ -32,7 +53,7 @@ const handleDeleteDraft = () => {
         <h2 class="text">新的创作</h2>
         <div style="color: #777880" v-if="hasUnPublish">
           您有一个上次未发布的作品
-          <span class="to-edit">继续编辑
+          <span class="to-edit" @click="handleContinueEdit">继续编辑
             <Right></Right>
           </span>
           <span class="delete" @click="handleDeleteDraft">放弃</span>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type {AxiosResponse} from 'axios';
-import type {ApiResponseData, ApiResponse} from '../type/ResultType.ts'
+import type {ApiResponseData, ApiResponse} from '../type/resultType.ts'
 
 const instance = axios.create({
     baseURL: 'http://localhost:10010', // 网关地址
@@ -28,7 +28,7 @@ export const request = async <T>(
             axiosResponse = await instance.put(url, options?.data);
             break;
         case 'DELETE':
-            axiosResponse = await instance.delete(url, {data: options?.data});
+            axiosResponse = await instance.delete(url, {params: options?.data});
             break;
         default: // GET
             axiosResponse = await instance.get(url, {params: options?.data});

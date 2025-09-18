@@ -1,6 +1,6 @@
 import request from './axiosInstanse.ts'
 
-interface VideoDraft {
+export interface VideoDraft {
     id: number;
     title: string;
     description: string;
@@ -17,7 +17,11 @@ export default {
     // 获取草稿
     getDraft: () => request<VideoDraft>(DRAFT_PATH, {method: 'GET'}),
     // 更新草稿
-    updateDraft: (draft: VideoDraft) => request(DRAFT_PATH, {method: 'PUT', data: draft}),
+    updateDraft: (draft: VideoDraft) => request<VideoDraft>(DRAFT_PATH + '/update', {method: 'PUT', data: draft}),
     // 删除草稿
-    deleteDraft: () => request(DRAFT_PATH,{method:'DELETE'})
+    deleteDraft: (draftId: number) => request(DRAFT_PATH + '/delete', {
+        method: 'DELETE', data: {
+            draftId
+        }
+    })
 }
