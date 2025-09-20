@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import draftService from '../../api/draftService.ts'
 import type {VideoDraft} from '../../api/draftService.ts'
-import {ref, reactive, computed, onMounted} from 'vue';
+import draftService from '../../api/draftService.ts'
+import {computed, onMounted, reactive, ref} from 'vue';
 import DButton from "../../components/d-button.vue";
 import {dayjs} from "@arco-design/web-vue/es/_utils/date";
 import {Message} from '@arco-design/web-vue';
@@ -9,12 +9,12 @@ import {useRoute} from 'vue-router'
 import {handleRequest} from "../../api/handleRequest.ts";
 
 const route = useRoute();
-
 // 是否创建了草稿
 const draftCreated = ref(false);
-
+// 上传组件引用
+const uploadComponentRef = ref(null);
 // 草稿表单
-const draftForm = ref<VideoDraft>(
+let draftForm = reactive<VideoDraft>(
     {
       id: 0,
       title: '',
@@ -22,23 +22,36 @@ const draftForm = ref<VideoDraft>(
       tags: '',
       coverImage: '',
       permission: 0,
-      scheduledTime: 0,
+      isScheduled: 0,
+      scheduledTime: new Date(),
     }
-)
+);
+
+
+// 视频信息
+const uploadedVideoInfo = reactive({
+  filename: '',
+  size: 0,
+  progress: 0
+})
 
 // 如果是从继续编辑而来，直接显示草稿表单
 onMounted(async () => {
   if (route.query.enter_from == 'draft') {
     draftCreated.value = true;
+
+    uploadedVideoInfo.filename = JSON.parse(localStorage.getItem('uploadProgress')).filename;
+    uploadedVideoInfo.progress = JSON.parse(localStorage.getItem('uploadProgress')).progress;
   }
   // 获取草稿
-  await handleRequest(draftService.getDraft,
-      {
-        onSuccess(data) {
-          draftForm.value = data;
+  if (draftCreated.value)
+    await handleRequest(draftService.getDraft,
+        {
+          onSuccess(data) {
+            draftForm = data;
+          }
         }
-      }
-  )
+    )
 })
 
 // 视频上传服务器路径
@@ -46,28 +59,64 @@ const videoUploadPath = ref("http://localhost:10010/video/upload?draft_id=");
 
 // 上传视频前的钩子方法
 const handleBeforeUpload = async (file: File) => {
+  console.log('开始上传视频...');
+  isUploadSuccess.value = false; // 重置上传状态
+
   if (file.size > 10 * 1024 ** 3) {
     // 文件大于 10GB
-    Message.error("上传文件太大了哦？")
+    Message.error("上传文件太大了哦")
     return false;
   }
+
+  if (draftForm.id !== 0) {
+    draftCreated.value = true;
+    return true;
+  }
+
   let result = false;
-  // 创建草稿
+  // 如果当前没有草稿，创建草稿
   await handleRequest(draftService.createDraft, {
     onSuccess(data) {
-      draftForm.value = data;
-      // 拼接视频上传路径
-      videoUploadPath.value = videoUploadPath.value + data.id;
+      draftForm = data;
       draftCreated.value = true;
       result = true;
     }
   })
   return result;
 };
+
+// 处理上传变更事件
+const handleUploadChange = (fileItem) => {
+  uploadedVideoInfo.filename = fileItem[fileItem.length - 1].name;
+  uploadedVideoInfo.progress = fileItem[fileItem.length - 1].percent;
+
+  localStorage.setItem('uploadProgress', JSON.stringify({
+    filename: uploadedVideoInfo.filename,
+    progress: uploadedVideoInfo.progress
+  }))
+}
+
+// 处理重新上传方法
+const handleReUpload = () => {
+
+  const input = document.createElement('input');
+  input.type = 'file'; // 文件类型
+  input.accept = 'video/*'; // 只接受视频
+  input.multiple = false; // 禁止多选
+
+  // 用户选择文件后
+  input.addEventListener('change', (event) => {
+    const files = Array.from(event.target.files);
+    uploadComponentRef.value.upload(files);
+  });
+  // 触发文件选择器
+  input.click();
+
+}
 // 保存草稿方法
 const handleSaveDraft = async () => {
   await handleRequest(draftService.updateDraft, {
-    params: draftForm.value,
+    params: draftForm,
     onSuccess() {
       Message.info("保存成功");
     },
@@ -101,34 +150,43 @@ const publishTimeItems = reactive(
     }]
 )
 
+// 修改作品权限，0：公开，1：仅限好友，2：私密
+const setPermission = (code: number) => {
+  console.log('切换权限')
+  draftForm.permission = code;
+}
+// 修改发布时间，0：立即发布，1：计划发布
+const setPublishTime = (code: number) => {
+  console.log('切换发布时间')
+  draftForm.isScheduled = code;
+}
 
-const handleChangeItem = (items: any, choice: any) => {
-  items.forEach((item: any) => {
-    item.active = item.code == choice.code;
+// 时间选择器点击确定后，更新计划发布时间
+function onOk(dateString: string) {
+  const date = new Date(dateString);
+  // 秒级时间戳
+  draftForm.scheduledTime = Math.floor(date.getTime() / 1000);
+}
+
+
+const isUploadSuccess = ref(false); // 上传成功标记
+
+const handleUploadSuccess = () => {
+  Message.success('上传成功！');
+  isUploadSuccess.value = true;
+}
+
+const handleSubmit = () => {
+  handleRequest(draftService.submitDraft, {
+    params: draftForm,
+    onSuccess: () => {
+      Message.success('提交成功！视频将在审核成功后展示~');
+      // 清理数据
+      draftCreated.value = false;
+      draftForm.id = 0;
+    },
   })
 }
-
-const isShowCalender = computed(() => {
-  return publishTimeItems.find(item => item.code === 1)?.active
-});
-
-
-function onSelect(dateString: string) {
-  console.log('onSelect', dateString);
-  const date1 = new Date(dateString);
-  const timestamp = Math.floor(date1.getTime() / 1000); // 秒级时间戳
-  console.log(timestamp);
-}
-
-function onChange(dateString, date) {
-  console.log('onChange: ', dateString, date);
-}
-
-function onOk(dateString, date) {
-  console.log('onOk: ', dateString, date);
-}
-
-
 </script>
 
 <template>
@@ -143,86 +201,110 @@ function onOk(dateString, date) {
         <div class="red-bar"></div>
       </div>
     </div>
-    <a-upload
-        v-show="!draftCreated"
-        accept="video/*"
-        draggable
-        :limit=1
-        :on-before-upload=handleBeforeUpload
-        :action=videoUploadPath
-    />
-    <div class="info-input-area" v-if="draftCreated">
-      <div class="base-info">
-        <h3 style="margin-bottom: 20px">基础信息</h3>
-        <div style="display: flex">
-          <h3>作品描述</h3>
-          <div class="input-area">
-            <div class="video-title">
-              <input type="text" placeholder="作品标题" v-model="draftForm.title">
-            </div>
-            <div class="video-description">
-              <textarea class="plain-textarea" placeholder="添加作品简介" v-model="draftForm.description"></textarea>
-              <div>
-                <span>#添加话题</span>
-                <span>@好友</span>
+    <div class="content">
+      <a-upload
+          v-show="!draftCreated"
+          accept="video/*"
+          draggable
+          :show-file-list="false"
+          :on-before-upload=handleBeforeUpload
+          :action="videoUploadPath + draftForm.id"
+          @change="handleUploadChange"
+          ref="uploadComponentRef"
+          @success="handleUploadSuccess"
+      ></a-upload>
+      <div class="info-input-area" v-if="draftCreated">
+        <!--      <div class="info-input-area" v-if="false">-->
+        <div class="base-info">
+          <h3 style="margin-bottom: 20px">基础信息</h3>
+          <div style="display: flex">
+            <h3>作品描述</h3>
+            <div class="input-area">
+              <div class="video-title">
+                <input type="text" placeholder="作品标题" v-model="draftForm.title">
+              </div>
+              <div class="video-description">
+                <textarea class="plain-textarea" placeholder="添加作品简介" v-model="draftForm.description"></textarea>
+                <div>
+                  <span>#添加话题</span>
+                  <span>@好友</span>
+                </div>
+              </div>
+              <div class="video-tags">
+                <span style="padding-top:5px;color:#7b7e88">推荐</span>
+                <div style="padding-top: 2px;display: flex;gap: 10px">
+                  <a-tag checkable>#二次元</a-tag>
+                  <a-tag checkable>#二次元</a-tag>
+                  <a-tag checkable>#二次元</a-tag>
+                </div>
               </div>
             </div>
-            <div class="video-tags">
-              <span style="padding-top:5px;color:#7b7e88">推荐</span>
-              <div style="padding-top: 2px;display: flex;gap: 10px">
-                <a-tag checkable>#二次元</a-tag>
-                <a-tag checkable>#二次元</a-tag>
-                <a-tag checkable>#二次元</a-tag>
+          </div>
+        </div>
+        <div class="setting">
+          <h3>发布设置</h3>
+          <div class="permission">
+            <h4 class="title">谁可以看</h4>
+            <div v-for="item in permissionItems"
+                 @click="setPermission(item.code)"
+                 class="item" :class="{active:item.code == draftForm.permission}">
+              <div class="dot">
+                <div class="inner"></div>
               </div>
+              <div>{{ item.text }}</div>
             </div>
+          </div>
+          <div class="publish-time">
+            <h4 class="title">
+              发布时间
+            </h4>
+            <div v-for="item in publishTimeItems"
+                 @click="setPublishTime(item.code)"
+                 class="item" :class="{active:item.code == draftForm.isScheduled}">
+              <div class="dot">
+                <div class="inner"></div>
+              </div>
+              <div>{{ item.text }}</div>
+            </div>
+            <a-date-picker
+                v-if="draftForm.isScheduled"
+                :defaultValue="draftForm.scheduledTime * 1000"
+                format="YYYY-MM-DD HH:mm"
+                :disabledDate="(current: Date) => dayjs(current).isBefore(dayjs(), 'day')"
+                style="width: 220px; margin: 0 24px 24px 0;"
+                show-time
+                @ok="onOk"
+            />
+          </div>
+          <div v-if="draftForm.isScheduled" style="margin-top: 10px;font-weight: bold">
+            选择定时发布时，只能选择大于当前时间2小时且在14天内的时间。
+          </div>
+        </div>
+        <div class="operation">
+          <d-button button-type="confirm" @click="handleSubmit">发布</d-button>
+          <d-button button-type="cancel" @click="handleSaveDraft">暂存离开</d-button>
+          <div v-if="!isUploadSuccess"
+               style="display: flex;align-items: center;justify-content: center;font-weight: bold">
+            在上传成功之前，请不要离开页面。
           </div>
         </div>
       </div>
-      <div class="setting">
-        <h3>发布设置</h3>
-        <div class="permission">
-          <h4 class="title">谁可以看</h4>
-          <div v-for="item in permissionItems"
-               @click="handleChangeItem(permissionItems,item)"
-               class="item" :class="{active:item.active}">
-            <div class="dot">
-              <div class="inner"></div>
+      <div v-if="draftCreated">
+        <div class="video-upload-info">
+          <div style="height: 80%;padding-top: 25%">
+            <div style="display: flex;align-items: center;justify-content: center">
+              <a-progress type="circle" status="normal"
+                          :percent="uploadedVideoInfo.progress" color="#ff3c69"/>
             </div>
-            <div>{{ item.text }}</div>
+            <div class="video-name" style="margin-top: 30%">{{ uploadedVideoInfo.filename }}</div>
+          </div>
+          <div class="button">
+            <d-button button-type="confirm" @click="handleReUpload">重新上传</d-button>
           </div>
         </div>
-        <div class="publish-time">
-          <h4 class="title">
-            发布时间
-          </h4>
-          <div v-for="item in publishTimeItems"
-               @click="handleChangeItem(publishTimeItems,item)"
-               class="item" :class="{active:item.active}">
-            <div class="dot">
-              <div class="inner"></div>
-            </div>
-            <div>{{ item.text }}</div>
-          </div>
-          <a-date-picker
-              v-if="isShowCalender"
-              :disabledDate="(current: Date) => dayjs(current).isBefore(dayjs(), 'day')"
-              style="width: 220px; margin: 0 24px 24px 0;"
-              show-time
-              format="YYYY-MM-DD HH:mm"
-              @change="onChange"
-              @select="onSelect"
-              @ok="onOk"
-          />
-        </div>
-        <div v-if="isShowCalender" style="margin-top: 10px;font-weight: bold">
-          选择定时发布时，只能选择大于当前时间2小时且在14天内的时间。
-        </div>
-      </div>
-      <div class="operation">
-        <d-button button-type="confirm">发布</d-button>
-        <d-button button-type="cancel" @click="handleSaveDraft">暂存离开</d-button>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -278,6 +360,26 @@ input {
         background-color: #e5355e;
       }
     }
+  }
+
+  .content {
+    display: flex;
+
+    .video-upload-info {
+      width: 200px;
+      height: 300px;
+      background-color: #fff;
+      border-radius: 15px;
+      margin-left: 20px;
+
+      .button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+
   }
 
   .info-input-area {

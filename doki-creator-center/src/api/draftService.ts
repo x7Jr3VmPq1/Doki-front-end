@@ -7,6 +7,7 @@ export interface VideoDraft {
     tags: string;
     coverImage: string;
     permission: number;
+    isScheduled: number;
     scheduledTime: number;
 }
 
@@ -23,5 +24,9 @@ export default {
         method: 'DELETE', data: {
             draftId
         }
+    }),
+    // 提交发布
+    submitDraft: (draft: VideoDraft) => request(DRAFT_PATH + '/submit', {
+        method: 'POST', data: draft
     })
 }

@@ -48,6 +48,15 @@ const handleContinueEdit = () => {
 
 <template>
   <div class="main-wrapper">
+    <div class="user-info">
+      <a-avatar></a-avatar>
+      <div class="user-stat">
+        <div>用户123456</div>
+        <span>关注 234</span>
+        <span>粉丝 221</span>
+        <span>获赞 20</span>
+      </div>
+    </div>
     <div class="works">
       <div class="title">
         <h2 class="text">新的创作</h2>
@@ -85,6 +94,10 @@ const handleContinueEdit = () => {
 .main-wrapper {
   width: 100%;
   padding-left: 20px;
+
+  .user-info {
+    display: flex;
+  }
 }
 
 .works, .data-center {
