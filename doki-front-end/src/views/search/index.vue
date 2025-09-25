@@ -57,7 +57,7 @@
                 <img :src="video.thumbnailUrl"/>
                 <div class="duration">{{ dayUtils.formatSecondsToHHMMSS(video.duration) }}</div>
                 <div class="likes">
-                  <like></like>
+                  <Like></Like>
                   {{ video.likeCount }}
                 </div>
                 <div class="views">{{ video.views }}</div>

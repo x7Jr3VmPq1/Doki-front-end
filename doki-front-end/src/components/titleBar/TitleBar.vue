@@ -97,14 +97,14 @@ const toCreator = () => {
       <!-- 投稿按钮 -->
       <div class="function" @click="toCreator">
         <add-music theme="outline" size="24"/>
-        <div style="text-align: center">投稿</div>
+        <div class="function-label">投稿</div>
       </div>
       <!-- 消息按钮 -->
       <my-popover>
         <template #trigger>
           <div class="function">
             <Message theme="outline" size="24"/>
-            <div style="text-align: center">消息</div>
+            <div class="function-label">消息</div>
           </div>
         </template>
         <template #content>
@@ -120,7 +120,7 @@ const toCreator = () => {
         <template #trigger>
           <div class="function">
             <Remind theme="outline" size="24"/>
-            <div style="text-align: center">通知</div>
+            <div class="function-label">通知</div>
           </div>
         </template>
       </my-popover>
@@ -169,6 +169,12 @@ const toCreator = () => {
       }
     }
 
+    .function-label {
+      text-align: center;
+      font-size: 12px;
+      transition: opacity 0.3s ease;
+    }
+
     .function:hover {
       cursor: pointer;
       color: #fe2c55;
@@ -180,6 +186,62 @@ const toCreator = () => {
       background-color: #fff;
       border-radius: 50%;
       overflow: hidden;
+    }
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .title-bar {
+    .search-input-area {
+      width: 75%;
+    }
+    
+    .functions {
+      width: 25%;
+      gap: 15px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .title-bar {
+    .search-input-area {
+      width: 70%;
+    }
+    
+    .functions {
+      width: 30%;
+      gap: 12px;
+      padding-right: 15px;
+    }
+    
+    .function-label {
+      font-size: 10px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .title-bar {
+    .search-input-area {
+      width: 60%;
+    }
+    
+    .functions {
+      width: 40%;
+      gap: 8px;
+      padding-right: 10px;
+    }
+    
+    .function {
+      .function-label {
+        display: none; /* 隐藏文字，只显示图标 */
+      }
+    }
+    
+    .function-label {
+      font-size: 9px;
     }
   }
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import Player from "../../components/Player.vue";
+import Player from "../../components/player/index.vue";
 import instance from "../../api/axiosInstance.ts";
 import {ref, onMounted} from "vue";
 import type {Video} from "../../store/videoStore.ts";

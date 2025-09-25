@@ -30,6 +30,7 @@ const uploadedVideoInfo = reactive({  // 视频信息
   progress: 0
 })
 
+
 // 如果是从继续编辑而来，直接显示草稿表单
 onMounted(async () => {
   if (route.query.enter_from == 'draft') {

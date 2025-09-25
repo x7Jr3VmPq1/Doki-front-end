@@ -9,7 +9,7 @@
       <div class="icon-placeholder">
         <component :is="item.icon" :size="24"></component>
       </div>
-      <span>{{ item.label }}</span>
+      <span class="menu-label">{{ item.label }}</span>
     </div>
 
     <div class="divider"></div>
@@ -23,7 +23,7 @@
       <div class="icon-placeholder">
         <component :is="item.icon" :size="24"></component>
       </div>
-      <span>{{ item.label }}</span>
+      <span class="menu-label">{{ item.label }}</span>
     </div>
 
     <div class="divider"></div>
@@ -37,7 +37,7 @@
       <div class="icon-placeholder">
         <component :is="item.icon" :size="24"></component>
       </div>
-      <span>{{ item.label }}</span>
+      <span class="menu-label">{{ item.label }}</span>
     </div>
   </div>
 </template>
@@ -93,6 +93,7 @@ const selectItem = (key: string) => {
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05); /* 轻微阴影 */
   border-right: 1px solid #eee;
   box-sizing: border-box; /* 确保padding和border不增加额外宽度 */
+  transition: all 0.3s ease;
 }
 
 .menu-item {
@@ -150,5 +151,65 @@ const selectItem = (key: string) => {
   height: 1px;
   background-color: #eee;
   margin: 16px 20px; /* 分隔线上下的间距和左右内缩 */
+}
+
+.menu-label {
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .sidebar-menu {
+    padding: 16px 8px;
+  }
+  
+  .menu-item {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+  
+  .icon-placeholder {
+    margin-right: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-menu {
+    padding: 16px 5px;
+  }
+  
+  .menu-item {
+    padding: 10px 8px;
+    justify-content: center;
+  }
+  
+  .menu-label {
+    display: none; /* 隐藏文字，只显示图标 */
+  }
+  
+  .icon-placeholder {
+    margin-right: 0;
+  }
+  
+  .divider {
+    margin: 16px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-menu {
+    padding: 12px 4px;
+  }
+  
+  .menu-item {
+    padding: 8px 4px;
+    margin-bottom: 8px;
+  }
+  
+  .divider {
+    margin: 12px 4px;
+  }
 }
 </style>

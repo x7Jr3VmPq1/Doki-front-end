@@ -15,6 +15,17 @@
         <Player :ref="el => setPlayerRef(el, index)" :video="video"></Player>
       </swiper-slide>
     </swiper>
+    
+    <!-- 翻页控制组件 - 右侧悬浮 -->
+    <SwiperController
+      ref="swiperControllerRef"
+      :swiper-instance="swiperInstance"
+      :player-refs="playerRefs"
+      :total-slides="props.videos.length"
+      @slide-change="handleSlideChange"
+      @player-pause="handlePlayerPause"
+      @player-play="handlePlayerPlay"
+    />
   </div>
 </template>
 
@@ -25,7 +36,8 @@ import {Pagination, Virtual} from 'swiper/modules'
 import type {Video} from "../../store/videoStore.ts";
 import "swiper/css"
 import "swiper/css/pagination"
-import Player from "../../components/Player.vue";
+import Player from "../../components/player/index.vue";
+import SwiperController from "../../components/player/SwiperController.vue";
 
 defineEmits(['_virtualUpdated']);
 
@@ -42,7 +54,7 @@ const props = defineProps({
 
 
 const playerRefs = ref([]);
-
+const swiperControllerRef = ref(null);
 
 function setPlayerRef(el, index) {
   if (el) {
@@ -123,6 +135,19 @@ const handleChange = (event: KeyboardEvent | MouseEvent) => {
   lockSlide();
 }
 
+// 控制器事件处理
+const handleSlideChange = (index) => {
+  console.log('🎬 切换到视频:', index + 1)
+}
+
+const handlePlayerPause = () => {
+  console.log('⏸️ 播放器暂停')
+}
+
+const handlePlayerPlay = () => {
+  console.log('▶️ 播放器播放')
+}
+
 onMounted(() => {
   watch(() => props.index, (newIndex) => {
     nextTick(() => {
@@ -150,7 +175,24 @@ onMounted(() => {
 }
 
 .video-container {
-  width: 100%;
+  width: calc(100% - 80px); /* 为控制器留出空间 */
   height: 100%;
+  position: relative;
+  margin-right: 80px; /* 确保播放器不延伸到控制器区域 */
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .video-container {
+    width: calc(100% - 70px);
+    margin-right: 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  .video-container {
+    width: calc(100% - 60px);
+    margin-right: 60px;
+  }
 }
 </style>

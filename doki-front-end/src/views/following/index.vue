@@ -26,7 +26,7 @@ import {Pagination, Virtual} from 'swiper/modules'
 import type {Video} from "../../store/videoStore.ts";
 import "swiper/css"
 import "swiper/css/pagination"
-import Player from "../../components/Player.vue";
+import Player from "../../components/player/index.vue";
 import axios from "../../api/axiosInstance.ts";
 
 defineEmits(['_virtualUpdated'])
