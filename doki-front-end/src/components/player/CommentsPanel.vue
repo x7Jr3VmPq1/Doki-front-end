@@ -114,10 +114,14 @@ const handleClickComments = (event: Event, targetComment: VideoComment) => {
     }
     isReplying.value = true
     // 高亮整条评论（包括头像和用户名）
+    // 从当前目标向上查找最近的 comment-item 元素
     const currentTarget = event.currentTarget as HTMLElement
-    replyTargetDOM.value = currentTarget
-    replyTargetObject.value = targetComment
-    currentTarget.classList.add('comment-highlight')
+    const commentItem = currentTarget.closest('.comment-item') as HTMLElement
+    if (commentItem) {
+      replyTargetDOM.value = commentItem
+      replyTargetObject.value = targetComment
+      commentItem.classList.add('comment-highlight')
+    }
   } else {
     removeHighlight()
   }
@@ -295,6 +299,23 @@ const handleDeleteComment = async (comment: VideoComment) => {
   border-radius: 8px;
   padding: 8px;
   margin: -8px;
+  box-sizing: border-box;
+  width: calc(100% - 16px);
+  max-width: 100%;
+}
+.comment-highlight .reply-btn {
+  background-color: transparent !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+/* 确保子评论不会被父评论的高亮影响 */
+.comment-highlight .replies-list .comment-item {
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  width: auto !important;
+  max-width: none !important;
 }
 </style>
 

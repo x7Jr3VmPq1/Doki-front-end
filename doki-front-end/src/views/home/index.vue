@@ -4,7 +4,11 @@ import SwiperPlayer from "./swiper-player.vue";
 import {onMounted, ref} from "vue";
 import axios from "../../api/axiosInstance.ts";
 
-const videos = ref([]);
+import feedService from '../../api/feedService.ts'
+import type {VideoInfo} from '../../api/feedService.ts'
+import {handleRequest} from '../../api/handleRequest.ts'
+
+const videos = ref<VideoInfo[]>([]);
 onMounted(async () => {
   await axios.get('/videos')
       .then(Response => {
@@ -14,7 +18,11 @@ onMounted(async () => {
           videoUrl: item.videoUrl.replace(/^"|"$/g, '').replace(/\\/g, '/')
         }));
       })
-
+  await handleRequest(feedService.getRandomVideos, {
+    onSuccess(data) {
+      console.log(data);
+    },
+  })
 })
 </script>
 

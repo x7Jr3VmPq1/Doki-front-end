@@ -163,6 +163,10 @@ const handleDeleteComment = (comment: VideoComment) => {
   transition: color 0.2s;
 }
 .action-btn:hover { color: white; }
+.reply-btn:active { 
+  background-color: transparent !important; 
+  color: rgba(255, 255, 255, 0.5) !important;
+}
 .replies-list { 
   margin-left: 40px; 
   margin-top: 8px; 
@@ -175,5 +179,22 @@ const handleDeleteComment = (comment: VideoComment) => {
   border-radius: 8px;
   padding: 8px;
   margin: -8px;
+  box-sizing: border-box;
+  width: calc(100% - 16px);
+  max-width: 100%;
+}
+.comment-highlight .reply-btn {
+  background-color: transparent !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+/* 确保子评论不会被父评论的高亮影响 */
+.comment-highlight .replies-list .comment-item {
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  width: auto !important;
+  max-width: none !important;
 }
 </style>
