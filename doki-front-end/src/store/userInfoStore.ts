@@ -1,24 +1,36 @@
 import {defineStore} from 'pinia';
-
+import type {userInfo} from '../api/userService.ts'
+import type {UserStatistics} from '../api/analyticsService.ts'
 
 export const useUserStore = defineStore('user', {
     state: () => ({
-        userInfo: null as null | {
-            token: string;
-            userId: number;
-            userName: string;
-            avatarUrl: string;
-            bio: string;
-            followingCount: number;
-            followerCount: number;
-        },
+        userInfo: {
+            isLogin: false,
+            id: 0,
+            username: '',
+            avatarUrl: '',
+            bio: '',
+            followingCount: 0,
+            followerCount: 0
+        }
     }),
     actions: {
-        setUser(data: any) {
-            this.userInfo = data;
+        setBaseUserinfo(data: userInfo) {
+            this.userInfo.id = data.id;
+            this.userInfo.username = data.username;
+            this.userInfo.avatarUrl = 'http://localhost:10010/image/avatar/' + data.avatarUrl;
+            this.userInfo.bio = data.bio;
+        },
+        setFollowCount(data: UserStatistics) {
+            this.userInfo.followingCount = data.followingCount;
+            this.userInfo.followerCount = data.followerCount;
         },
         logout() {
-            this.userInfo = null;
+            this.userInfo.isLogin = false;
+            this.userInfo.id = 0;
+            this.userInfo.username = '';
+            this.userInfo.avatarUrl = '';
+            this.userInfo.bio = '';
         },
     },
 });

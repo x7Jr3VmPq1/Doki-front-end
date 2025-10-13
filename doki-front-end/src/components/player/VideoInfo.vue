@@ -1,15 +1,42 @@
 <script setup lang="ts">
-import type { Video } from '../../store/videoStore';
-import { dayUtils } from '../../utils/dayUtils';
 
-defineProps<{ video: Video }>();
+import type {VideoInfo} from '../../api/feedService.ts'
+import type {userInfo} from '../../api/userService.ts'
+import {handleRequest} from '../../api/handleRequest.ts'
+import userService from '../../api/userService.ts'
+
+import {dayUtils} from '../../utils/dayUtils.ts'
+import {onMounted, ref} from "vue";
+
+const props = defineProps<{ video: VideoInfo }>();
+
+// 上传者信息
+const uploaderInfo = ref<userInfo>({
+  id: 0,
+  username: '',
+  avatarUrl: '',
+  bio: '',
+  createdAt: 0,
+  updatedAt: 0
+})
+onMounted(() => {
+  // 获取上传者信息
+  handleRequest(userService.getUserinfoById, {
+    onSuccess(data) {
+      uploaderInfo.value = data[0]
+    },
+    params: [props.video.uploaderId]
+  })
+})
+
+
 </script>
 
 <template>
   <div class="video-info">
     <div style="display: flex">
-      <div class="user-name">{{ '@' + video.userName }}</div>
-      <div class="upload-time">{{ dayUtils.formatDate(video.createdAt) }}</div>
+      <div class="user-name">{{ '@' + uploaderInfo.username }}</div>
+      <div class="upload-time">{{ dayUtils.formatTimestamp(video.publishTime) }}</div>
     </div>
     <div style="display: flex;flex-wrap: wrap;width: 100%">
       <div class="video-title">{{ video.title }}</div>

@@ -1,22 +1,26 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { Close,Like } from '@icon-park/vue-next';
-import { likeVideoByVideoId, favoriteVideoByVideoId } from "../../api/videoService.ts";
-import { getUserInfo } from "../../api/userService.ts";
+import {onMounted, ref} from 'vue'
+import {Close, Like} from '@icon-park/vue-next';
+import {likeVideoByVideoId, favoriteVideoByVideoId} from "../../api/videoService.ts";
+import {getUserInfo} from "../../api/userService.ts";
 import type {Video} from '../../store/videoStore.ts'
+import type {VideoInfo} from '../../api/feedService.ts'
 import {useUserStore} from "../../store/userInfoStore.ts";
+
 const userStore = useUserStore();
 // 子组件
 import InteractionButtons from './InteractionButtons.vue'
-import VideoInfo from './VideoInfo.vue'
+import VideoInfoComponent from './VideoInfo.vue'
 import Controls from './Controls.vue'
 import CommentsPanel from './CommentsPanel.vue'
 // 当前登录用户ID
 const userId = ref(userStore.userInfo?.userId);
 // 获取视频数据
 const {video} = defineProps<{
-  video: Video
+  video: VideoInfo
 }>()
+// 视频流请求地址
+const videoStreamPath = 'http://localhost:10010/video/play/'
 // 获取播放器HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
 // TA的作品集合
@@ -208,38 +212,39 @@ const favoriteVideo = async (videoId: number) => {
     <!-- 视频区域绑定动态 class 控制宽度 -->
     <div :class="['player-video', { shrink: open }]" @click="onPlay">
       <div class="video-wrapper">
-        <video src="http://localhost:10010/video/play/dc160900-87b8-4522-9672-9087913bbbbd" ref="videoRef" loop preload="auto"></video>
+        <video :src="videoStreamPath + video.videoFilename" ref="videoRef" loop
+               preload="auto"></video>
         <!-- 交互按钮 -->
         <InteractionButtons
-          :video="video"
-          :onOpenComments="openComments"
-          :onLike="likeVideo"
-          :onFavorite="favoriteVideo"
+            :video="video"
+            :onOpenComments="openComments"
+            :onLike="likeVideo"
+            :onFavorite="favoriteVideo"
         />
       </div>
       <!-- 视频主信息 -->
-      <VideoInfo v-if="!clearScreen" :video="video" />
+      <VideoInfoComponent v-if="!clearScreen" :video="video"/>
       <!--  遮罩层    -->
       <div v-if="!clearScreen" class="cover"></div>
       <!--  控件  -->
       <Controls
-        :isPlaying="isPlaying"
-        :currentTime="currentTime"
-        :durationTime="durationTime"
-        :clearScreen="clearScreen"
-        :speeds="speeds"
-        :currentSpeed="currentSpeed"
-        :volume="volume"
-        :isFullScreen="isFullScreen"
-        :videoDuration="videoRef?.duration"
-        :shrink="open"
-        @togglePlay="onPlay"
-        @setTime="setVideoTime"
-        @toggleClear="(v:any)=>clearScreen=v"
-        @setSpeed="setSpeed"
-        @changeVolume="(v:any)=>{ volume=v; handleVolumeChange(); }"
-        @toggleFullscreen="toggleFullScreen"
-        @toggleMute="toggleMute"
+          :isPlaying="isPlaying"
+          :currentTime="currentTime"
+          :durationTime="durationTime"
+          :clearScreen="clearScreen"
+          :speeds="speeds"
+          :currentSpeed="currentSpeed"
+          :volume="volume"
+          :isFullScreen="isFullScreen"
+          :videoDuration="videoRef?.duration"
+          :shrink="open"
+          @togglePlay="onPlay"
+          @setTime="setVideoTime"
+          @toggleClear="(v:any)=>clearScreen=v"
+          @setSpeed="setSpeed"
+          @changeVolume="(v:any)=>{ volume=v; handleVolumeChange(); }"
+          @toggleFullscreen="toggleFullScreen"
+          @toggleMute="toggleMute"
       />
     </div>
     <!-- 评论区抽屉 -->
@@ -280,7 +285,8 @@ const favoriteVideo = async (videoId: number) => {
 
         </a-tab-pane>
         <a-tab-pane key="2" :tab='`评论 (${video.commentCount})`' force-render>
-          <CommentsPanel :videoId="video.id" :userId="userId" @countChange="(delta:number)=> video.commentCount += delta" />
+          <CommentsPanel :videoId="video.id" :userId="userId"
+                         @countChange="(delta:number)=> video.commentCount += delta"/>
         </a-tab-pane>
         <a-tab-pane key="3" tab="相关推荐">Content...</a-tab-pane>
       </a-tabs>

@@ -3,16 +3,18 @@
     <div class="profile-header">
       <img :src="user.avatarUrl" alt="User Avatar" class="user-avatar"/>
       <div class="user-details">
-        <div class="username">{{ user.userName }}</div>
+        <div class="username">{{ userStore.userInfo.username }}</div>
         <div class="follow-info">
           <follow-modal
               v-model:visible="openFollowingList"
               :fans-list="fansList"
               :following-list="followingList">
           </follow-modal>
-          <span class="follow-item" @click="openFollowingList = true">关注 {{ user.followingCount }}</span>
+          <span class="follow-item" @click="openFollowingList = true">关注 {{
+              userStore.userInfo.followingCount
+            }}</span>
           <span class="follow-divider">|&nbsp;</span>
-          <span class="follow-item" @click="openFollowingList = true">粉丝 {{ user.followerCount }}</span>
+          <span class="follow-item" @click="openFollowingList = true">粉丝 {{ userStore.userInfo.followerCount }}</span>
         </div>
       </div>
     </div>
@@ -156,30 +158,27 @@
 </template>
 
 <script setup lang="ts">
-import {createVNode, ref} from 'vue';
+import {createVNode, ref, onMounted} from 'vue';
 import FollowModal from "./follow-modal.vue";
 import {useUserStore} from "../store/userInfoStore.ts";
-import {getFansList, getFollowList} from "../api/userService.ts";
+import analyticsService from '../api/analyticsService.ts';
+import {handleRequest} from '../api/handleRequest.ts'
 import {Modal} from "ant-design-vue";
 import {ExclamationCircleOutlined} from "@ant-design/icons-vue";
+
+onMounted(async () => {
+  await handleRequest(analyticsService.getUserStatById, {
+    onSuccess: (data) => {
+      userStore.setFollowCount(data);
+    },
+    params: userStore.userInfo.id
+  })
+})
 
 interface LikedItem {
   id: number;
   image: string;
   title: string;
-}
-
-interface UserProfile {
-  avatar: string;
-  username: string;
-  followingCount: number;
-  followerCount: number;
-  likesCount: number;
-  likedItems: LikedItem[];
-  collectionsCount: number;
-  watchHistoryRange: string;
-  watchLaterCount: number;
-  myWorksCount: number;
 }
 
 const userStore = useUserStore();
@@ -191,19 +190,6 @@ const followingList = ref([]); // 关注列表
 const fansList = ref([]); // 粉丝列表
 
 const openFollowingList = ref(false); // 控制 FollowModal 的显示/隐藏
-
-const handleFollowList = async () => {
-  followingList.value = await getFollowList(user.userId ?? 0);
-  fansList.value = await getFansList(user.userId ?? 0);
-  openFollowingList.value = true;
-}
-
-const handleFansList = async () => {
-  followingList.value = await getFollowList(user.userId ?? 0);
-  fansList.value = await getFansList(user.userId ?? 0);
-  openFollowingList.value = true;
-}
-
 
 const rememberLogin = ref(false);
 const expandedSection = ref<string | null>(null); // State to track which section is expanded
@@ -245,7 +231,7 @@ const handleLogout = () => {
 </script>
 <style scoped>
 .profile-card {
-  width: 375px; /* Standard mobile width, adjust as needed */
+  width: 375px;
   background-color: #f8f8f8;
   border-radius: 12px;
   overflow: hidden;
@@ -303,25 +289,21 @@ const handleLogout = () => {
   color: #ccc;
 }
 
-/* Section Styling */
 .section {
   background-color: #fff;
   margin-top: 10px;
-  /* padding: 15px 20px; Removed padding from here for expandable sections */
   border-bottom: 1px solid #eee;
-  cursor: pointer; /* Indicate interactivity */
+  cursor: pointer;
 }
 
-/* Base style for all section items (including those in section-list and additional-options) */
 .section-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  background-color: #fff; /* Ensure background for transition */
+  background-color: #fff;
 }
 
-/* Remove bottom border for section-item if it's within a section-item-wrapper */
 .section-item-wrapper .section-item {
   border-bottom: none;
 }
@@ -331,8 +313,7 @@ const handleLogout = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  /* margin-bottom: 15px; Removed for dynamic expansion */
-  padding: 15px 20px; /* Add padding here for consistent click area */
+  padding: 15px 20px;
 }
 
 .section-title {
@@ -358,11 +339,11 @@ const handleLogout = () => {
   border-right: 1.5px solid #ccc;
   transform: rotate(45deg);
   margin-left: 8px;
-  transition: transform 0.3s ease; /* Transition for rotation */
+  transition: transform 0.3s ease;
 }
 
 .arrow-right.rotated {
-  transform: rotate(135deg); /* Point down when expanded */
+  transform: rotate(135deg);
 }
 
 /* Icons */
@@ -447,18 +428,16 @@ const handleLogout = () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%; /* Ensure title takes full width to truncate */
+  width: 100%;
 }
 
-/* Wrapper for each expandable section item to manage its own border and background */
 .section-item-wrapper {
   background-color: #fff;
   border-bottom: 1px solid #eee;
-  /* margin-bottom: 10px; Removed as we want these to be contiguous like the image */
 }
 
 .section-item-wrapper:last-child {
-  border-bottom: none; /* No border for the last item in a list group */
+  border-bottom: none;
 }
 
 .section-list,
@@ -466,20 +445,17 @@ const handleLogout = () => {
   margin-top: 10px;
   border-radius: 8px;
   overflow: hidden;
-  background-color: #fff; /* Ensure continuous background */
+  background-color: #fff;
 }
 
-/* Style for option items, which are also section-items */
 .option-item {
-  justify-content: flex-start; /* Align icon and text to the left */
-  /* Remove section-count from here if it's already in the section-item div */
+  justify-content: flex-start;
 }
 
 .option-item .section-count {
-  margin-left: auto; /* Push the arrow to the right */
+  margin-left: auto;
 }
 
-/* Logout Section */
 .logout-section {
   background-color: #fff;
   margin-top: 10px;

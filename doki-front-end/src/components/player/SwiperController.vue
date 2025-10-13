@@ -2,8 +2,8 @@
   <div class="swiper-controller">
     <!-- 翻页控制按钮 -->
     <div class="navigation-controls">
-      <button 
-        class="nav-btn prev-btn" 
+      <button
+        class="nav-btn prev-btn"
         @click="goToPrevious"
         :disabled="isFirstSlide"
         :class="{ disabled: isFirstSlide }"
@@ -11,10 +11,10 @@
       >
         <ArrowUp />
       </button>
-      
-      
-      <button 
-        class="nav-btn next-btn" 
+
+
+      <button
+        class="nav-btn next-btn"
         @click="goToNext"
         :disabled="isLastSlide"
         :class="{ disabled: isLastSlide }"
@@ -68,30 +68,30 @@ const lockSlide = () => {
 // 翻页核心方法
 const navigateToSlide = (direction: 'next' | 'prev') => {
   if (slideLocked.value || !props.swiperInstance) return
-  
+
   const swiper = props.swiperInstance
-  
+
   // 检查边界
   if (direction === 'next' && swiper.isEnd) return
   if (direction === 'prev' && swiper.isBeginning) return
-  
+
   // 暂停当前播放器
   const currentPlayer = props.playerRefs[currentIndex.value]
   if (currentPlayer) {
     currentPlayer.pause()
     emits('playerPause')
   }
-  
+
   // 执行翻页
   if (direction === 'next') {
     swiper.slideNext()
   } else {
     swiper.slidePrev()
   }
-  
+
   // 更新当前索引
   currentIndex.value = swiper.activeIndex
-  
+
   // 播放下一个视频
   setTimeout(() => {
     const nextPlayer = props.playerRefs[currentIndex.value]
@@ -100,10 +100,10 @@ const navigateToSlide = (direction: 'next' | 'prev') => {
       emits('playerPlay')
     }
   }, 100)
-  
+
   // 触发翻页事件
   emits('slideChange', currentIndex.value)
-  
+
   // 加锁防止频繁操作
   lockSlide()
 }
@@ -115,20 +115,20 @@ const goToPrevious = () => navigateToSlide('prev')
 // 跳转到指定幻灯片
 const goToSlide = (index: number) => {
   if (slideLocked.value || !props.swiperInstance || index === currentIndex.value) return
-  
+
   const swiper = props.swiperInstance
-  
+
   // 暂停当前播放器
   const currentPlayer = props.playerRefs[currentIndex.value]
   if (currentPlayer) {
     currentPlayer.pause()
     emits('playerPause')
   }
-  
+
   // 跳转到指定幻灯片
   swiper.slideTo(index, 300, false)
   currentIndex.value = index
-  
+
   // 播放目标视频
   setTimeout(() => {
     const targetPlayer = props.playerRefs[currentIndex.value]
@@ -137,10 +137,10 @@ const goToSlide = (index: number) => {
       emits('playerPlay')
     }
   }, 350)
-  
+
   // 触发翻页事件
   emits('slideChange', currentIndex.value)
-  
+
   // 加锁
   lockSlide()
 }
@@ -148,7 +148,7 @@ const goToSlide = (index: number) => {
 // 键盘事件处理
 const handleKeydown = (event: KeyboardEvent) => {
   if (slideLocked.value) return
-  
+
   switch (event.key) {
     case 'ArrowUp':
       event.preventDefault()
@@ -172,7 +172,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 // 鼠标滚轮事件处理
 const handleWheel = (event: WheelEvent) => {
   if (slideLocked.value) return
-  
+
   event.preventDefault()
   if (event.deltaY > 0) {
     goToNext()
@@ -185,11 +185,11 @@ const handleWheel = (event: WheelEvent) => {
 const handleTouchStart = (event: TouchEvent) => {
   const touch = event.touches[0]
   const startY = touch.clientY
-  
+
   const handleTouchMove = (moveEvent: TouchEvent) => {
     const moveTouch = moveEvent.touches[0]
     const deltaY = startY - moveTouch.clientY
-    
+
     if (Math.abs(deltaY) > 50) { // 滑动阈值
       if (deltaY > 0) {
         goToNext()
@@ -200,12 +200,12 @@ const handleTouchStart = (event: TouchEvent) => {
       document.removeEventListener('touchend', handleTouchEnd)
     }
   }
-  
+
   const handleTouchEnd = () => {
     document.removeEventListener('touchmove', handleTouchMove)
     document.removeEventListener('touchend', handleTouchEnd)
   }
-  
+
   document.addEventListener('touchmove', handleTouchMove)
   document.addEventListener('touchend', handleTouchEnd)
 }
@@ -242,7 +242,6 @@ onUnmounted(() => {
   right: 15px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 1000;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -311,19 +310,19 @@ onUnmounted(() => {
     width: 55px;
     right: 12px;
   }
-  
+
   .navigation-controls {
     width: 45px;
     min-width: 45px;
     height: auto;
   }
-  
+
   .nav-btn {
     width: 32px;
     height: 32px;
     font-size: 14px;
   }
-  
+
 }
 
 @media (max-width: 480px) {
@@ -331,19 +330,19 @@ onUnmounted(() => {
     width: 50px;
     right: 8px;
   }
-  
+
   .navigation-controls {
     width: 40px;
     min-width: 40px;
     height: auto;
   }
-  
+
   .nav-btn {
     width: 28px;
     height: 28px;
     font-size: 12px;
   }
-  
+
 }
 
 /* 深色主题适配 */
@@ -352,12 +351,12 @@ onUnmounted(() => {
     background: rgba(0, 0, 0, 0.85);
     border-color: rgba(255, 255, 255, 0.15);
   }
-  
+
   .nav-btn {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.15);
   }
-  
+
   .nav-btn:hover:not(.disabled) {
     background: rgba(255, 255, 255, 0.22);
   }
@@ -369,7 +368,7 @@ onUnmounted(() => {
     background: rgba(0, 0, 0, 0.9);
     border: 2px solid white;
   }
-  
+
   .nav-btn {
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid white;

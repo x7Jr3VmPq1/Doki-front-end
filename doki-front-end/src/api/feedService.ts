@@ -25,7 +25,6 @@ export interface VideoInfo {
     allowComment: number;
     createdTime: number;
     updatedTime: number;
-    deleted: number;
 }
 
 export default {

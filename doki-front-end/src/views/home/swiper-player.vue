@@ -10,21 +10,19 @@
         @keyup="handleChange"
         @wheel="handleChange"
         @swiper="onSwiperInit"
+        @slide-change="onSlideChange"
     >
       <swiper-slide v-for="(video, index) in props.videos" :key="index" :virtualIndex="index">
         <Player :ref="el => setPlayerRef(el, index)" :video="video"></Player>
       </swiper-slide>
     </swiper>
-    
+
     <!-- 翻页控制组件 - 右侧悬浮 -->
     <SwiperController
-      ref="swiperControllerRef"
-      :swiper-instance="swiperInstance"
-      :player-refs="playerRefs"
-      :total-slides="props.videos.length"
-      @slide-change="handleSlideChange"
-      @player-pause="handlePlayerPause"
-      @player-play="handlePlayerPlay"
+        ref="swiperControllerRef"
+        :swiper-instance="swiperInstance"
+        :player-refs="playerRefs"
+        :total-slides="props.videos.length"
     />
   </div>
 </template>
@@ -33,11 +31,12 @@
 import {ref, nextTick, watch, onMounted} from 'vue'
 import {Swiper, SwiperSlide} from 'swiper/vue'
 import {Pagination, Virtual} from 'swiper/modules'
-import type {Video} from "../../store/videoStore.ts";
 import "swiper/css"
 import "swiper/css/pagination"
 import Player from "../../components/player/index.vue";
 import SwiperController from "../../components/player/SwiperController.vue";
+import feedService from '../../api/feedService.ts'
+import {handleRequest} from '../../api/handleRequest.ts'
 
 defineEmits(['_virtualUpdated']);
 
@@ -135,17 +134,17 @@ const handleChange = (event: KeyboardEvent | MouseEvent) => {
   lockSlide();
 }
 
-// 控制器事件处理
-const handleSlideChange = (index) => {
-  console.log('🎬 切换到视频:', index + 1)
-}
-
-const handlePlayerPause = () => {
-  console.log('⏸️ 播放器暂停')
-}
-
-const handlePlayerPlay = () => {
-  console.log('▶️ 播放器播放')
+// 监测视频数组的索引，待观看视频少于两个时，加载新一批视频
+const onSlideChange = async (swiper) => {
+  if (swiper.activeIndex >= props.videos.length - 2) {
+    await handleRequest(feedService.getRandomVideos, {
+      onSuccess(data) {
+        console.log("获取新视频成功");
+        console.log(data);
+        props.videos.push(...data);
+      },
+    })
+  }
 }
 
 onMounted(() => {

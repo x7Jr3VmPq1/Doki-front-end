@@ -1,14 +1,65 @@
 <script setup lang="ts">
 import {HeartFilled, MessageFilled, PlusCircleFilled, StarFilled} from "@ant-design/icons-vue";
-import { IconMore, IconShareInternal } from '@arco-design/web-vue/es/icon';
-import type { Video } from '../../store/videoStore';
+import {IconMore, IconShareInternal} from '@arco-design/web-vue/es/icon';
+import type {VideoInfo} from '../../api/feedService.ts'
+import {onMounted} from 'vue';
+import analyticsService from '../../api/analyticsService.ts';
+import userService from '../../api/userService.ts'
+import type {VideoStatistics} from '../../api/analyticsService.ts'
+import type {userInfo} from '../../api/userService.ts'
+import {ref} from 'vue'
+import {handleRequest} from '../../api/handleRequest.ts'
 
 const props = defineProps<{
-  video: Video,
+  video: VideoInfo,
   onOpenComments: () => void,
   onLike: (videoId: number) => void,
   onFavorite: (videoId: number) => void,
 }>()
+
+// 获取头像服务器地址
+const avatarServer = 'http://localhost:10010/image/avatar/'
+
+// 视频统计信息
+const stat = ref<VideoStatistics>({
+  id: 0,
+  videoId: 0,
+  viewCount: 0,
+  likeCount: 0,
+  dislikeCount: 0,
+  commentCount: 0,
+  shareCount: 0,
+  favoriteCount: 0,
+  downloadCount: 0,
+  createdTime: 0,
+  updatedTime: 0,
+  deleted: 0,
+});
+// 上传者信息
+const uploaderInfo = ref<userInfo>({
+  id: 0,
+  username: '',
+  avatarUrl: '',
+  bio: '',
+  createdAt: 0,
+  updatedAt: 0
+})
+onMounted(() => {
+  // 获取视频统计信息
+  handleRequest(analyticsService.getVideoStatById, {
+    onSuccess(data) {
+      stat.value = data[0];
+    },
+    params: [props.video.id]
+  })
+  // 获取上传者信息
+  handleRequest(userService.getUserinfoById, {
+    onSuccess(data) {
+      uploaderInfo.value = data[0]
+    },
+    params: [props.video.uploaderId]
+  })
+})
 </script>
 
 <template>
@@ -27,7 +78,7 @@ const props = defineProps<{
         <div class="follow-button">
           <PlusCircleFilled/>
         </div>
-        <a-avatar :src="props.video.avatarUrl" size="large" class="bounce-on-click" />
+        <a-avatar :src="avatarServer + uploaderInfo.avatarUrl" size="large" class="bounce-on-click"/>
       </div>
     </a-tooltip>
 
@@ -42,9 +93,9 @@ const props = defineProps<{
         </div>
       </template>
       <div class="like bounce-on-click" @click="props.onLike(props.video.id)">
-        <heart-filled v-if="props.video.liked" style="color: red"/>
+        <heart-filled v-if="false" style="color: red"/>
         <heart-filled v-else/>
-        <div style="font-size: 20px;padding-top: 5px">{{ props.video.likeCount }}</div>
+        <div style="font-size: 20px;padding-top: 5px">{{ stat.likeCount }}</div>
       </div>
     </a-tooltip>
 
@@ -60,7 +111,7 @@ const props = defineProps<{
       </template>
       <div class="comment bounce-on-click" @click="props.onOpenComments">
         <message-filled/>
-        <div style="font-size: 20px;padding-top: 5px">{{ props.video.commentCount }}</div>
+        <div style="font-size: 20px;padding-top: 5px">{{ stat.commentCount }}</div>
       </div>
     </a-tooltip>
 
@@ -75,9 +126,9 @@ const props = defineProps<{
         </div>
       </template>
       <div class="star bounce-on-click" @click="props.onFavorite(props.video.id)">
-        <star-filled v-if="props.video.favorited" style="color: goldenrod"/>
+        <star-filled v-if="false" style="color: goldenrod"/>
         <star-filled v-else/>
-        <div style="font-size: 20px;padding-top: 5px">{{ props.video.favoriteCount }}</div>
+        <div style="font-size: 20px;padding-top: 5px">{{ stat.favoriteCount }}</div>
       </div>
     </a-tooltip>
 

@@ -8,6 +8,17 @@ const instance = axios.create({
     headers: {'X-Custom-Header': 'foobar'}
 });
 
+// 添加请求拦截器
+instance.interceptors.request.use(config => {
+    // 获取token
+    const token = localStorage.getItem('token');
+    // 添加到请求头
+    config.headers['Authorization'] = `Bearer ${token}`;
+    return config;
+}, error => {
+    return Promise.reject(error);
+});
+
 // 支持的 HTTP 方法
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -41,22 +52,6 @@ export const request = async <T>(
         isSuccess: () => res.code === 200
     };
 };
-// 添加请求拦截器
-// instance.interceptors.request.use(config => {
-//     const token = localStorage.getItem('token');
-//
-//     // 这些接口不需要 token
-//     const noAuthUrls = ['/loginByPassword', '/register'];
-//
-//     // 如果当前请求 URL 不在 `noAuthUrls` 里面，并且 `token` 存在，就添加 `Authorization` 头
-//     if (!noAuthUrls.includes(config.url!) && token) {
-//         config.headers['Authorization'] = `Bearer ${token}`;
-//     }
-//
-//
-//     return config;
-// }, error => {
-//     return Promise.reject(error);
-// });
+
 
 export default request;

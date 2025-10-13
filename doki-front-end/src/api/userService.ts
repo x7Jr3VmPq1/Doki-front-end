@@ -1,4 +1,19 @@
 import instance from './axiosInstance'; // 引入axios实例
+import request from './gateway.ts'
+
+export interface userInfo {
+    id: number,
+    username: string,
+    avatarUrl: string,
+    bio: string,
+    createdAt: number,
+    updatedAt: number
+}
+
+export interface loginSuccessData {
+    token: string,
+    hasPassword: boolean
+}
 
 // 拉取当前登录用户的个人信息
 const getUserInfoByToken = async () => {
@@ -17,30 +32,6 @@ const followUser = async (userId: number) => {
     return response.data;
 }
 
-// 更新用户资料
-const updateUserInfo = async (userId: number, userName: string, bio: string, avatarBase64: string) => {
-    const response = await instance.put(`/user/update/${userId}`, {
-        userName,
-        bio,
-        avatarBase64
-    });
-    return response.data;
-}
-// 校验用户名可用性
-const checkUserName = async (userName: string) => {
-    const response = await instance.get(`/user/checkUsername/${userName}`);
-    return response.data;
-}
-
-// 搜索用户列表
-const searchUsers = async (keyword: string) => {
-    const response = await instance.get(`/user/search`, {
-        params: {
-            userName: keyword
-        }
-    });
-    return response.data;
-}
 
 // 获取用户关注列表..
 const getFollowList = async (userId: number, page?: number, lastUserId?: number) => {
@@ -70,9 +61,27 @@ export {
     getUserInfoByToken,
     getUserInfo,
     followUser,
-    updateUserInfo,
-    checkUserName,
-    searchUsers,
     getFollowList,
     getFansList
+}
+
+export default {
+    getUserinfoById: async (ids: number[]) => await request<userInfo[]>('/user/userinfo', {
+        method: 'POST',
+        data: ids
+    }),
+    getSmsCode: async (phone: number) => await request('/user/getSmsCode', {
+        method: 'GET',
+        data: phone
+    }),
+    loginBySms: async (phoneAndCode: {
+        phone: number,
+        code: number
+    }) => await request<loginSuccessData>('/user/loginBySms', {
+        method: 'GET',
+        data: phoneAndCode
+    }),
+    getUserinfoByToken: async () => await request<userInfo>('/user/userinfo', {
+        method: 'GET'
+    })
 }

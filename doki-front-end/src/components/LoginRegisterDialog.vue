@@ -79,6 +79,8 @@
 import {ref, reactive, computed} from 'vue';
 import {getSmsCode, loginByPhone, loginByPassword, setPassword} from "../api/loginAndRegister.js";
 import passwordChecker from "../utils/passwordChecker.js";
+import userService from '../api/userService.js';
+import {handleRequest} from '../api/handleRequest.js';
 import {message} from 'ant-design-vue';
 
 const hasPassword = ref(true);
@@ -104,6 +106,7 @@ const isSendingCode = ref(false); // 正在发送验证码
 const loginForm = reactive({
   password: '',
   phone: '',
+  code: ''
 });
 
 const registerForm = reactive({
@@ -144,20 +147,19 @@ const sendSmsCode = async () => {
   isSendingCode.value = true;
   try {
     // 发送验证码
-    const result = await getSmsCode(loginForm.phone);
-    if (result.code == 200) {
-      message.success("发送验证码成功！请注意查收");
-    } else {
-      message.warning("发送太频繁，请稍后再试！");
-      return;
-    }
-    countdown.value = 60; // 倒计时60秒
-    const timer = setInterval(() => {
-      countdown.value--;
-      if (countdown.value <= 0) {
-        clearInterval(timer);
-      }
-    }, 1000);
+    await handleRequest(userService.getSmsCode, {
+      onSuccess: () => {
+        message.success("验证码已发送，请注意查收~");
+        countdown.value = 60; // 倒计时60秒
+        const timer = setInterval(() => {
+          countdown.value--;
+          if (countdown.value <= 0) {
+            clearInterval(timer);
+          }
+        }, 1000);
+      },
+      params: {phone}
+    });
   } catch (error) {
     alert('验证码发送失败，请稍后重试。');
   } finally {
@@ -182,27 +184,17 @@ const handleLoginWithPassword = async () => {
 
 // 处理短信验证码登录
 const handleLoginWithSms = async () => {
-  const result = await loginByPhone(loginForm.phone, loginForm.code);
-  if (result.code == 200) {
-    message.success({
-      content: "登陆成功！",
-    });
-    // 设置token
-    localStorage.setItem('token', result.data.token);
-    if (result.data.hasPassword == "0") {
-      hasPassword.value = false;
-      return;
+  await handleRequest(userService.loginBySms, {
+    onSuccess: (data) => {
+      // 设置token
+      localStorage.setItem('token', data.token);
+      // 刷新页面
+      window.location.reload();
+    }, params: {
+      phone: loginForm.phone,
+      code: loginForm.code
     }
-    // 刷新页面重新获取用户信息
-    location.reload();
-  } else {
-    // 验证码校验失败，弹出警告
-    message.warning({
-      content: result.msg,
-    });
-    return;
-  }
-  closeDialog();
+  });
 };
 
 

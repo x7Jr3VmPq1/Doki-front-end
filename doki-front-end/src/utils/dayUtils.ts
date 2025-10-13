@@ -46,5 +46,46 @@ export const dayUtils = {
         const pad = (num: number) => String(num).padStart(2, '0');
 
         return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+    },
+    formatTimestamp(timestamp: number): string {
+        // 兼容秒级或毫秒级时间戳
+        if (timestamp < 1e12) {
+            timestamp *= 1000;
+        }
+
+        const now = Date.now();
+        const diff = now - timestamp;
+
+        // 小于1分钟
+        if (diff < 60 * 1000) {
+            return "刚刚";
+        }
+
+        // 小于1小时
+        if (diff < 60 * 60 * 1000) {
+            const minutes = Math.floor(diff / (60 * 1000));
+            return `${minutes}分钟前`;
+        }
+
+        // 小于24小时
+        if (diff < 24 * 60 * 60 * 1000) {
+            const hours = Math.floor(diff / (60 * 60 * 1000));
+            return `${hours}小时前`;
+        }
+
+        const date = new Date(timestamp);
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+
+        // 补零函数
+        const pad = (n: number) => n.toString().padStart(2, "0");
+
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        const seconds = pad(date.getSeconds());
+
+        return `${year}年${month}月${day}日 ${hours}:${minutes}:${seconds}`;
     }
+
 };

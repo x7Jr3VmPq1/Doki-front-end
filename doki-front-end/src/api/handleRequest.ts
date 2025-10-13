@@ -1,10 +1,11 @@
-import {Message} from "@arco-design/web-vue";
+import {message} from 'ant-design-vue';
 import type {ApiResponse} from "../type/resultType.ts"
 
 // 通用请求处理器
 interface HandleRequestOptions<T, P> {
     params?: P; // 接口的参数是可选的
     onSuccess?: (data: T) => any; // 成功回调也是可选的
+    onError?: (data: T) => any; //失败回调也是可选的
 }
 
 const SERVER_UNKNOWN_WRONG = '服务器未知错误';
@@ -14,17 +15,24 @@ export async function handleRequest<T, P>(
     requestFn: (params: P) => Promise<ApiResponse<T>>,
     options?: HandleRequestOptions<T, P>
 ) {
-    const {params, onSuccess} = options || {};
+    const {params, onSuccess, onError} = options || {};
 
     try {
         const response = await requestFn(params!);
         if (response.isSuccess()) {
-            onSuccess?.(response.data!);
+            if (onSuccess)
+                onSuccess?.(response.data!);
         } else {
-            Message.error(response.msg || SERVER_UNKNOWN_WRONG);
+            if (onError) {
+                onError(response.data!);
+                return;
+            }
+            console.log(requestFn + "请求失败了！")
+            console.log(response.msg);
+            message.error(response.msg || SERVER_UNKNOWN_WRONG);
         }
     } catch (err) {
         console.error(err);
-        Message.error(NETWORK_WRONG);
+        message.error(NETWORK_WRONG);
     }
 }
