@@ -77,7 +77,7 @@
 
 <script setup>
 import {ref, reactive, computed} from 'vue';
-import {getSmsCode, loginByPhone, loginByPassword, setPassword} from "../api/loginAndRegister.js";
+import {loginByPassword, setPassword} from "../api/loginAndRegister.js";
 import passwordChecker from "../utils/passwordChecker.js";
 import userService from '../api/userService.js';
 import {handleRequest} from '../api/handleRequest.js';

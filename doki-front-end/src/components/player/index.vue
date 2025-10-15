@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue'
 import {Close, Like} from '@icon-park/vue-next';
-import {likeVideoByVideoId, favoriteVideoByVideoId} from "../../api/videoService.ts";
+import likeFavoriteService from '../../api/likeFavoriteService.ts'
+import {handleRequest} from '../../api/handleRequest.ts'
 import {getUserInfo} from "../../api/userService.ts";
 import type {Video} from '../../store/videoStore.ts'
 import type {VideoInfo} from '../../api/feedService.ts'
@@ -14,7 +15,7 @@ import VideoInfoComponent from './VideoInfo.vue'
 import Controls from './Controls.vue'
 import CommentsPanel from './CommentsPanel.vue'
 // 当前登录用户ID
-const userId = ref(userStore.userInfo?.userId);
+const userId = ref(userStore.userInfo?.id);
 // 获取视频数据
 const {video} = defineProps<{
   video: VideoInfo
@@ -28,8 +29,6 @@ const userItems = ref<Video[]>([]);
 // 初始作品集合加载完毕标志
 const isInitUserItemsLoaded = ref(false);
 // 评论统计从子组件回传增量
-
-// 评论区已抽取到 CommentsPanel 组件
 
 // 播放器初始化钩子
 onMounted(async () => {
@@ -180,24 +179,9 @@ const openComments = async () => {
 // 评论相关逻辑已下放至 CommentsPanel 组件
 
 
-// 视频交互按钮方法
-// 给视频点赞
-const likeVideo = async (videoId: number) => {
-  const res = await likeVideoByVideoId(videoId);
-  if (res.code === 200) {
-    // 修改本地状态
-    video.liked = !video.liked;
-    video.liked ? video.likeCount++ : video.likeCount--;
-  }
-}
 // 给视频收藏
 const favoriteVideo = async (videoId: number) => {
-  const res = await favoriteVideoByVideoId(videoId);
-  if (res.code === 200) {
-    // 修改本地状态
-    video.favorited = !video.favorited;
-    video.favorited ? video.favoriteCount++ : video.favoriteCount--;
-  }
+  // TODO 收藏方法
 }
 
 </script>
@@ -218,8 +202,6 @@ const favoriteVideo = async (videoId: number) => {
         <InteractionButtons
             :video="video"
             :onOpenComments="openComments"
-            :onLike="likeVideo"
-            :onFavorite="favoriteVideo"
         />
       </div>
       <!-- 视频主信息 -->

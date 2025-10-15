@@ -8,13 +8,12 @@ import userService from '../../api/userService.ts'
 import type {VideoStatistics} from '../../api/analyticsService.ts'
 import type {userInfo} from '../../api/userService.ts'
 import {ref} from 'vue'
+import LikeFavoriteService from "../../api/likeFavoriteService.ts";
 import {handleRequest} from '../../api/handleRequest.ts'
 
 const props = defineProps<{
   video: VideoInfo,
   onOpenComments: () => void,
-  onLike: (videoId: number) => void,
-  onFavorite: (videoId: number) => void,
 }>()
 
 // 获取头像服务器地址
@@ -34,6 +33,7 @@ const stat = ref<VideoStatistics>({
   createdTime: 0,
   updatedTime: 0,
   deleted: 0,
+  userLiked: false
 });
 // 上传者信息
 const uploaderInfo = ref<userInfo>({
@@ -44,26 +44,45 @@ const uploaderInfo = ref<userInfo>({
   createdAt: 0,
   updatedAt: 0
 })
+
+const loaded = ref(false);
 onMounted(() => {
   // 获取视频统计信息
   handleRequest(analyticsService.getVideoStatById, {
     onSuccess(data) {
-      stat.value = data[0];
+      stat.value = data;
     },
     params: [props.video.id]
   })
   // 获取上传者信息
   handleRequest(userService.getUserinfoById, {
     onSuccess(data) {
-      uploaderInfo.value = data[0]
+      uploaderInfo.value = data[0];
     },
     params: [props.video.uploaderId]
   })
+
+  loaded.value = true;
+
 })
+
+// 视频交互按钮方法
+// 给视频点赞
+const onLike = async (videoId: number) => {
+  await handleRequest(LikeFavoriteService.videoLike, {
+    onSuccess(_) {
+      // 更改点赞的状态
+      stat.value.userLiked = !stat.value.userLiked;
+      // 增减或减少点赞数
+      stat.value.likeCount += (stat.value.userLiked ? 1 : -1);
+    },
+    params: videoId
+  })
+}
 </script>
 
 <template>
-  <div class="interaction-buttons" @click.stop>
+  <div v-if="loaded" class="interaction-buttons" @click.stop>
     <a-tooltip placement="left" color="grey">
       <template #title>
         <div style="display: flex;line-height: 1.2em;padding: 8px">
@@ -92,8 +111,8 @@ onMounted(() => {
           </div>
         </div>
       </template>
-      <div class="like bounce-on-click" @click="props.onLike(props.video.id)">
-        <heart-filled v-if="false" style="color: red"/>
+      <div class="like bounce-on-click" @click="onLike(props.video.id)">
+        <heart-filled v-if="stat.userLiked" style="color: red"/>
         <heart-filled v-else/>
         <div style="font-size: 20px;padding-top: 5px">{{ stat.likeCount }}</div>
       </div>
@@ -125,7 +144,7 @@ onMounted(() => {
           </div>
         </div>
       </template>
-      <div class="star bounce-on-click" @click="props.onFavorite(props.video.id)">
+      <div class="star bounce-on-click">
         <star-filled v-if="false" style="color: goldenrod"/>
         <star-filled v-else/>
         <div style="font-size: 20px;padding-top: 5px">{{ stat.favoriteCount }}</div>
