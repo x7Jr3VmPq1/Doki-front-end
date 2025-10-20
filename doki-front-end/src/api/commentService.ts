@@ -1,44 +1,70 @@
-import instance from './axiosInstance'; // 引入axios实例
+import request from './gateway.ts'
 
-import {useUserStore} from "../store/userInfoStore.ts";
-
-const userStore = useUserStore()
-// 获取视频评论
-const getVideoCommentsByVideoId = async (videoId: number, cursor: number) => {
-    const response = await instance.get(`/video/comments/${videoId}`, {
-        params: {
-            cursor: cursor ? cursor : 0,
-        }
-    });
-    return response.data;
+// 评论相关的类型定义
+export interface VideoCommentDTO {
+    videoId: number;
+    content: string;
+    imageBase64?: string;
 }
 
-// 添加视频评论
-const addVideoComment = async (videoId: number, comment: string, parentCommentId: number | null, imgUrl: string) => {
-    const response = await instance.post(`/video/comments/add`, {
-        userId: userStore.userInfo?.userId,
-        videoId: videoId,
-        content: comment,
-        parentCommentId: parentCommentId,
-        imgUrl: imgUrl
-    });
-    return response.data;
-}
-// 删除视频评论
-const deleteVideoComment = async (commentId: number) => {
-    const response = await instance.delete(`/video/comments/del/${commentId}`);
-    return response.data;
+export interface VideoComments {
+    id: string;
+    userId: number;
+    videoId: number;
+    content: string;
+    imgUrl: string;
+    createdAt: number;
+    likeCount: number;
+    childCount: number;
+    parentCommentId: string;
+    replyTargetId: string
+    isRoot: boolean;
+    score: number;
 }
 
-// 给评论点赞
-const likeCommentByCommentId = async (commentId: number) => {
-    const response = await instance.post(`/video/comments/like/${commentId}`);
-    return response.data;
+export interface VideoCommentsVO {
+    comments: VideoComments,
+    liked: boolean;
+    user: {
+        username: string;
+        bio: string;
+        id: number;
+        avatarUrl: string;
+    };
 }
 
-export {
-    getVideoCommentsByVideoId,
-    addVideoComment,
-    deleteVideoComment,
-    likeCommentByCommentId
+export interface CommentListResponse {
+    list: VideoCommentsVO[];
+    hasMore: boolean;
+}
+
+export default {
+    // 添加视频评论
+    addComment: (videoComment: VideoCommentDTO) => request<VideoComments>('/comment', {
+        method: 'POST',
+        data: videoComment
+    }),
+
+    // 删除视频评论
+    deleteComment: (commentId: string) => request<void>('/comment', {
+        method: 'DELETE',
+        data: {commentId}
+    }),
+
+    // 获取视频评论列表
+    getComments: (params: {
+        videoId: number;
+        score?: number;
+        lastId?: string;
+        parentCommentId?: string;
+    }) => request<CommentListResponse>('/comment/get', {
+        method: 'GET',
+        data: params
+    }),
+
+    // 评论点赞
+    likeComment: (commentId: string) => request<void>('/comment/action/like', {
+        method: 'GET',
+        data: {commentId}
+    })
 }

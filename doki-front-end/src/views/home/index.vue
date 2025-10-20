@@ -6,6 +6,7 @@ import {onMounted, ref} from "vue";
 import feedService from '../../api/feedService.ts'
 import type {VideoInfo} from '../../api/feedService.ts'
 import {handleRequest} from '../../api/handleRequest.ts'
+import videoProcessingService from '../../api/videoProcessingService.ts'
 
 const videos = ref<VideoInfo[]>([]);
 onMounted(async () => {
@@ -17,10 +18,11 @@ onMounted(async () => {
   //         videoUrl: item.videoUrl.replace(/^"|"$/g, '').replace(/\\/g, '/')
   //       }));
   //     })
-  await handleRequest(feedService.getRandomVideos, {
+  await handleRequest(videoProcessingService.getVideoInfo, {
     onSuccess(data) {
-      videos.value = data;
+      videos.value[0] = data; // ID为10的视频用来测试
     },
+    params: 10
   })
 })
 </script>

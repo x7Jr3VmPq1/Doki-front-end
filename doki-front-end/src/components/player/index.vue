@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue'
 import {Close, Like} from '@icon-park/vue-next';
-import likeFavoriteService from '../../api/likeFavoriteService.ts'
-import {handleRequest} from '../../api/handleRequest.ts'
-import {getUserInfo} from "../../api/userService.ts";
 import type {Video} from '../../store/videoStore.ts'
 import type {VideoInfo} from '../../api/feedService.ts'
 import {useUserStore} from "../../store/userInfoStore.ts";
@@ -145,14 +142,14 @@ const clearScreen = ref(false);
 // 拓展面板key
 const activeKey = ref('2');
 // 处理选项卡切换时的逻辑
-const handleTabChange = async (key: string) => {
-  if (key === '1' && !isInitUserItemsLoaded.value) {
-    // 获取用户作品
-    const res = await getUserInfo(video.userName);
-    userItems.value.push(...res.data.videos);
-    isInitUserItemsLoaded.value = true;
-  }
-}
+// const handleTabChange = async (key: string) => {
+//   if (key === '1' && !isInitUserItemsLoaded.value) {
+//     // 获取用户作品
+//     const res = await getUserInfo(video.userName);
+//     userItems.value.push(...res.data.videos);
+//     isInitUserItemsLoaded.value = true;
+//   }
+// }
 
 // 打开用户信息选项卡
 const openUserPage = () => {
@@ -266,9 +263,8 @@ const favoriteVideo = async (videoId: number) => {
           </div>
 
         </a-tab-pane>
-        <a-tab-pane key="2" :tab='`评论 (${video.commentCount})`' force-render>
-          <CommentsPanel :videoId="video.id" :userId="userId"
-                         @countChange="(delta:number)=> video.commentCount += delta"/>
+        <a-tab-pane key="2" :tab='`评论 (1)`' force-render>
+          <CommentsPanel :videoId="video.id" :userId="userId"/>
         </a-tab-pane>
         <a-tab-pane key="3" tab="相关推荐">Content...</a-tab-pane>
       </a-tabs>
