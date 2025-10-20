@@ -31,6 +31,8 @@ export interface VideoCommentsVO {
         id: number;
         avatarUrl: string;
     };
+    // 可选的子评论列表
+    replies?: CommentListResponse;
 }
 
 export interface CommentListResponse {

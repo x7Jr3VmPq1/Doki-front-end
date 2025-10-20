@@ -20,8 +20,9 @@ export async function handleRequest<T, P>(
     try {
         const response = await requestFn(params!);
         if (response.isSuccess()) {
-            if (onSuccess)
+            if (onSuccess) {
                 onSuccess?.(response.data!);
+            }
         } else {
             if (onError) {
                 onError(response.data!);
