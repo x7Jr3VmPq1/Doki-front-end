@@ -28,8 +28,6 @@ onMounted(async () => {
   if (localStorage.getItem('token')) {
     await handleRequest(userService.getUserinfoByToken, {
       onSuccess(data) {
-        console.log('获取用户信息成功：')
-        console.log(data);
         userStore.setBaseUserinfo(data)
         userStore.userInfo.isLogin = true;
       },
@@ -45,11 +43,6 @@ onMounted(async () => {
   height: 100vh;
 }
 
-.sidebar-container {
-  width: 200px;
-  background-color: skyblue;
-  transition: width 0.3s ease;
-}
 
 .main-container {
   flex: 1;
@@ -63,22 +56,9 @@ onMounted(async () => {
   overflow: hidden;
 }
 
-/* 响应式设计 */
-@media (max-width: 1024px) {
-  .sidebar-container {
-    width: 160px;
-  }
+.sidebar-container {
+  background-color: skyblue;
+  transition: width 0.3s ease;
 }
 
-@media (max-width: 768px) {
-  .sidebar-container {
-    width: 80px;
-  }
-}
-
-@media (max-width: 480px) {
-  .sidebar-container {
-    width: 60px;
-  }
-}
 </style>

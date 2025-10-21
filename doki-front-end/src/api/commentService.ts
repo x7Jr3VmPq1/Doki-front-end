@@ -4,9 +4,9 @@ import request from './gateway.ts'
 export interface VideoCommentDTO {
     videoId: number;
     content: string;
-    parentCommentId?: string;
-    replyTargetId?: string;
-    image?: string;
+    parentCommentId?: string | null;
+    replyTargetId?: string | null;
+    image?: string | null;
 }
 
 export interface VideoComments {

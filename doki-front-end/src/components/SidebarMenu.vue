@@ -133,8 +133,6 @@ const selectItem = (key: string) => {
   display: flex; /* 让其内容居中，虽然目前没有内容 */
   align-items: center;
   justify-content: center;
-  /* 可以在这里添加一个简单的形状或字母作为占位符 */
-  /* content: ''; */
 }
 
 .live-tag {
@@ -164,35 +162,40 @@ const selectItem = (key: string) => {
   .sidebar-menu {
     padding: 16px 8px;
   }
-  
+
   .menu-item {
     padding: 10px 15px;
     font-size: 14px;
   }
-  
+
   .icon-placeholder {
     margin-right: 8px;
   }
+
+  .menu-label {
+    display: none; /* 隐藏文字，只显示图标 */
+  }
+
 }
 
 @media (max-width: 768px) {
   .sidebar-menu {
     padding: 16px 5px;
   }
-  
+
   .menu-item {
     padding: 10px 8px;
     justify-content: center;
   }
-  
+
   .menu-label {
     display: none; /* 隐藏文字，只显示图标 */
   }
-  
+
   .icon-placeholder {
     margin-right: 0;
   }
-  
+
   .divider {
     margin: 16px 8px;
   }
@@ -202,14 +205,19 @@ const selectItem = (key: string) => {
   .sidebar-menu {
     padding: 12px 4px;
   }
-  
+
   .menu-item {
     padding: 8px 4px;
     margin-bottom: 8px;
   }
-  
+
   .divider {
     margin: 12px 4px;
   }
+
+  .menu-label {
+    display: none; /* 隐藏文字，只显示图标 */
+  }
+
 }
 </style>

@@ -247,7 +247,6 @@ onUnmounted(() => {
   align-items: center;
   gap: 0;
   pointer-events: auto;
-  /* 简洁的垂直控制器 */
   width: 60px;
 }
 

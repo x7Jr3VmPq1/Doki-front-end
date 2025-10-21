@@ -197,16 +197,6 @@ const hotTopicsData: HotTopic[] = [
   {text: '清朝最后一次早朝'}
 ]
 
-// 抖音热点数据
-/*const trendingTopics: TrendingTopic[] = [
-  {text: '推动不同文明交流对话和谐共生'},
-  {text: '今年第1号台风"蝴蝶"生成', warning: true},
-  {text: '国台办：重点监管台"资通电军"'},
-  {text: '2025中国网络文明大会'},
-  {text: '中美经贸磋商达成协议框架'},
-  {text: '韩国军方停止对朝扩音广播'}
-]*/
-// 热点数据
 const trendingTopics = ref(['']);
 
 // 计算属性
@@ -355,6 +345,7 @@ onUnmounted(() => {
 <style scoped>
 .search-container {
   position: relative;
+  height: 90%;
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
@@ -370,11 +361,7 @@ onUnmounted(() => {
   border-radius: 8px;
   padding: 0;
   transition: all 0.2s ease;
-  border: 1px solid #d0d7de;
-}
-
-.search-box:focus-within {
-  border-color: #d0d7de;
+  border: 1px solid black;
 }
 
 .search-input {
@@ -384,7 +371,6 @@ onUnmounted(() => {
   font-size: 16px;
   padding: 12px 16px;
   background: transparent;
-  color: #24292e;
   line-height: 1.5;
 }
 
@@ -507,11 +493,6 @@ onUnmounted(() => {
 
 .history-item:hover {
   color: #0969da;
-}
-
-.history-icon {
-  color: #656d76;
-  flex-shrink: 0;
 }
 
 .history-text {

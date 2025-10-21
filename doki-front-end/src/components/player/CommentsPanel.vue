@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import {defineProps, onMounted, ref, onBeforeUnmount, createVNode} from 'vue'
+import {defineProps, onMounted, ref, reactive, onBeforeUnmount, createVNode, watch} from 'vue'
 
-import CommentService, {type CommentListResponse, type VideoCommentsVO} from '../../api/commentService.js'
+import {type CommentListResponse, type VideoComments, type VideoCommentsVO} from '../../api/commentService.js'
 import commentService from '../../api/commentService.js'
 import {handleRequest} from '../../api/handleRequest.ts'
 import {useUserStore} from '../../store/userInfoStore'
 import CommentItem from './CommentItem.vue'
 import type {commentStatus} from './CommentItem.vue'
 import CommentInput from "./CommentInput.vue";
-import {Modal, message} from 'ant-design-vue';
 import DokiLoading from "../Doki-Loading.vue"
-import {ToTop} from '@icon-park/vue-next'
-
+import {Modal, message} from 'ant-design-vue'
 
 const userStore = useUserStore();
 
@@ -22,29 +20,32 @@ const commentLoaded = ref(false); // 评论是否加载完毕标记
 // 父组件传递来的视频ID
 const props = defineProps({
   videoId: Number,
+  open: Boolean
 })
 
 const commentsArray = ref<CommentListResponse>(); // 评论数组
 
 const InnerCommentsArea = ref<HTMLDivElement | null>(null); // 评论展示区盒子引用
 
-// 初始化钩子
+// 初始化方法
 let observer: IntersectionObserver | null = null;
-
 const isRootLoading = ref(true); // 根评论正在加载标记
+// 只有在评论抽屉打开，并且还没初始化评论时才开始加载评论
+watch(() => props.open, async () => {
+  if (!commentLoaded.value) {
+    await handleRequest(commentService.getComments, {
+      async onSuccess(data) {
+        commentsArray.value = data;
+        commentLoaded.value = true; // 初始评论加载完毕
+      },
+      params: {videoId: props.videoId!}
+    })
+    isRootLoading.value = false;
+  }
+})
 
+// 添加无限滚动方法
 onMounted(async () => {
-  // 模拟加载效果
-  await new Promise(resolve => setTimeout(resolve, 500));
-  await handleRequest(commentService.getComments, {
-    async onSuccess(data) {
-      commentsArray.value = data;
-      commentLoaded.value = true; // 初始评论加载完毕
-    },
-    params: {videoId: props.videoId!}
-  })
-  isRootLoading.value = false;
-  // 添加无限加载方法
   if (!loadMoreRef.value) return;
 
   observer = new IntersectionObserver(
@@ -58,17 +59,14 @@ onMounted(async () => {
               return;
             // 获取最后一条评论
             let lastComment = commentsArray.value.list[commentsArray.value.list.length - 1];
+            isRootLoading.value = true;
             handleRequest(commentService.getComments, {
               async onSuccess(data) {
                 if (commentsArray.value) {
-                  // 模拟加载效果
-                  isRootLoading.value = true;
-                  await new Promise(resolve => setTimeout(resolve, 500));
                   // 追加更多评论
                   commentsArray.value.list.push(...data.list);
                   // 更新hasMore状态
                   commentsArray.value.hasMore = data.hasMore;
-
                   isRootLoading.value = false;
                 }
               }, params: {
@@ -122,7 +120,6 @@ const isRepliesLoading = ref(''); // 空串代表加载完毕，如果正在加�
 const handleGetReplies = async (rootComment: VideoCommentsVO) => {
   // 模拟加载效果
   isRepliesLoading.value = rootComment.comments.id;
-  await new Promise(resolve => setTimeout(resolve, 500));
   // 已经存在回复列表，进行追加逻辑
   if (rootComment.replies) {
     // 没有更多回复，不再加载
@@ -158,12 +155,11 @@ const handleGetReplies = async (rootComment: VideoCommentsVO) => {
 }
 
 // 删除评论处理方法
-const handleDelete = (status: commentStatus) => {
-  console.log(status)
+const handleDelete = async (status: commentStatus) => {
   Modal.confirm({
     content: createVNode('div', {style: 'color:black;'}, '确定要删除这条评论吗？'),
     onOk() {
-      handleRequest(CommentService.deleteComment, {
+      handleRequest(commentService.deleteComment, {
         onSuccess(_) {
           message.success("删除成功！")
           // 删除回复
@@ -181,18 +177,49 @@ const handleDelete = (status: commentStatus) => {
 }
 // 评论点赞处理方法
 const handleLike = (status: commentStatus) => {
+  const targetComment = status.commentObject;
   handleRequest(commentService.likeComment, {
     onSuccess(_) {
-      status.commentObject.comments.likeCount += (status.commentObject.liked ? -1 : 1);
-      status.commentObject.liked = !status.commentObject.liked;
+      targetComment.comments.likeCount += (targetComment.liked ? -1 : 1);
+      targetComment.liked = !targetComment.liked;
     },
-    params: status.commentObject.comments.id
+    params: targetComment.comments.id
   })
+}
+
+// 评论添加处理方法，添加逻辑在input组件内部，这里处理添加成功后的逻辑
+const handleAddReply = (comment: VideoComments) => {
+  // 1. 构建一个新的VO对象用来存储新增加的评论
+  // 从userStore中获取用户信息
+  const user = userStore.userInfo;
+  const newComment = {
+    comments: comment,
+    user: {
+      username: user.username,
+      bio: user.bio,
+      id: user.id,
+      avatarUrl: user.avatarUrl
+    },
+    liked: false
+  }
+  // 2. 把这个对象插入到合适的位置，如果它是根评论，插入到最上边
+  if (comment.isRoot) {
+    commentsArray.value?.list.unshift(newComment);
+  } else {
+    // 如果它是回复，则把它插入到回复列表的最上边
+    // 从status中获取目标根评论的索引
+    const index = currentCommentStatus.value?.rootIndex!
+    const targetList = commentsArray.value?.list[index].replies;
+    targetList?.list.unshift(newComment);
+    // TODO 回复新添加的评论时会出现不显示评论
+  }
+  // 清除回复状态
+  clearReplyStatus();
 }
 </script>
 
 <template>
-  <div class="comments" ref="commentsArea" style="height: 100%; display: flex;flex-direction: column">
+  <div class="comments">
     <div style="flex: 1;overflow-y: auto;position: relative" ref="InnerCommentsArea">
       <div class="comment-list" v-if="commentLoaded">
         <div
@@ -202,7 +229,7 @@ const handleLike = (status: commentStatus) => {
           <div class="root-comments">
             <CommentItem
                 :commentObject="roots"
-                :key="rootIndex"
+                :key="roots.comments.id"
                 :root-index="rootIndex"
                 @clickReply="handleReply"
                 @clickDelete="handleDelete"
@@ -215,7 +242,7 @@ const handleLike = (status: commentStatus) => {
               <CommentItem
                   v-for="(reply,replyIndex) in roots.replies.list"
                   :commentObject="reply"
-                  :key="replyIndex"
+                  :key="reply.comments.id"
                   :root-index="rootIndex"
                   :reply-index="replyIndex"
                   @clickReply="handleReply"
@@ -242,17 +269,23 @@ const handleLike = (status: commentStatus) => {
     </div>
     <!-- 评论输入框 -->
     <CommentInput
-        :reply-target-object="currentCommentStatus?.commentObject"
+        :status="currentCommentStatus ?? null"
+        :videoId="props.videoId!"
         @deleteReply="handleDeleteReply"
+        @addComment="handleAddReply"
     ></CommentInput>
   </div>
 </template>
 
 <style scoped>
+/* 整体盒子样式 */
 .comments {
-  padding: 15px;
+  padding: 0 15px 15px;
   width: 100%;
   position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column
 }
 
 /* 评论列表样式 */

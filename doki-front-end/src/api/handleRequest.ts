@@ -18,6 +18,8 @@ export async function handleRequest<T, P>(
     const {params, onSuccess, onError} = options || {};
 
     try {
+        // 模拟一点延迟
+        await new Promise(resolve => setTimeout(resolve, 500));
         const response = await requestFn(params!);
         if (response.isSuccess()) {
             if (onSuccess) {

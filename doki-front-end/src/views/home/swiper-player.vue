@@ -36,13 +36,16 @@ import "swiper/css/pagination"
 import Player from "../../components/player/index.vue";
 import SwiperController from "../../components/player/SwiperController.vue";
 import feedService from '../../api/feedService.ts'
+import type {VideoInfo} from '../../api/feedService.ts'
 import {handleRequest} from '../../api/handleRequest.ts'
 
 defineEmits(['_virtualUpdated']);
 
+import type { PropType } from 'vue'
+
 const props = defineProps({
   videos: {
-    type: Array,
+    type: Array as PropType<VideoInfo[]>,
     default: () => []
   },
   index: {
@@ -174,7 +177,6 @@ onMounted(() => {
 }
 
 .video-container {
-  width: calc(100% - 80px); /* 为控制器留出空间 */
   height: 100%;
   position: relative;
   margin-right: 80px; /* 确保播放器不延伸到控制器区域 */

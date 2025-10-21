@@ -263,8 +263,8 @@ const favoriteVideo = async (videoId: number) => {
           </div>
 
         </a-tab-pane>
-        <a-tab-pane key="2" :tab='`评论 (1)`' force-render>
-          <CommentsPanel :videoId="video.id"/>
+        <a-tab-pane key="2" :tab='`评论`' force-render>
+          <CommentsPanel :videoId="video.id" :open="open"/>
         </a-tab-pane>
         <a-tab-pane key="3" tab="相关推荐">Content...</a-tab-pane>
       </a-tabs>
@@ -382,42 +382,6 @@ const favoriteVideo = async (videoId: number) => {
       height: calc(100% - 40px);
       position: relative;
 
-      .interaction-buttons {
-        user-select: none;
-        display: flex;
-        flex-direction: column; /* 垂直排列 */
-        gap: 20px;
-        line-height: 1;
-        font-size: 25px;
-        color: white;
-        position: absolute;
-        z-index: 100;
-        bottom: 10%;
-        right: 3%;
-        text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
-
-        .like, .comment, .star, .share {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .user-avatar {
-          position: relative;
-
-          .follow-button {
-            cursor: pointer;
-            color: rgba(254, 44, 85);
-            font-size: 20px;
-            position: absolute;
-            bottom: -8px;
-            right: 10px;
-            z-index: 1;
-          }
-        }
-      }
-
       video {
         width: 100%;
         height: 100%;
@@ -428,113 +392,6 @@ const favoriteVideo = async (videoId: number) => {
         width: 100%;
         height: 100%;
         object-fit: contain;
-      }
-    }
-
-    .player-controls {
-      position: absolute;
-      text-align: center;
-      bottom: 0;
-      left: 0;
-      display: flex;
-      color: white;
-      background-color: rgba(0, 0, 0, 1);
-      transition: width 0.32s ease;
-      height: 40px;
-      width: 100%;
-
-      .player-progress {
-        line-height: 1;
-        position: absolute;
-        width: 100%;
-        left: 0;
-
-        bottom: 20px;
-        z-index: 5;
-      }
-
-      .play-button {
-        line-height: 1;
-        display: flex;
-        cursor: pointer;
-        margin-left: 10px;
-        margin-top: 2px;
-        font-size: 30px;
-      }
-
-      .time {
-        margin: 15px 20px;
-        line-height: 1;
-        color: white;
-        font-size: 15px;
-      }
-
-      .player-others {
-        flex: 1;
-        display: flex;
-        line-height: 1;
-        gap: 20px;
-        margin-right: 15px;
-        justify-content: flex-end;
-        align-items: center;
-
-        .clear-screen-button {
-          font-size: 1.1em;
-          gap: 5px;
-
-          div {
-            display: flex;
-            align-items: center;
-          }
-
-          display: flex;
-        }
-
-        svg {
-          cursor: pointer;
-          width: 20px;
-          height: 20px;
-        }
-      }
-    }
-
-    .player-controls.shrink {
-      width: 70%;
-    }
-
-
-    .video-info {
-      user-select: none;
-      line-height: 1.5;
-      display: flex;
-      flex-direction: column; /* 垂直排列 */
-      position: absolute;
-      left: 3%;
-      bottom: 10%;
-      z-index: 0;
-
-      .user-name {
-        font-size: 1.5em;
-        margin-right: 1em;
-      }
-
-      .upload-time {
-        margin-top: 5px;
-      }
-
-      .video-title {
-        font-size: 1.2em;
-        margin-right: 0.5em;
-      }
-
-      .video-tags {
-        font-size: 1.2em;
-        color: gold;
-      }
-
-      .video-tags:hover {
-        cursor: pointer;
-        color: orange;
       }
     }
 
@@ -558,11 +415,6 @@ const favoriteVideo = async (videoId: number) => {
   }
 
   /* 强制覆盖抽屉的padding */
-
-  .player-comments {
-    width: 100%;
-    height: 100%;
-  }
 
   .other-draw {
     height: 100%;
@@ -630,103 +482,6 @@ const favoriteVideo = async (videoId: number) => {
       }
     }
 
-    .comments {
-      padding: 15px;
-      width: 100%;
-
-
-      .comment-input {
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        overflow: hidden;
-
-        .reply-target {
-          background-color: rgba(255, 255, 255, 0.1);
-          display: flex;
-          text-indent: 1em;
-          position: relative;
-          color: #bbbfc6;
-
-          .reply-target-content {
-            text-align: left;
-            width: 80%;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-          }
-
-          .delete-btn {
-            color: grey;
-            cursor: pointer;
-            width: 15px;
-            position: absolute;
-            right: 10px;
-            top: 3px;
-          }
-
-          .delete-btn:hover {
-            color: white;
-          }
-        }
-
-        .functions {
-          user-select: none;
-          display: flex;
-          align-items: flex-end;
-          flex-direction: row-reverse;
-          gap: 10px;
-          font-size: 20px;
-          margin-right: 10px;
-
-          .send-button {
-            .arrow-circle-up {
-              color: red;
-            }
-          }
-
-          .upload-picture {
-            display: flex;
-            position: relative;
-            padding: 10px;
-            flex: 1;
-
-            .delete-btn {
-              cursor: pointer;
-              width: 20px;
-              height: 20px;
-              position: absolute;
-              left: 80px;
-              top: -2px;
-              color: white;
-            }
-          }
-
-          span {
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.5);
-          }
-
-          span:hover {
-            color: white;
-          }
-        }
-      }
-
-      .comment-input:hover {
-        border: 2px solid rgba(255, 255, 255, 0.2);
-      }
-
-      .report-delete-btn {
-        cursor: pointer;
-        position: absolute;
-        right: 10px;
-        top: 0;
-        opacity: 0;
-      }
-
-
-    }
-
     .close-button {
       cursor: pointer;
       height: 25px;
@@ -755,22 +510,5 @@ const favoriteVideo = async (videoId: number) => {
   z-index: -1;
 }
 
-.bounce-on-click {
-  transition: transform 0.15s ease;
-  cursor: pointer;
-}
-
-.bounce-on-click:hover {
-  transform: scale(1.05);
-}
-
-.bounce-on-click:active {
-  transform: scale(0.9);
-}
-
-.comment-highlight {
-  /* 评论高亮样式 */
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0)) !important;
-}
 </style>
 

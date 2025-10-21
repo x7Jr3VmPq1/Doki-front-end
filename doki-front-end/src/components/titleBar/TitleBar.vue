@@ -52,7 +52,7 @@ const toCreator = () => {
           <profile-card></profile-card>
         </template>
         <template #trigger>
-          <div style="width: 40px;height: 40px">
+          <div style="height: 40px">
             <div class="avatar-wrapper">
               <img style="object-fit: contain;width:100%;height: 100%;"
                    :src="avatarUrl" :alt="''">
@@ -104,16 +104,13 @@ const toCreator = () => {
 .title-bar {
   display: flex;
   width: 100%;
-  padding-top: 10px;
-  padding-bottom: 10px;
   box-sizing: border-box;
+  padding: 5px;
 
   .search-input-area {
     width: 80%;
     text-align: center;
     display: flex;
-    padding-top: 10px;
-    padding-bottom: 10px;
     position: relative;
   }
 
@@ -121,8 +118,7 @@ const toCreator = () => {
     display: flex;
     width: 20%;
     flex-direction: row-reverse;
-    padding-top: 10px;
-    padding-right: 20px;
+    margin-top: 5px;
     gap: 20px;
     box-sizing: border-box;
 
@@ -161,7 +157,6 @@ const toCreator = () => {
   }
 }
 
-/* 响应式设计 */
 @media (max-width: 1024px) {
   .title-bar {
     .search-input-area {

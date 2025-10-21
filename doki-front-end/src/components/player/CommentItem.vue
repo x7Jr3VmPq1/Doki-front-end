@@ -217,7 +217,7 @@ const onClickLike = () => {
 }
 
 .comment-highlight {
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
   border-radius: 8px;
   box-sizing: border-box;
   width: calc(100% - 16px);

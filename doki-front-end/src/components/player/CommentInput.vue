@@ -1,28 +1,34 @@
 <script setup lang="ts">
 import {GrinningFace, AtSign, Picture, ArrowCircleUp, Delete} from '@icon-park/vue-next'
-import {ref, type Ref, defineProps, defineEmits, reactive} from 'vue';
-import type {VideoCommentsVO, VideoCommentDTO} from '../../api/commentService.ts'
+import {ref, type Ref, defineProps, defineEmits, reactive, watch} from 'vue';
+import {handleRequest} from "../../api/handleRequest.ts";
+import commentService from "../../api/commentService.ts";
+import type {commentStatus} from './CommentItem.vue'
+import type {VideoCommentDTO, VideoComments} from '../../api/commentService.ts'
 
 const props = defineProps<{
-  replyTargetObject: VideoCommentsVO | undefined
+  status: commentStatus | null, // 父组件传递的被点击回复按钮评论的对象引用
+  videoId: number
 }>();
 
 const emit = defineEmits<{
-  (event: 'deleteReply', replyTargetObject: VideoCommentsVO | undefined): void
+  (event: 'deleteReply'): void,
+  (event: 'addComment', comments: VideoComments): void
 }>()
 
 // 评论收集表单
 const commentForm = reactive<VideoCommentDTO>({
-  videoId: 0,
+  videoId: props.videoId,
   content: '',
-  parentCommentId: '',
-  replyTargetId: '',
   image: ''
 });
 
 // 删除回复目标事件
 const onClickDeleteReply = () => {
-  emit('deleteReply', props.replyTargetObject)
+  // 删除表单中可能存在的父评论和回复目标评论id
+  delete commentForm.parentCommentId;
+  delete commentForm.replyTargetId;
+  emit('deleteReply')
 }
 
 // 图片上传与预览
@@ -46,17 +52,44 @@ const handlePictureUpload = (event: Event) => {
   }
 };
 
+// 获取目标评论对象和用户信息
+let targetComment: any;
+let userInfo: any;
+watch(() => props.status, () => {
+  targetComment = props.status?.commentObject.comments;
+  userInfo = props.status?.commentObject.user;
+})
+
 // 处理提交评论
-const handleClickSend = () => {
-  console.log(commentForm)
+const handleClickSend = async () => {
+  // 如果存在回复目标，添加根评论ID和目标评论ID
+  if (targetComment) {
+    // 从status中获取回复目标评论对象
+    commentForm.parentCommentId = targetComment.isRoot ?
+        targetComment.id : targetComment.parentCommentId
+    commentForm.replyTargetId = targetComment.id;
+  }
+  // 发送请求
+  await handleRequest(commentService.addComment, {
+    onSuccess(data) {
+      // 把添加的评论发回父组件
+      emit('addComment', data)
+    },
+    params: commentForm
+  })
+  // 清空表单
+  commentForm.content = '';
+  commentForm.image = '';
+  delete commentForm.parentCommentId;
+  delete commentForm.replyTargetId;
 }
 </script>
 
 <template>
   <div class="comment-input" style="max-height: 50%;display: flex;flex-direction: column">
-    <div class="reply-target" v-if="replyTargetObject">
+    <div class="reply-target" v-if="status">
       <div class="reply-target-content">{{
-          '回复@' + (replyTargetObject.user.username + ': ' + replyTargetObject.comments.content) + (replyTargetObject.comments.imgUrl ? '[图片]' : '')
+          '回复@' + (userInfo.username + ': ' + targetComment.content) + (targetComment.imgUrl ? '[图片]' : '')
         }}
       </div>
       <Delete class="delete-btn" @click="onClickDeleteReply"></Delete>
@@ -70,7 +103,7 @@ const handleClickSend = () => {
     </div>
     <div class="functions">
       <!-- 提交评论按钮 -->
-      <div class="send-button" @click="handleClickSend">
+      <div class="send-button" @click="handleClickSend" v-if="commentForm.content">
         <arrow-circle-up/>
       </div>
       <!-- 表情选择器（暂不可用） -->
