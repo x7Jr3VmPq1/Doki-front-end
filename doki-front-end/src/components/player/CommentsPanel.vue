@@ -9,6 +9,8 @@ import CommentItem from './CommentItem.vue'
 import type {commentStatus} from './CommentItem.vue'
 import CommentInput from "./CommentInput.vue";
 import {Modal, message} from 'ant-design-vue';
+import DokiLoading from "../Doki-Loading.vue"
+import {ToTop} from '@icon-park/vue-next'
 
 
 const userStore = useUserStore();
@@ -19,7 +21,7 @@ const commentLoaded = ref(false); // 评论是否加载完毕标记
 
 // 父组件传递来的视频ID
 const props = defineProps({
-  videoId: Number
+  videoId: Number,
 })
 
 const commentsArray = ref<CommentListResponse>(); // 评论数组
@@ -29,14 +31,19 @@ const InnerCommentsArea = ref<HTMLDivElement | null>(null); // 评论展示区�
 // 初始化钩子
 let observer: IntersectionObserver | null = null;
 
+const isRootLoading = ref(true); // 根评论正在加载标记
+
 onMounted(async () => {
+  // 模拟加载效果
+  await new Promise(resolve => setTimeout(resolve, 500));
   await handleRequest(commentService.getComments, {
-    onSuccess(data) {
+    async onSuccess(data) {
       commentsArray.value = data;
-      commentLoaded.value = true; // 评论加载完毕
+      commentLoaded.value = true; // 初始评论加载完毕
     },
     params: {videoId: props.videoId!}
   })
+  isRootLoading.value = false;
   // 添加无限加载方法
   if (!loadMoreRef.value) return;
 
@@ -52,12 +59,17 @@ onMounted(async () => {
             // 获取最后一条评论
             let lastComment = commentsArray.value.list[commentsArray.value.list.length - 1];
             handleRequest(commentService.getComments, {
-              onSuccess(data) {
+              async onSuccess(data) {
                 if (commentsArray.value) {
+                  // 模拟加载效果
+                  isRootLoading.value = true;
+                  await new Promise(resolve => setTimeout(resolve, 500));
                   // 追加更多评论
                   commentsArray.value.list.push(...data.list);
                   // 更新hasMore状态
                   commentsArray.value.hasMore = data.hasMore;
+
+                  isRootLoading.value = false;
                 }
               }, params: {
                 videoId: lastComment.comments.videoId,
@@ -69,9 +81,9 @@ onMounted(async () => {
         }
       },
       {
-        root: null, // 监听整个视口
-        rootMargin: "0px",
-        threshold: 0.1,
+        root: InnerCommentsArea.value, // 监听评论展示盒子
+        rootMargin: "50px", // 距离底部50px时触发加载
+        threshold: 0,
       }
   );
   observer.observe(loadMoreRef.value);
@@ -106,13 +118,17 @@ const handleDeleteReply = () => {
 }
 
 // 获取回复方法
-const handleGetReplies = (rootComment: VideoCommentsVO) => {
+const isRepliesLoading = ref(''); // 空串代表加载完毕，如果正在加载中，它的值是根评论的id
+const handleGetReplies = async (rootComment: VideoCommentsVO) => {
+  // 模拟加载效果
+  isRepliesLoading.value = rootComment.comments.id;
+  await new Promise(resolve => setTimeout(resolve, 500));
   // 已经存在回复列表，进行追加逻辑
   if (rootComment.replies) {
     // 没有更多回复，不再加载
     if (!rootComment.replies.hasMore)
       return;
-    handleRequest(commentService.getComments, {
+    await handleRequest(commentService.getComments, {
       onSuccess(data) {
         if (rootComment.replies) {
           rootComment.replies?.list.push(...(data.list))
@@ -126,7 +142,7 @@ const handleGetReplies = (rootComment: VideoCommentsVO) => {
     })
     // 还没有回复列表，创建一个新数组
   } else {
-    handleRequest(commentService.getComments, {
+    await handleRequest(commentService.getComments, {
       onSuccess(data) {
         rootComment.replies = data;
       }, params: {
@@ -137,6 +153,8 @@ const handleGetReplies = (rootComment: VideoCommentsVO) => {
   }
   // 减去两条总数
   rootComment.comments.childCount -= 2;
+  // 加载完毕
+  isRepliesLoading.value = '';
 }
 
 // 删除评论处理方法
@@ -175,7 +193,7 @@ const handleLike = (status: commentStatus) => {
 
 <template>
   <div class="comments" ref="commentsArea" style="height: 100%; display: flex;flex-direction: column">
-    <div style="flex: 1;overflow-y: auto" ref="InnerCommentsArea">
+    <div style="flex: 1;overflow-y: auto;position: relative" ref="InnerCommentsArea">
       <div class="comment-list" v-if="commentLoaded">
         <div
             v-for="(roots,rootIndex) in commentsArray?.list"
@@ -205,18 +223,22 @@ const handleLike = (status: commentStatus) => {
                   @clickLike="handleLike"
               />
             </div>
-            <div v-if="roots.comments.childCount > 0" class="getMoreText" @click="handleGetReplies(roots)">—— 展开{{
-                roots.comments.childCount
-              }}条回复
-            </div>
+            <span v-if="roots.comments.childCount > 0 && isRepliesLoading == ''"
+                  class="getMoreText"
+                  @click="handleGetReplies(roots)"
+            >—— 展开{{ roots.comments.childCount }}条回复
+            </span>
+            <!-- 加载动画 -->
+            <DokiLoading v-if="isRepliesLoading == roots.comments.id"></DokiLoading>
           </div>
         </div>
       </div>
-
+      <!-- 加载动画 -->
+      <DokiLoading v-if="isRootLoading"></DokiLoading>
       <!-- 加载更多标记 -->
-      <div ref="loadMoreRef" style="height: 5px"></div>
+      <div ref="loadMoreRef" v-show="!isRootLoading"></div>
       <!-- 没有更多评论提示语 -->
-      <div class="noMoreText" v-if="!commentsArray?.hasMore">没有更多了~！</div>
+      <div class="noMoreText" v-if="!commentsArray?.hasMore && isRootLoading==false">没有更多了~！</div>
     </div>
     <!-- 评论输入框 -->
     <CommentInput
@@ -230,6 +252,7 @@ const handleLike = (status: commentStatus) => {
 .comments {
   padding: 15px;
   width: 100%;
+  position: relative;
 }
 
 /* 评论列表样式 */
@@ -251,16 +274,21 @@ const handleLike = (status: commentStatus) => {
 }
 
 .getMoreText {
+  padding: 5px 0;
   color: #bdbdbd;
-  display: flex;
+  display: inline-block;
   align-items: center;
-  height: 20px;
-  padding-left: 20%;
   cursor: pointer;
 }
 
 .getMoreText:hover {
   color: white;
+}
+
+.to-top {
+  position: absolute;
+  right: 50px;
+  bottom: 50px;
 }
 
 </style>

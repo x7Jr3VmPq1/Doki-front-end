@@ -264,7 +264,7 @@ const favoriteVideo = async (videoId: number) => {
 
         </a-tab-pane>
         <a-tab-pane key="2" :tab='`评论 (1)`' force-render>
-          <CommentsPanel :videoId="video.id" :userId="userId"/>
+          <CommentsPanel :videoId="video.id"/>
         </a-tab-pane>
         <a-tab-pane key="3" tab="相关推荐">Content...</a-tab-pane>
       </a-tabs>

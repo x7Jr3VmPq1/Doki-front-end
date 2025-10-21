@@ -4,7 +4,9 @@ import request from './gateway.ts'
 export interface VideoCommentDTO {
     videoId: number;
     content: string;
-    imageBase64?: string;
+    parentCommentId?: string;
+    replyTargetId?: string;
+    image?: string;
 }
 
 export interface VideoComments {
@@ -22,6 +24,11 @@ export interface VideoComments {
     score: number;
 }
 
+export interface CommentListResponse {
+    list: VideoCommentsVO[];
+    hasMore: boolean;
+}
+
 export interface VideoCommentsVO {
     comments: VideoComments,
     liked: boolean;
@@ -31,14 +38,10 @@ export interface VideoCommentsVO {
         id: number;
         avatarUrl: string;
     };
-    // 可选的子评论列表
+    // 额外的属性，可选的子评论列表
     replies?: CommentListResponse;
 }
 
-export interface CommentListResponse {
-    list: VideoCommentsVO[];
-    hasMore: boolean;
-}
 
 export default {
     // 添加视频评论

@@ -26,8 +26,8 @@
                 {{ commentObject.comments.likeCount }}
                 </span>
               </span>
-              <!-- 不喜欢 -->
-              <span class="action-btn"><Dislike/></span>
+              <!-- 不喜欢（功能待实现） -->
+              <!--              <span class="action-btn"><Dislike/></span>-->
               <!-- 分享 -->
               <a-popover trigger="click" :arrow="false" :overlayInnerStyle="{backgroundColor:'#252632'}"
                          style="user-select: none" :destroyTooltipOnHide="true">

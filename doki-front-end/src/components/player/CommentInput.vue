@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import {GrinningFace, AtSign, Picture, ArrowCircleUp, Delete} from '@icon-park/vue-next'
-import {ref, type Ref, defineProps, defineEmits} from 'vue';
-import type {VideoCommentsVO} from '../../api/commentService.ts'
-
+import {ref, type Ref, defineProps, defineEmits, reactive} from 'vue';
+import type {VideoCommentsVO, VideoCommentDTO} from '../../api/commentService.ts'
 
 const props = defineProps<{
   replyTargetObject: VideoCommentsVO | undefined
@@ -11,6 +10,15 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'deleteReply', replyTargetObject: VideoCommentsVO | undefined): void
 }>()
+
+// 评论收集表单
+const commentForm = reactive<VideoCommentDTO>({
+  videoId: 0,
+  content: '',
+  parentCommentId: '',
+  replyTargetId: '',
+  image: ''
+});
 
 // 删除回复目标事件
 const onClickDeleteReply = () => {
@@ -37,6 +45,11 @@ const handlePictureUpload = (event: Event) => {
     alert('请选择图片文件')
   }
 };
+
+// 处理提交评论
+const handleClickSend = () => {
+  console.log(commentForm)
+}
 </script>
 
 <template>
@@ -51,14 +64,16 @@ const handlePictureUpload = (event: Event) => {
     <div style="flex: 1">
       <!-- 评论输入框 -->
       <a-textarea :auto-size="{ minRows: 1, maxRows: 8 }" @keyup.stop
+                  v-model:value="commentForm.content"
                   style="background-color: transparent;color: white;border: none;outline: none;box-shadow: none;"
                   placeholder="留下你的评论吧~"/>
     </div>
     <div class="functions">
       <!-- 提交评论按钮 -->
-      <div class="send-button">
+      <div class="send-button" @click="handleClickSend">
         <arrow-circle-up/>
       </div>
+      <!-- 表情选择器（暂不可用） -->
       <div class="emoji-picker">
         <a-popover trigger="click">
           <template #content>

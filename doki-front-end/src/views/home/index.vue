@@ -7,7 +7,9 @@ import feedService from '../../api/feedService.ts'
 import type {VideoInfo} from '../../api/feedService.ts'
 import {handleRequest} from '../../api/handleRequest.ts'
 import videoProcessingService from '../../api/videoProcessingService.ts'
+import DokiLoading from "../../components/Doki-Loading.vue";
 
+const isLoading = ref(true);
 const videos = ref<VideoInfo[]>([]);
 onMounted(async () => {
   // await axios.get('/videos')
@@ -24,11 +26,15 @@ onMounted(async () => {
     },
     params: 10
   })
+  isLoading.value = false;
+
 })
 </script>
 
 <template>
   <swiper-player :videos="videos" v-if="videos.length > 0"></swiper-player>
+  <!-- 加载动画 -->
+  <DokiLoading v-if="isLoading"></DokiLoading>
 </template>
 
 <style scoped>
