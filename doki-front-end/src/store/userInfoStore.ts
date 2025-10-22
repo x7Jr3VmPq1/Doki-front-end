@@ -18,7 +18,7 @@ export const useUserStore = defineStore('user', {
         setBaseUserinfo(data: userInfo) {
             this.userInfo.id = data.id;
             this.userInfo.username = data.username;
-            this.userInfo.avatarUrl = 'http://localhost:10010/image/avatar/' + data.avatarUrl;
+            this.userInfo.avatarUrl = data.avatarUrl;
             this.userInfo.bio = data.bio;
         },
         setFollowCount(data: UserStatistics) {

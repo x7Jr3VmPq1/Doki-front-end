@@ -37,7 +37,7 @@
 
         <div class="user-list">
           <div v-if="isLoading" class="loading-sign">
-            <a-spin></a-spin>
+            <DokiLoading></DokiLoading>
           </div>
           <div v-else>
             <div v-if="usersToDisplay.length > 0">
@@ -66,6 +66,7 @@
 import {ref, computed, watch} from 'vue';
 import {getFansList, getFollowList, followUser} from "../api/userService.ts";
 import {useUserStore} from "../store/userInfoStore.ts";
+import DokiLoading from "./Doki-Loading.vue";
 
 const userStore = useUserStore();
 

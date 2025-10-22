@@ -34,9 +34,17 @@ onMounted(async () => {
 <template>
   <swiper-player :videos="videos" v-if="videos.length > 0"></swiper-player>
   <!-- 加载动画 -->
-  <DokiLoading v-if="isLoading"></DokiLoading>
+  <div class="loading">
+    <DokiLoading v-if="isLoading"></DokiLoading>
+  </div>
 </template>
 
 <style scoped>
+.loading {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 </style>

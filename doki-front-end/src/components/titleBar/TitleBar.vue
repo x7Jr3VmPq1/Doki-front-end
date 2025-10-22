@@ -11,6 +11,8 @@ import {ref, onMounted, watch} from "vue";
 import {getHotSearchList} from "../../api/searchService.ts";
 import profileCard from "../profile-card.vue";
 import {useUserStore} from "../../store/userInfoStore.ts";
+import userService from '../../api/userService.ts'
+import {handleRequest} from '../../api/handleRequest.ts'
 
 const userStore = useUserStore();
 const avatarUrl = ref('');
@@ -32,9 +34,13 @@ const showDialog = ref(false);
 const showLoginDialog = () => {
   showDialog.value = true;
 }
-const toCreator = () => {
-  const url = 'http://localhost:5174';
-  window.open(url, '_blank'); //
+const toCreator = async () => {
+  const url = 'http://localhost:5174/authpage';
+  await handleRequest(userService.getAuthCode, {
+    onSuccess(data) {
+      window.open(url + "?auth=" + data, '_blank');
+    },
+  })
 }
 </script>
 

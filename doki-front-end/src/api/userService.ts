@@ -83,5 +83,8 @@ export default {
     }),
     getUserinfoByToken: async () => await request<userInfo>('/user/userinfo', {
         method: 'GET'
+    }),
+    getAuthCode: async () => await request<string>('/user/auth/code', {
+        method: 'GET'
     })
 }

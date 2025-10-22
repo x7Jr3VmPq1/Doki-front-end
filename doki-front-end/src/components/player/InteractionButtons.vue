@@ -16,9 +16,6 @@ const props = defineProps<{
   onOpenComments: () => void,
 }>()
 
-// 获取头像服务器地址
-const avatarServer = 'http://localhost:10010/image/avatar/'
-
 // 视频统计信息
 const stat = ref<VideoStatistics>({
   id: 0,
@@ -97,7 +94,7 @@ const onLike = async (videoId: number) => {
         <div class="follow-button">
           <PlusCircleFilled/>
         </div>
-        <a-avatar :src="avatarServer + uploaderInfo.avatarUrl" size="large" class="bounce-on-click"/>
+        <a-avatar :src="uploaderInfo.avatarUrl" size="large" class="bounce-on-click"/>
       </div>
     </a-tooltip>
 
@@ -185,6 +182,7 @@ const onLike = async (videoId: number) => {
 
 <style scoped>
 .interaction-buttons {
+  cursor: pointer;
   user-select: none;
   display: flex;
   flex-direction: column;

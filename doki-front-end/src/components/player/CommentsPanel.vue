@@ -38,6 +38,7 @@ watch(() => props.open, async () => {
   if (!commentLoaded.value) {
     await handleRequest(commentService.getComments, {
       async onSuccess(data) {
+        console.log(data)
         // 给每一条评论初始化一个可能存在的回复列表
         data.list.forEach(c => c.replies = {list: [], hasMore: c.comments.childCount > 0})
         commentsArray.value = data;

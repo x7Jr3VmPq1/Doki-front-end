@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {GrinningFace, AtSign, Picture, ArrowCircleUp, Delete} from '@icon-park/vue-next'
+import {GrinningFace, AtSign, Picture, ArrowCircleUp, Delete, CloseOne} from '@icon-park/vue-next'
 import {ref, type Ref, defineProps, defineEmits, reactive, watch} from 'vue';
 import {handleRequest} from "../../api/handleRequest.ts";
 import commentService from "../../api/commentService.ts";
@@ -33,7 +33,6 @@ const onClickDeleteReply = () => {
 
 // 图片上传与预览
 const fileInput: Ref<HTMLInputElement | null> = ref(null)
-const previewUrl = ref('')
 const triggerFileSelect = () => {
   fileInput.value?.click()
 }
@@ -44,7 +43,7 @@ const handlePictureUpload = (event: Event) => {
   if (file && file.type.startsWith('image/')) {
     const reader = new FileReader()
     reader.onload = (e) => {
-      previewUrl.value = e.target?.result as string
+      commentForm.image = e.target?.result as string
     }
     reader.readAsDataURL(file)
   } else {
@@ -103,7 +102,7 @@ const handleClickSend = async () => {
     </div>
     <div class="functions">
       <!-- 提交评论按钮 -->
-      <div class="send-button" @click="handleClickSend" v-if="commentForm.content">
+      <div class="send-button" @click="handleClickSend" v-if="commentForm.content || commentForm.image">
         <arrow-circle-up/>
       </div>
       <!-- 表情选择器（暂不可用） -->
@@ -114,16 +113,18 @@ const handleClickSend = async () => {
           <GrinningFace/>
         </a-popover>
       </div>
+      <!-- @其他用户 -->
       <AtSign/>
+      <!-- 上传图片按钮 -->
       <div @click="triggerFileSelect">
         <Picture/>
         <input type="file" ref="fileInput" accept="image/*" @change="handlePictureUpload" style="display: none"/>
       </div>
-      <div class="upload-picture" v-if="previewUrl!=''">
-        <a-image :src="previewUrl" :height="80" :width="80" :preview-mask="false"
+      <div class="upload-picture" v-if="commentForm.image!=''">
+        <a-image :src="commentForm.image" :height="80" :width="80" :preview-mask="false"
                  style="object-fit: cover;border-radius: 10px;"/>
-        <div class="delete-btn" @click="previewUrl=''">
-          <!--          <icon-close-circle-fill/>-->
+        <div class="delete-btn" @click="commentForm.image=''">
+          <CloseOne/>
         </div>
       </div>
     </div>
@@ -206,7 +207,11 @@ const handleClickSend = async () => {
   display: flex;
   position: relative;
   padding: 10px;
+}
+
+.upload-picture {
   flex: 1;
+  cursor: default !important;
 }
 
 .comment-input .functions .upload-picture .delete-btn {

@@ -5,12 +5,16 @@
       <div class="custom-comment"
            :class="{'comment-highlight':status.isReplying}">
         <div class="comment-avatar">
-          <a-avatar src="http://localhost:8081/avatars/defaultAvatar.png"/>
+          <a-avatar :src=commentObject.user.avatarUrl></a-avatar>
         </div>
         <div class="comment-body">
           <div class="comment-author">{{ commentObject.user.username }}</div>
           <div class="comment-text">
             <p>{{ commentObject.comments.content }}</p>
+            <a-image
+                v-if="commentObject.comments.imgUrl"
+                :src="commentObject.comments.imgUrl" :height="80" :width="80" :preview-mask="false"
+                style="object-fit: cover;border-radius: 10px;"/>
             <p class="comment-time">{{ dayUtils.formatTimestamp(commentObject.comments.createdAt) }}</p>
             <div class="comment-actions">
               <!-- 回复按钮 -->

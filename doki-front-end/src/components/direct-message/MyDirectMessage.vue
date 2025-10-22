@@ -9,6 +9,7 @@ import {Modal} from 'ant-design-vue';
 import {createVNode} from 'vue';
 import {ExclamationCircleOutlined} from '@ant-design/icons-vue';
 import {useUserStore} from "../../store/userInfoStore.ts";
+import DokiLoading from "../Doki-Loading.vue";
 
 // 页面加载后，获取聊天列表
 const isConversationsLoading = ref(false);
@@ -195,7 +196,7 @@ const handleDeleteConversation = () => {
           </div>
         </div>
         <div v-else style="text-align: center">
-          <a-spin></a-spin>
+          <DokiLoading></DokiLoading>
         </div>
         <!-- 空盒子 -->
         <div class="empty-box" v-if="conversations.length === 0 && !isConversationsLoading">
