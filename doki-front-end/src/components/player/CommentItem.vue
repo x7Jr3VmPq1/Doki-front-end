@@ -70,6 +70,7 @@
               <More/>
             </a-popover>
           </div>
+
         </div>
       </div>
 
@@ -78,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import {Message, ShareTwo, Like, Dislike, Search, More} from '@icon-park/vue-next'
+import {Message, ShareTwo, Like, Search, More} from '@icon-park/vue-next'
 import type {VideoCommentsVO} from '../../api/commentService.ts'
 import {defineProps, defineEmits, ref} from 'vue';
 import {dayUtils} from '../../utils/dayUtils.ts'
@@ -89,23 +90,17 @@ const userStore = useUserStore();
 // 定义组件状态类型
 export interface commentStatus {
   commentObject: VideoCommentsVO,// 评论本体
-  isReplying: boolean,
-  rootIndex: number, // 该评论在评论数组中的索引
-  replyIndex?: number // 该回复在根评论回复数组中的索引
+  isReplying: boolean // 该评论是否处于回复状态
 }
 
 // 定义评论属性对象，由父组件提供
 const props = defineProps<{
   commentObject: VideoCommentsVO,
-  rootIndex: number,
-  replyIndex?: number
 }>()
 
 // 定义评论状态对象，返回给父组件用于控制评论状态
 const status = ref<commentStatus>({
   commentObject: props.commentObject,
-  rootIndex: props.rootIndex,
-  replyIndex: props.replyIndex,
   isReplying: false
 })
 // 定义点击回复事件，传递状态对象

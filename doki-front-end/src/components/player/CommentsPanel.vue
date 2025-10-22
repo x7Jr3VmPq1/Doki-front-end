@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {defineProps, onMounted, ref, reactive, onBeforeUnmount, createVNode, watch} from 'vue'
+import {defineProps, onMounted, ref, onBeforeUnmount, createVNode, watch} from 'vue'
 
 import {type CommentListResponse, type VideoComments, type VideoCommentsVO} from '../../api/commentService.js'
 import commentService from '../../api/commentService.js'
@@ -14,17 +14,20 @@ import {Modal, message} from 'ant-design-vue'
 const userStore = useUserStore();
 
 
-const loadMoreRef = ref();
-const commentLoaded = ref(false); // 评论是否加载完毕标记
+const loadMoreRef = ref(); // 需要判断这个DOM是否出现在视口内，决定是否触发加载评论
+const commentLoaded = ref(false); // 初始评论是否加载完毕标记
 
-// 父组件传递来的视频ID
+// 父组件传递来的视频ID和评论区抽屉开启状态
 const props = defineProps({
   videoId: Number,
   open: Boolean
 })
 
-const commentsArray = ref<CommentListResponse>(); // 评论数组
-
+// 根评论数组
+const commentsArray = ref<CommentListResponse>({
+  list: [], // 评论的列表
+  hasMore: false // 是否还有更多评论
+});
 const InnerCommentsArea = ref<HTMLDivElement | null>(null); // 评论展示区盒子引用
 
 // 初始化方法
@@ -35,7 +38,10 @@ watch(() => props.open, async () => {
   if (!commentLoaded.value) {
     await handleRequest(commentService.getComments, {
       async onSuccess(data) {
+        // 给每一条评论初始化一个可能存在的回复列表
+        data.list.forEach(c => c.replies = {list: [], hasMore: c.comments.childCount > 0})
         commentsArray.value = data;
+        loadCursor = data.list[data.list.length - 1]; // 保存最后一条评论作为游标
         commentLoaded.value = true; // 初始评论加载完毕
       },
       params: {videoId: props.videoId!}
@@ -45,6 +51,8 @@ watch(() => props.open, async () => {
 })
 
 // 添加无限滚动方法
+let loadCursor: VideoCommentsVO | null = null; // 游标评论对象，加载根评论时以这个为基准
+let RepliesLoadCursors = new Map<string, string>(); // 这个map存储每条根评论上次加载回复时获取的最后一条评论id
 onMounted(async () => {
   if (!loadMoreRef.value) return;
 
@@ -57,22 +65,24 @@ onMounted(async () => {
             // 没有更多了，不再加载。
             if (!commentsArray.value.hasMore)
               return;
-            // 获取最后一条评论
-            let lastComment = commentsArray.value.list[commentsArray.value.list.length - 1];
             isRootLoading.value = true;
             handleRequest(commentService.getComments, {
               async onSuccess(data) {
                 if (commentsArray.value) {
+                  // 去重
+                  data.list = data.list.filter(c => !userAddedComments.some(u => u.comments.id === c.comments.id));
                   // 追加更多评论
                   commentsArray.value.list.push(...data.list);
                   // 更新hasMore状态
                   commentsArray.value.hasMore = data.hasMore;
+                  // 更新loadCursor
+                  loadCursor = data.list[data.list.length - 1];
                   isRootLoading.value = false;
                 }
               }, params: {
-                videoId: lastComment.comments.videoId,
-                lastId: lastComment.comments.id,
-                score: lastComment.comments.score
+                videoId: props.videoId!,
+                lastId: loadCursor?.comments.id,
+                score: loadCursor?.comments.score
               }
             })
           }
@@ -120,34 +130,30 @@ const isRepliesLoading = ref(''); // 空串代表加载完毕，如果正在加�
 const handleGetReplies = async (rootComment: VideoCommentsVO) => {
   // 模拟加载效果
   isRepliesLoading.value = rootComment.comments.id;
-  // 已经存在回复列表，进行追加逻辑
-  if (rootComment.replies) {
-    // 没有更多回复，不再加载
-    if (!rootComment.replies.hasMore)
-      return;
-    await handleRequest(commentService.getComments, {
-      onSuccess(data) {
-        if (rootComment.replies) {
-          rootComment.replies?.list.push(...(data.list))
-          rootComment.replies.hasMore = data.hasMore;
-        }
-      }, params: {
-        videoId: rootComment.comments.videoId,
-        parentCommentId: rootComment.comments.id,
-        lastId: rootComment.replies?.list[rootComment.replies?.list.length - 1].comments.id
-      }
-    })
-    // 还没有回复列表，创建一个新数组
-  } else {
-    await handleRequest(commentService.getComments, {
-      onSuccess(data) {
-        rootComment.replies = data;
-      }, params: {
-        videoId: rootComment.comments.videoId,
-        parentCommentId: rootComment.comments.id,
-      }
-    })
+  if (!rootComment.replies.hasMore) {
+    return;
   }
+  await handleRequest(commentService.getComments, {
+    onSuccess(data) {
+      // 先对获取的数据做去重处理
+      data.list = data.list.filter(c => !userAddedComments.some(u => u.comments.id === c.comments.id));
+      // 获取根评论的id
+      const rootId = rootComment.comments.id;
+      // 获取拉取的回复数据的最后一条id作为新游标
+      const cursorId = data.list[data.list.length - 1].comments.id;
+      // 更新游标
+      RepliesLoadCursors.set(rootId, cursorId);
+      // 把新数据填充到回复列表中
+      rootComment.replies.list.push(...(data.list))
+      // 更新是否还有更多数据标记
+      rootComment.replies.hasMore = data.hasMore;
+    }, params: {
+      videoId: rootComment.comments.videoId,
+      parentCommentId: rootComment.comments.id,
+      lastId: RepliesLoadCursors.get(rootComment.comments.id)
+    }
+  })
+
   // 减去两条总数
   rootComment.comments.childCount -= 2;
   // 加载完毕
@@ -156,24 +162,31 @@ const handleGetReplies = async (rootComment: VideoCommentsVO) => {
 
 // 删除评论处理方法
 const handleDelete = async (status: commentStatus) => {
+  // 获取目标评论引用
+  const targetComment = status.commentObject.comments
   Modal.confirm({
     content: createVNode('div', {style: 'color:black;'}, '确定要删除这条评论吗？'),
     onOk() {
       handleRequest(commentService.deleteComment, {
         onSuccess(_) {
           message.success("删除成功！")
-          // 删除回复
-          if (status.rootIndex != null && status.replyIndex != null) {
-            commentsArray.value?.list[status.rootIndex].replies?.list.splice(status.replyIndex, 1);
-          } else {
-            // 删除根评论
-            commentsArray.value?.list.splice(status.rootIndex, 1);
+          // 如果是根评论，从根评论数组中找到这个元素并移除
+          if (targetComment.isRoot) {
+            commentsArray.value.list = commentsArray.value.list.filter(c => c.comments.id !== targetComment.id);
+            return;
+          }
+          // 如果是回复，先找到它所在的根评论，然后从这个评论的回复数组中移除它
+          const find = commentsArray.value.list.find(c => c.comments.id === targetComment.parentCommentId)!;
+          if (find.replies) {
+            find.replies.list = find.replies.list.filter(c => c.comments.id !== targetComment.id);
           }
         },
-        params: status.commentObject.comments.id
+        params: targetComment.id
       },)
     },
   });
+  // 清除回复状态
+  clearReplyStatus();
 }
 // 评论点赞处理方法
 const handleLike = (status: commentStatus) => {
@@ -188,11 +201,14 @@ const handleLike = (status: commentStatus) => {
 }
 
 // 评论添加处理方法，添加逻辑在input组件内部，这里处理添加成功后的逻辑
+// 新建一个保存“当前用户新添加的评论”的数组，因为服务器可能会返回刚刚添加的评论
+// 那么这时候视图中就可能出现重复的评论，所以每次加载的时候，对新拉取的评论做一下去重。
+const userAddedComments: VideoCommentsVO[] = [];
 const handleAddReply = (comment: VideoComments) => {
-  // 1. 构建一个新的VO对象用来存储新增加的评论
+  // 1. 构建一个新的VO对象用来存储新增加的评论，并将其添加到userAddedComments
   // 从userStore中获取用户信息
   const user = userStore.userInfo;
-  const newComment = {
+  const newComment: VideoCommentsVO = {
     comments: comment,
     user: {
       username: user.username,
@@ -200,18 +216,24 @@ const handleAddReply = (comment: VideoComments) => {
       id: user.id,
       avatarUrl: user.avatarUrl
     },
-    liked: false
+    liked: false,
+    replies: {
+      list: [],
+      hasMore: false
+    }
   }
+  userAddedComments.push(newComment);
   // 2. 把这个对象插入到合适的位置，如果它是根评论，插入到最上边
   if (comment.isRoot) {
-    commentsArray.value?.list.unshift(newComment);
+    commentsArray.value.list.unshift(newComment);
   } else {
-    // 如果它是回复，则把它插入到回复列表的最上边
-    // 从status中获取目标根评论的索引
-    const index = currentCommentStatus.value?.rootIndex!
-    const targetList = commentsArray.value?.list[index].replies;
-    targetList?.list.unshift(newComment);
-    // TODO 回复新添加的评论时会出现不显示评论
+    // 如果它是回复，则把它插入到回复列表的最底部。
+    // 先找到它的根评论
+    const root = commentsArray.value.list.find(c => c.comments.id === newComment.comments.parentCommentId);
+    // 在根评论的回复列表中，添加这条评论。
+    if (root && root.replies) {
+      root.replies.list.push(newComment);
+    }
   }
   // 清除回复状态
   clearReplyStatus();
@@ -223,28 +245,25 @@ const handleAddReply = (comment: VideoComments) => {
     <div style="flex: 1;overflow-y: auto;position: relative" ref="InnerCommentsArea">
       <div class="comment-list" v-if="commentLoaded">
         <div
-            v-for="(roots,rootIndex) in commentsArray?.list"
+            v-for="(roots) in commentsArray?.list"
         >
           <!-- 根评论 -->
           <div class="root-comments">
             <CommentItem
                 :commentObject="roots"
                 :key="roots.comments.id"
-                :root-index="rootIndex"
                 @clickReply="handleReply"
                 @clickDelete="handleDelete"
                 @clickLike="handleLike"
             />
           </div>
           <!-- 回复列表 -->
-          <div class="replies" v-if="roots.comments.isRoot">
+          <div class="replies">
             <div class="reply-list" v-if="roots.replies?.list">
               <CommentItem
-                  v-for="(reply,replyIndex) in roots.replies.list"
+                  v-for="(reply) in roots.replies.list"
                   :commentObject="reply"
                   :key="reply.comments.id"
-                  :root-index="rootIndex"
-                  :reply-index="replyIndex"
                   @clickReply="handleReply"
                   @clickDelete="handleDelete"
                   @clickLike="handleLike"
@@ -253,7 +272,9 @@ const handleAddReply = (comment: VideoComments) => {
             <span v-if="roots.comments.childCount > 0 && isRepliesLoading == ''"
                   class="getMoreText"
                   @click="handleGetReplies(roots)"
-            >—— 展开{{ roots.comments.childCount }}条回复
+            >{{
+                RepliesLoadCursors.get(roots.comments.id) ? "—— 展开更多" : "—— 展开" + roots.comments.childCount + "条回复"
+              }}
             </span>
             <!-- 加载动画 -->
             <DokiLoading v-if="isRepliesLoading == roots.comments.id"></DokiLoading>

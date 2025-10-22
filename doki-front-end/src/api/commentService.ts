@@ -39,7 +39,7 @@ export interface VideoCommentsVO {
         avatarUrl: string;
     };
     // 额外的属性，可选的子评论列表
-    replies?: CommentListResponse;
+    replies: CommentListResponse;
 }
 
 

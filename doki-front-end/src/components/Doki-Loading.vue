@@ -20,7 +20,7 @@
 .loading-dots span {
   width: 12px;
   height: 12px;
-  background-color: grey;
+  background-color: #fe2c55;
   border-radius: 50%;
   display: inline-block;
   animation: bounce 0.6s infinite alternate;
