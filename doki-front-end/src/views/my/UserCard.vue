@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
-import userService from '../../api/userService';
+import userService from '../../api/userService.ts';
 import analyticsService from '../../api/analyticsService.ts'
 import type { UserStatistics } from '../../api/analyticsService.ts'
-import type { userInfo } from '../../api/userService'
-import { handleRequest } from '../../api/handleRequest';
-import { useUserStore } from '../../store/userInfoStore'
-import FollowModal from '../../components/follow-modal.vue';
+import type { userInfo } from '../../api/userService.ts'
+import { handleRequest } from '../../api/handleRequest.ts';
+import { useUserStore } from '../../store/userInfoStore.ts'
+import FollowModal from '../../components/FollowModal.vue';
 import EditProfileModal from './EditProfileModal.vue';
 import { Edit } from '@icon-park/vue-next'
 const userStore = useUserStore();

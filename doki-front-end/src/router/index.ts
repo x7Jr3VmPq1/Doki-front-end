@@ -1,72 +1,58 @@
-import {createRouter, createWebHistory} from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 
 const routes = [
-    {
-        path: '/',
-        redirect: '/home' // 访问根路径时重定向到 /home
-    },
-    {
-        path: '/home',
-        component: () => import('../views/home/index.vue'),
-    },
-    {
-        path: '/friends',
-        component: () => import('../views/friends/index.vue'),
-        meta: {requiresAuth: true}
-    },
-    {
-        path: '/login',
-        component: () => import('../views/login/index.vue'),
-        meta: {fullPage: true}
-    },
-    {
-        path: '/upload',
-        component: () => import('../views/upload/index.vue'),
-    },
-    {
-        path: '/search',
-        name: 'Search',
-        component: () => import('../views/search/index.vue'),
-    },
-    {
-        path: '/my',
-        name: 'my',
-        component: () => import('../views/profiles/ProfilePage.vue'),
-    },
-    {
-        path: '/404',
-        component: () => import('../views/404/index.vue'),
-        meta: {fullPage: true}
-    },
+  {
+    path: '/',
+    redirect: '/home' // 访问根路径时重定向到 /home
+  },
+  {
+    path: '/home',
+    component: () => import('../views/home/index.vue'),
+  },
+  {
+    path: '/friends',
+    component: () => import('../views/friends/index.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my',
+    name: 'my',
+    component: () => import('../views/my/index.vue'),
+  },
+  {
+    path: '/404',
+    component: () => import('../views/404/index.vue'),
+    meta: { fullPage: true }
+  },
 
-    {
-        // 捕获所有未知路由并跳转到 404
-        path: '/:pathMatch(.*)*',
-        redirect: '/404'
-    }
+  {
+    // 捕获所有未知路由并跳转到 404
+    path: '/:pathMatch(.*)*',
+    redirect: '/404'
+  }
 ]
 
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes
+  history: createWebHistory(),
+  routes
 })
 // 全局前置守卫：在每次导航之前检查 token
 router.beforeEach((to, _, next): void => {
-    const token = localStorage.getItem('token'); // 获取 token
+  const token = localStorage.getItem('token'); // 获取 token
 
-    // 检查目标路由是否需要授权访问（meta.requiresAuth）
-    if (to.matched.some(record => record.meta.requiresAuth)) {
-        if (!token) {
-            // 如果没有 token，重定向到登录页
-            next({path: '/login'});
-        } else {
-            // 如果有 token，继续访问目标页面
-            next();
-        }
+  // 检查目标路由是否需要授权访问（meta.requiresAuth）
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!token) {
+      // 如果没有 token，重定向到登录页
+      next({ path: '/login' });
     } else {
-        // 如果目标路由不需要授权访问，继续访问
-        next();
+      // 如果有 token，继续访问目标页面
+      next();
     }
+  } else {
+    // 如果目标路由不需要授权访问，继续访问
+    next();
+  }
 });
 export default router

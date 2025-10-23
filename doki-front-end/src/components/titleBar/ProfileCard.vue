@@ -159,7 +159,7 @@
 
 <script setup lang="ts">
 import {createVNode, ref, onMounted} from 'vue';
-import FollowModal from "../follow-modal.vue";
+import FollowModal from "../FollowModal.vue";
 import {useUserStore} from "../../store/userInfoStore.ts";
 import analyticsService from '../../api/analyticsService.ts';
 import {handleRequest} from '../../api/handleRequest.ts'
