@@ -1,85 +1,89 @@
 <script setup lang="ts">
-import {reactive} from "vue";
+import { reactive, onMounted } from 'vue';
+import userService from '../../api/userService';
+import analyticsService from '../../api/analyticsService.ts'
+import type { UserStatistics } from '../../api/analyticsService.ts'
+import type { userInfo } from '../../api/userService'
+import { handleRequest } from '../../api/handleRequest';
+import { useUserStore } from '../../store/userInfoStore'
+import FollowModal from '../../components/follow-modal.vue';
+import EditProfileModal from './EditProfileModal.vue';
+import { Edit } from '@icon-park/vue-next'
+const userStore = useUserStore();
 
-const pageData = reactive({
-  user: {
-    name: '楚门聊电影',
-    handle: 'cmidy123',
-    followers: '710.0万',
-    likes: '7141.9万',
-    ipLocation: '辽宁',
-    age: 30,
-    zodiac: '摩羯',
-    bio: '“如果不再见你祝你早、午、晚都安”',
-  },
-  menu: [
-    {title: '作品', count: 330, type: 'works'},
-    {title: '推荐', count: 0, type: 'recommended'},
-    {title: '喜欢', count: 0, type: 'likes'},
-  ],
-  subTabs: ['作品', '合集', '短剧'],
-  works: [
-    {
-      title: '辣手神探',
-      likes: '8.9万',
-      description: '暴力版《无间道》是纯粹的...',
-      image: 'path_to_image_1.jpg',
-      rating: 8.9
-    },
-    {
-      title: '喋血街头',
-      likes: '3.6万',
-      description: '为什么说吴宇森的这部作品...',
-      image: 'path_to_image_2.jpg',
-      rating: 8.5
-    },
-    {
-      title: '烂赌英雄',
-      likes: '31.1万',
-      description: '二龙湖浩哥新剧爆笑来袭...',
-      image: 'path_to_image_3.jpg',
-      rating: 7.5
-    },
-    {
-      title: '喋血双雄',
-      likes: '8.5万',
-      description: '终于理解吴宇森为何说...',
-      image: 'path_to_image_4.jpg',
-      rating: 9.2
-    },
-    {
-      title: '英雄本色',
-      likes: '11.9万',
-      description: '真实的本色，回头的英雄！...',
-      image: 'path_to_image_5.jpg',
-      rating: 9.0
-    },
-    {
-      title: '盲探',
-      likes: '20.0万',
-      description: '杜琪峰野心最大的一部作品...',
-      image: 'path_to_image_6.jpg',
-      rating: 8.8
-    },
-  ],
+const userInfo = reactive<userInfo>({
+  id: -1,
+  username: '',
+  avatarUrl: '',
+  bio: '',
 });
+
+const userStat = reactive<UserStatistics>({
+  userId: -1,
+  followingCount: 0,
+  followerCount: 0,
+  likeCount: 0,
+  createdAt: 0,
+  updatedAt: 0
+});
+
+const state = reactive({
+  followModal: false,
+  editModal: false
+})
+
+// 获取用户信息
+onMounted(() => {
+  handleRequest(userService.getUserinfoById, {
+    onSuccess(data) {
+      Object.assign(userInfo, data[0]);
+    }, params: [userStore.userInfo.id]
+  })
+
+  handleRequest(analyticsService.getUserStatById, {
+    onSuccess(data) {
+      Object.assign(userStat, data);
+    }, params: userStore.userInfo.id
+  })
+});
+
+// 处理编辑按钮点击
+const handleEditClick = () => {
+  state.editModal = true;
+}
+
+// 处理资料更新
+const handleProfileUpdated = (updatedData: any) => {
+  Object.assign(userInfo, updatedData);
+  // 可以在这里添加其他更新逻辑，比如重新获取统计数据
+}
 
 </script>
 
 <template>
+  <FollowModal :visible="state.followModal" @update:visible="state.followModal = $event"></FollowModal>
+  <EditProfileModal :visible="state.editModal" :userInfo="userInfo" @update:visible="state.editModal = $event"
+    @profileUpdated="handleProfileUpdated" />
   <div class="user-card">
     <div class="avatar-container">
-      <img src="http://localhost:8081/avatars/defaultAvatar.png" alt="User Avatar" class="avatar"/>
+      <img :src="userInfo.avatarUrl" class="avatar" />
     </div>
     <div class="user-info">
-      <h1 class="user-name">{{ pageData.user.name }}</h1>
+      <div class="name-change-info">
+        <h1 class="user-name">{{ userInfo.username }}</h1>
+        <div class="edit-button" @click="handleEditClick">
+          <edit></edit>
+        </div>
+      </div>
       <div class="stats">
-        <div class="stat-item">关注 <span class="stat-value">{{ pageData.user.followers }}</span></div>
-        <div class="stat-item">粉丝 <span class="stat-value">{{ pageData.user.followers }}</span></div>
-        <div class="stat-item">获赞 <span class="stat-value">{{ pageData.user.likes }}</span></div>
+        <div class="stat-item" @click="state.followModal = !state.followModal">关注 <span class="stat-value">{{
+            userStat.followingCount }}</span></div>
+        <div class="stat-item" @click="state.followModal = !state.followModal">粉丝 <span class="stat-value">{{
+            userStat.followerCount }}</span></div>
+        <div class="stat-item">获赞 <span class="stat-value">{{ userStat.likeCount }}</span></div>
       </div>
       <div class="user-bio">
-        {{ pageData.user.bio }}
+        {{ userInfo.bio }}
       </div>
     </div>
   </div>
@@ -118,11 +122,27 @@ const pageData = reactive({
   margin: 0;
 }
 
+.name-change-info {
+  display: flex;
+}
+
+.edit-button {
+  cursor: pointer;
+  padding-top: 3px;
+  margin-left: 10px;
+  font-size: 20px;
+}
+
+.edit-button:hover {
+  color: red;
+}
+
 /* 用户签名 */
 .user-bio {
   height: 30px;
   line-height: 30px;
-  text-align: start; /* 水平居中 */
+  text-align: start;
+  /* 水平居中 */
   font-size: 14px;
   color: #666;
 }
@@ -135,9 +155,16 @@ const pageData = reactive({
   color: #666;
 }
 
+.stat-item {
+  cursor: pointer;
+}
+
+.stat-item:hover {
+  color: #000;
+}
+
 .stat-value {
   font-weight: bold;
   color: #333;
 }
-
 </style>

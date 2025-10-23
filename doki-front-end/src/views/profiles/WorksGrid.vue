@@ -1,16 +1,21 @@
 <script setup lang="ts">
+import { reactive } from 'vue';
 
+const userWorks = reactive({
+  list: []
+})
 </script>
 
 <template>
   <div class="works-grid">
 
-    <div v-for="work in 20" class="work-card">
+    <div v-for="item in userWorks.list" class="work-card">
       <div class="image-container">
-        <img src="http://localhost:8081/cat.jpeg" alt="" class="work-image"/>
+        <img src="http://localhost:8081/cat.jpeg" alt="" class="work-image" />
       </div>
       <div class="work-description">{{ "这是视频的描述..." }}</div>
     </div>
+
   </div>
 
 </template>
@@ -34,7 +39,8 @@
 }
 
 .image-container {
-  aspect-ratio: 3 / 4; /* 宽高比 3:4 */
+  aspect-ratio: 3 / 4;
+  /* 宽高比 3:4 */
   position: relative;
   width: 100%;
   overflow: hidden;

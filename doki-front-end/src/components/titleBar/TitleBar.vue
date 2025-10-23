@@ -1,18 +1,18 @@
 <script setup lang="ts">
 // 顶部标题栏组件，包括搜索框，功能按钮
 // (通知按钮，消息按钮，投稿按钮，登录/个人信息按钮)
-import MyDirectMessage from "../direct-message/MyDirectMessage.vue";
+import MyDirectMessage from "./MyDirectMessage.vue";
 import MyPopover from "../MyPopover.vue";
 import SearchComponent from "./searchComponent.vue";
-import Notification from "../notification.vue";
-import LoginRegisterDialog from "../LoginRegisterDialog.vue";
-import {Message, Remind, AddMusic} from '@icon-park/vue-next';
-import {ref, onMounted, watch} from "vue";
-import {getHotSearchList} from "../../api/searchService.ts";
-import profileCard from "../profile-card.vue";
-import {useUserStore} from "../../store/userInfoStore.ts";
+import Notification from "./notification.vue";
+import LoginRegisterDialog from "./LoginRegisterDialog.vue";
+import { Message, Remind, AddMusic } from '@icon-park/vue-next';
+import { ref, onMounted, watch } from "vue";
+import { getHotSearchList } from "../../api/searchService.ts";
+import profileCard from "./ProfileCard.vue";
+import { useUserStore } from "../../store/userInfoStore.ts";
 import userService from '../../api/userService.ts'
-import {handleRequest} from '../../api/handleRequest.ts'
+import { handleRequest } from '../../api/handleRequest.ts'
 
 const userStore = useUserStore();
 const avatarUrl = ref('');
@@ -38,7 +38,9 @@ const toCreator = async () => {
   const url = 'http://localhost:5174/authpage';
   await handleRequest(userService.getAuthCode, {
     onSuccess(data) {
-      window.open(url + "?auth=" + data, '_blank');
+      // 构建跳转url
+      const target = url + ("?auth=" + data) + "&" + ("userId=" + userStore.userInfo.id)
+      window.open(target, '_blank');
     },
   })
 }
@@ -60,8 +62,7 @@ const toCreator = async () => {
         <template #trigger>
           <div style="height: 40px">
             <div class="avatar-wrapper">
-              <img style="object-fit: contain;width:100%;height: 100%;"
-                   :src="avatarUrl" :alt="''">
+              <img style="object-fit: contain;width:100%;height: 100%;" :src="avatarUrl" :alt="''">
             </div>
           </div>
         </template>
@@ -69,18 +70,18 @@ const toCreator = async () => {
       <!-- 未登录,显示登录按钮 -->
       <a-button v-else @click="showLoginDialog">登录</a-button>
 
-      <LoginRegisterDialog :visible="showDialog" @close="showDialog = false"/>
+      <LoginRegisterDialog :visible="showDialog" @close="showDialog = false" />
 
       <!-- 投稿按钮 -->
       <div class="function" @click="toCreator">
-        <add-music theme="outline" size="24"/>
+        <add-music theme="outline" size="24" />
         <div class="function-label">投稿</div>
       </div>
       <!-- 消息按钮 -->
       <my-popover>
         <template #trigger>
           <div class="function">
-            <Message theme="outline" size="24"/>
+            <Message theme="outline" size="24" />
             <div class="function-label">消息</div>
           </div>
         </template>
@@ -89,14 +90,13 @@ const toCreator = async () => {
         </template>
       </my-popover>
       <!-- 通知按钮 -->
-      <my-popover
-      >
+      <my-popover>
         <template #content>
           <Notification></Notification>
         </template>
         <template #trigger>
           <div class="function">
-            <Remind theme="outline" size="24"/>
+            <Remind theme="outline" size="24" />
             <div class="function-label">通知</div>
           </div>
         </template>
@@ -106,7 +106,6 @@ const toCreator = async () => {
 </template>
 
 <style scoped>
-
 .title-bar {
   display: flex;
   width: 100%;
@@ -208,7 +207,8 @@ const toCreator = async () => {
 
     .function {
       .function-label {
-        display: none; /* 隐藏文字，只显示图标 */
+        display: none;
+        /* 隐藏文字，只显示图标 */
       }
     }
 

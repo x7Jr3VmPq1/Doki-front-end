@@ -24,8 +24,8 @@
             <div class="code-input-group">
               <input type="text" id="code-sms" v-model="loginForm.code" required>
               <button type="button" @click="sendSmsCode" :disabled="isSendingCode || countdown > 0">{{
-                  codeBtnText
-                }}
+                codeBtnText
+              }}
               </button>
             </div>
             <strong>输入手机号并验证，即可登录或自动注册。</strong>
@@ -42,8 +42,7 @@
             <label for="password">密码</label>
             <input type="password" id="password" v-model="loginForm.password" required>
           </div>
-          <strong>忘记密码？<a @click="loginMethod='sms'"
-                              style="color: red;cursor: pointer">使用短信验证码登录</a></strong>
+          <strong>忘记密码？<a @click="loginMethod = 'sms'" style="color: red;cursor: pointer">使用短信验证码登录</a></strong>
           <button type="submit" class="submit-btn">登录</button>
         </form>
 
@@ -76,12 +75,10 @@
 </template>
 
 <script setup>
-import {ref, reactive, computed} from 'vue';
-import {loginByPassword, setPassword} from "../api/loginAndRegister.js";
-import passwordChecker from "../utils/passwordChecker.js";
-import userService from '../api/userService.js';
-import {handleRequest} from '../api/handleRequest.js';
-import {message} from 'ant-design-vue';
+import { ref, reactive, computed } from 'vue';
+import userService from '../../api/userService.ts'
+import { handleRequest } from '../../api/handleRequest.ts';
+import { message } from 'ant-design-vue';
 
 const hasPassword = ref(true);
 
@@ -158,7 +155,7 @@ const sendSmsCode = async () => {
           }
         }, 1000);
       },
-      params: {phone}
+      params: { phone }
     });
   } catch (error) {
     alert('验证码发送失败，请稍后重试。');
@@ -211,7 +208,7 @@ const passwordForm = reactive({
 const confirmSetPassword = async () => {
   // 两个密码不一致，直接返回
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    message.warning({content: "两次输入的密码不一致"});
+    message.warning({ content: "两次输入的密码不一致" });
     return;
   }
   // 校验密码是否符合一定的规则
@@ -351,7 +348,8 @@ const confirmSetPassword = async () => {
   color: #aaa;
 }
 
-.submit-btn, .cancel-btn {
+.submit-btn,
+.cancel-btn {
   width: 100%;
   padding: 12px;
   background-color: #ff4d4f;

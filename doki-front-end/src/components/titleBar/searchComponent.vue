@@ -127,7 +127,7 @@
 
 <script setup lang="ts">
 import {ref, computed, onMounted, onUnmounted} from 'vue'
-import router from "../../router";
+import router from "../../router/index.ts";
 import {getHotSearchList} from "../../api/searchService.ts";
 
 // 类型定义

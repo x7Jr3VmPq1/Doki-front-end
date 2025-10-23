@@ -16,10 +16,10 @@
 </template>
 <script lang="ts" setup>
 import {onMounted} from "vue";
-import {useUserStore} from "./store/userInfoStore.ts";
+import {useUserStore} from "./store/userInfoStore";
 import TitleBar from "./components/titleBar/TitleBar.vue";
-import userService from './api/userService.ts'
-import {handleRequest} from './api/handleRequest.ts'
+import userService from './api/userService'
+import {handleRequest} from './api/handleRequest'
 import SidebarMenu from "./components/SidebarMenu.vue";
 
 const userStore = useUserStore();

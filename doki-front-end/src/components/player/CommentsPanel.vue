@@ -26,7 +26,8 @@ const props = defineProps({
 // 根评论数组
 const commentsArray = ref<CommentListResponse>({
   list: [], // 评论的列表
-  hasMore: false // 是否还有更多评论
+  hasMore: false, // 是否还有更多评论
+  cursor: ''
 });
 const InnerCommentsArea = ref<HTMLDivElement | null>(null); // 评论展示区盒子引用
 
@@ -37,12 +38,12 @@ const isRootLoading = ref(true); // 根评论正在加载标记
 watch(() => props.open, async () => {
   if (!commentLoaded.value) {
     await handleRequest(commentService.getComments, {
+      delay: 500,
       async onSuccess(data) {
-        console.log(data)
         // 给每一条评论初始化一个可能存在的回复列表
-        data.list.forEach(c => c.replies = {list: [], hasMore: c.comments.childCount > 0})
+        data.list.forEach(c => c.replies = {list: [], hasMore: c.comments.childCount > 0, cursor: ''})
         commentsArray.value = data;
-        loadCursor = data.list[data.list.length - 1]; // 保存最后一条评论作为游标
+        loadCursor = data.cursor; // 保存游标
         commentLoaded.value = true; // 初始评论加载完毕
       },
       params: {videoId: props.videoId!}
@@ -52,8 +53,8 @@ watch(() => props.open, async () => {
 })
 
 // 添加无限滚动方法
-let loadCursor: VideoCommentsVO | null = null; // 游标评论对象，加载根评论时以这个为基准
-let RepliesLoadCursors = new Map<string, string>(); // 这个map存储每条根评论上次加载回复时获取的最后一条评论id
+let loadCursor: string | null = null; // 游标，加载根评论时以这个为基准
+let RepliesLoadCursors = new Map<string, string>(); // 这个map存储每条根评论的回复列表游标
 onMounted(async () => {
   if (!loadMoreRef.value) return;
 
@@ -68,6 +69,7 @@ onMounted(async () => {
               return;
             isRootLoading.value = true;
             handleRequest(commentService.getComments, {
+              delay: 500,
               async onSuccess(data) {
                 if (commentsArray.value) {
                   // 去重
@@ -77,13 +79,12 @@ onMounted(async () => {
                   // 更新hasMore状态
                   commentsArray.value.hasMore = data.hasMore;
                   // 更新loadCursor
-                  loadCursor = data.list[data.list.length - 1];
+                  loadCursor = data.cursor;
                   isRootLoading.value = false;
                 }
               }, params: {
                 videoId: props.videoId!,
-                lastId: loadCursor?.comments.id,
-                score: loadCursor?.comments.score
+                cursor: loadCursor
               }
             })
           }
@@ -135,15 +136,32 @@ const handleGetReplies = async (rootComment: VideoCommentsVO) => {
     return;
   }
   await handleRequest(commentService.getComments, {
+    delay: 500,
     onSuccess(data) {
       // 先对获取的数据做去重处理
       data.list = data.list.filter(c => !userAddedComments.some(u => u.comments.id === c.comments.id));
       // 获取根评论的id
       const rootId = rootComment.comments.id;
-      // 获取拉取的回复数据的最后一条id作为新游标
-      const cursorId = data.list[data.list.length - 1].comments.id;
+      // 如果有具体的回复目标，如A回复了B，添加 A → B 的格式
+      data.list.forEach(c => {
+        const rid = c.comments.replyTargetId;
+        const pid = c.comments.parentCommentId;
+        if (rid && pid && (rid != pid)) {
+          // 找到代表pid的评论
+          const pidComment = commentsArray.value.list.find(c => c.comments.id === pid);
+          if (pidComment) {
+            // 找到回复的目标评论
+            const ridComment = pidComment.replies.list.find(c => c.comments.id === rid);
+            if (ridComment) {
+              // 找到，添加回复目标
+              c.user.reply_to = ridComment.user;
+            }
+          }
+        }
+      })
       // 更新游标
-      RepliesLoadCursors.set(rootId, cursorId);
+      if (data.hasMore && data.cursor)
+        RepliesLoadCursors.set(rootId, data.cursor);
       // 把新数据填充到回复列表中
       rootComment.replies.list.push(...(data.list))
       // 更新是否还有更多数据标记
@@ -151,7 +169,7 @@ const handleGetReplies = async (rootComment: VideoCommentsVO) => {
     }, params: {
       videoId: rootComment.comments.videoId,
       parentCommentId: rootComment.comments.id,
-      lastId: RepliesLoadCursors.get(rootComment.comments.id)
+      cursor: RepliesLoadCursors.get(rootComment.comments.id)
     }
   })
 
@@ -205,28 +223,33 @@ const handleLike = (status: commentStatus) => {
 // 新建一个保存“当前用户新添加的评论”的数组，因为服务器可能会返回刚刚添加的评论
 // 那么这时候视图中就可能出现重复的评论，所以每次加载的时候，对新拉取的评论做一下去重。
 const userAddedComments: VideoCommentsVO[] = [];
-const handleAddReply = (comment: VideoComments) => {
+const handleAddReply = (newCommentObject: any) => {
   // 1. 构建一个新的VO对象用来存储新增加的评论，并将其添加到userAddedComments
   // 从userStore中获取用户信息
   const user = userStore.userInfo;
   const newComment: VideoCommentsVO = {
-    comments: comment,
+    comments: newCommentObject.newComment,
     user: {
       username: user.username,
       bio: user.bio,
       id: user.id,
-      avatarUrl: user.avatarUrl
+      avatarUrl: user.avatarUrl,
+      reply_to: newCommentObject.userInfo
     },
     liked: false,
     replies: {
       list: [],
-      hasMore: false
+      hasMore: false,
+      cursor: ''
     }
   }
   userAddedComments.push(newComment);
   // 2. 把这个对象插入到合适的位置，如果它是根评论，插入到最上边
-  if (comment.isRoot) {
+  if (newCommentObject.newComment.isRoot) {
     commentsArray.value.list.unshift(newComment);
+    // 让评论盒子返回到顶部
+    if (InnerCommentsArea.value)
+      InnerCommentsArea.value.scrollTop = 0;
   } else {
     // 如果它是回复，则把它插入到回复列表的最底部。
     // 先找到它的根评论
@@ -236,6 +259,7 @@ const handleAddReply = (comment: VideoComments) => {
       root.replies.list.push(newComment);
     }
   }
+
   // 清除回复状态
   clearReplyStatus();
 }
@@ -340,11 +364,6 @@ const handleAddReply = (comment: VideoComments) => {
   color: white;
 }
 
-.to-top {
-  position: absolute;
-  right: 50px;
-  bottom: 50px;
-}
 
 </style>
 

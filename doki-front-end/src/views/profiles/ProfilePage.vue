@@ -5,19 +5,27 @@ import FollowAndDM from "./FollowAndDM.vue";
 import MainMenu from "./MainMenu.vue";
 import WorksFilters from "./WorksFilters.vue";
 import WorksGrid from "./WorksGrid.vue";
+import { useRoute } from 'vue-router'
+import { onMounted, ref } from "vue";
+const route = useRoute()
 
+const mode = ref<string>('/my');
+
+onMounted(() => {
+  mode.value = route.path;
+})
 </script>
-
+<!-- “我的”页面 -->
 <template>
   <div class="profile-page">
     <header class="header">
       <!-- 用户信息 -->
       <user-card></user-card>
       <!-- 用户操作 -->
-      <header-actions></header-actions>
+      <header-actions :mode="mode"></header-actions>
     </header>
     <!-- 关注/私信按钮 -->
-    <follow-and-d-m></follow-and-d-m>
+    <follow-and-d-m v-if="mode != '/my'"></follow-and-d-m>
     <!-- 菜单按钮 -->
     <main-menu></main-menu>
     <!-- 筛选作品类型按钮 -->

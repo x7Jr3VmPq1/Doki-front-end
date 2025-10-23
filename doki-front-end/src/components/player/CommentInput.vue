@@ -4,7 +4,7 @@ import {ref, type Ref, defineProps, defineEmits, reactive, watch} from 'vue';
 import {handleRequest} from "../../api/handleRequest.ts";
 import commentService from "../../api/commentService.ts";
 import type {commentStatus} from './CommentItem.vue'
-import type {VideoCommentDTO, VideoComments} from '../../api/commentService.ts'
+import type {VideoCommentDTO, VideoComments, User} from '../../api/commentService.ts'
 
 const props = defineProps<{
   status: commentStatus | null, // 父组件传递的被点击回复按钮评论的对象引用
@@ -13,7 +13,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'deleteReply'): void,
-  (event: 'addComment', comments: VideoComments): void
+  (event: 'addComment', comments: {
+    newComment: VideoComments,
+    userInfo: User | null
+  }): void
 }>()
 
 // 评论收集表单
@@ -53,10 +56,10 @@ const handlePictureUpload = (event: Event) => {
 
 // 获取目标评论对象和用户信息
 let targetComment: any;
-let userInfo: any;
+let userInfo: User | null;
 watch(() => props.status, () => {
   targetComment = props.status?.commentObject.comments;
-  userInfo = props.status?.commentObject.user;
+  userInfo = props.status?.commentObject.user ?? null;
 })
 
 // 处理提交评论
@@ -72,7 +75,7 @@ const handleClickSend = async () => {
   await handleRequest(commentService.addComment, {
     onSuccess(data) {
       // 把添加的评论发回父组件
-      emit('addComment', data)
+      emit('addComment', {newComment: data, userInfo: userInfo})
     },
     params: commentForm
   })
@@ -88,7 +91,7 @@ const handleClickSend = async () => {
   <div class="comment-input" style="max-height: 50%;display: flex;flex-direction: column">
     <div class="reply-target" v-if="status">
       <div class="reply-target-content">{{
-          '回复@' + (userInfo.username + ': ' + targetComment.content) + (targetComment.imgUrl ? '[图片]' : '')
+          '回复@' + (userInfo?.username + ': ' + targetComment.content) + (targetComment.imgUrl ? '[图片]' : '')
         }}
       </div>
       <Delete class="delete-btn" @click="onClickDeleteReply"></Delete>

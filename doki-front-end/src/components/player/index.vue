@@ -503,7 +503,7 @@ const favoriteVideo = async (videoId: number) => {
   content: "";
   position: absolute;
   inset: 0; /* top:0; right:0; bottom:0; left:0 */
-  background-image: url('http://localhost:8081/avatars/202300803-ProjectSEKAI-HatsuneMiku.jpg');
+  background-image: url('http://localhost:10010/image/cover/202300803-ProjectSEKAI-HatsuneMiku.jpg');
   background-size: cover;
   background-position: center;
   filter: blur(80px); /* 高斯模糊 */

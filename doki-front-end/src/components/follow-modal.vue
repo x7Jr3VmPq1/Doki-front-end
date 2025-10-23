@@ -1,5 +1,13 @@
 <template>
-  <div v-if="visible" class="modal-overlay" @click.self="handleOverlayClick" @click.stop>
+  <Doki-Modal 
+    :visible="visible" 
+    :fullscreen="false"
+    :closeOnOverlay="true"
+    :showHeader="false"
+    :showCloseButton="true"
+    @update:visible="$emit('update:visible', $event)"
+    @close="closeModal"
+  >
     <div class="follow-modal">
       <div class="modal-header">
         <div class="tabs">
@@ -10,7 +18,6 @@
             粉丝 ({{ followersCount }})
           </div>
         </div>
-        <button class="close-button" @click="closeModal">×</button>
       </div>
 
       <div class="modal-content">
@@ -27,7 +34,7 @@
                   v-for="option in sortOptions"
                   :key="option.value"
                   :class="['sort-menu-item', { active: currentSort === option.value }]"
-                  @click="selectSortOption(option.value)"
+                  @click="selectSortOption(option.value as SortOptionValue)"
               >
                 {{ option.label }}
               </div>
@@ -59,16 +66,14 @@
         </div>
       </div>
     </div>
-  </div>
+  </Doki-Modal>
 </template>
 
 <script setup lang="ts">
 import {ref, computed, watch} from 'vue';
-import {getFansList, getFollowList, followUser} from "../api/userService.ts";
-import {useUserStore} from "../store/userInfoStore.ts";
+// import {useUserStore} from "../store/userInfoStore.ts"; // 暂时未使用
 import DokiLoading from "./Doki-Loading.vue";
-
-const userStore = useUserStore();
+import DokiModal from "./Doki-Modal.vue";
 
 interface User {
   id: number;
@@ -102,17 +107,6 @@ const showSortMenu = ref(false); // 控制排序菜单的显示/隐藏
 const currentSort = ref<SortOptionValue>('default'); // 当前选中的排序方式
 
 const isLoading = ref(false);
-
-watch(() => props.visible, async () => {
-  if (props.visible) {
-    isLoading.value = true;
-    followingList.value = await getFollowList(userStore.userInfo?.userId);
-    fansList.value = await getFansList(userStore.userInfo?.userId);
-    // 500ms 延迟，确保数据已加载
-    await new Promise(resolve => setTimeout(resolve, 500));
-    isLoading.value = false;
-  }
-})
 
 // 定义排序选项
 const sortOptions = [
@@ -152,16 +146,9 @@ const closeModal = () => {
   emit('update:visible', false);
 };
 
-// 点击模态框外部关闭模态框
-const handleOverlayClick = () => {
-  emit('update:visible', false);
-};
-
 const handleFollowButtonClick = async (user: User) => {
-  const res = await followUser(user.id);
-  if (res.code == 200) {
-    user.isFollowing = !user.isFollowing;
-  }
+  // TODO: 实现关注/取消关注逻辑
+  console.log('Follow button clicked for user:', user.userName);
 };
 </script>
 
@@ -173,29 +160,12 @@ const handleFollowButtonClick = async (user: User) => {
   align-items: center;
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* 半透明背景，形成遮罩效果 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000; /* 确保模态框在最上层 */
-}
-
 .follow-modal {
-  width: 600px; /* Adjust width as needed */
+  width: 600px;
   height: 600px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  z-index: 1001; /* 比 overlay 高一点确保内容在遮罩上 */
+  overflow: hidden;
 }
 
 .modal-header {
@@ -237,18 +207,13 @@ const handleFollowButtonClick = async (user: User) => {
   border-radius: 2px;
 }
 
-.close-button {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #999;
-  cursor: pointer;
-}
+/* close-button 样式已由 Doki-Modal 提供 */
 
 .modal-content {
   padding: 16px;
-  flex-grow: 1;
+  flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .search-sort-bar {

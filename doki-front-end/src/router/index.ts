@@ -29,20 +29,9 @@ const routes = [
         component: () => import('../views/search/index.vue'),
     },
     {
-        path: '/following',
-        name: 'Following',
-        component: () => import('../views/following/index.vue'),
-        meta: {requiresAuth: true}
-    },
-    {
         path: '/my',
         name: 'my',
         component: () => import('../views/profiles/ProfilePage.vue'),
-    },
-    {
-        path: '/creator',
-        name: 'creator',
-        component: () => import('../views/creator/index.vue')
     },
     {
         path: '/404',

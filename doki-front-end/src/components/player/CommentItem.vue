@@ -4,15 +4,33 @@
       <!-- 自定义评论组件 -->
       <div class="custom-comment"
            :class="{'comment-highlight':status.isReplying}">
-        <div class="comment-avatar">
+        <div class="comment-avatar" @click="handleClickAvatar(commentObject.user.id)">
           <a-avatar :src=commentObject.user.avatarUrl></a-avatar>
         </div>
         <div class="comment-body">
-          <div class="comment-author">{{ commentObject.user.username }}</div>
+          <div class="comment-author">
+            <div class="user-name">
+              <!-- 用户名 -->
+              <a @click="handleClickUsername(commentObject.user.id)">{{ commentObject.user.username }}</a>
+              <!-- 回复目标 -->
+              <!-- 只有回复目标不是自己的时候，或者回复目标不是根评论，才显示 -->
+              <div v-if="commentObject.user.reply_to
+              && commentObject.comments.parentCommentId !== commentObject.comments.replyTargetId
+              && commentObject.user.reply_to.id !== commentObject.user.id"
+                   class="reply-target">
+                <p style="color: silver">
+                  <Right></Right>
+                </p>
+                <a @click="handleClickUsername(commentObject.user.reply_to.id)">
+                  {{ commentObject.user.reply_to.username }}
+                </a>
+              </div>
+            </div>
+          </div>
           <div class="comment-text">
             <p>{{ commentObject.comments.content }}</p>
             <a-image
-                v-if="commentObject.comments.imgUrl"
+                v-if="commentObject.comments.imgUrl != '' && commentObject.comments.imgUrl!=null"
                 :src="commentObject.comments.imgUrl" :height="80" :width="80" :preview-mask="false"
                 style="object-fit: cover;border-radius: 10px;"/>
             <p class="comment-time">{{ dayUtils.formatTimestamp(commentObject.comments.createdAt) }}</p>
@@ -83,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import {Message, ShareTwo, Like, Search, More} from '@icon-park/vue-next'
+import {Message, ShareTwo, Like, Search, More, Right} from '@icon-park/vue-next'
 import type {VideoCommentsVO} from '../../api/commentService.ts'
 import {defineProps, defineEmits, ref} from 'vue';
 import {dayUtils} from '../../utils/dayUtils.ts'
@@ -126,13 +144,21 @@ const onClickLike = () => {
   emit('clickLike', status.value);
 }
 
+const handleClickUsername = (uid: number) => {
+  console.log(uid);
+}
+const handleClickAvatar = (uid: number) => {
+  console.log(uid);
+}
+
 
 </script>
 
 <style scoped>
 /* 自定义评论组件样式 */
 .comment-item {
-  margin-bottom: 5px;
+  margin-top: 5px;
+  margin-bottom: 15px;
 }
 
 .comment-content {
@@ -148,6 +174,7 @@ const onClickLike = () => {
 
 .comment-avatar {
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .comment-body {
@@ -158,9 +185,32 @@ const onClickLike = () => {
 .comment-author {
   font-weight: 500;
   color: white;
-  margin-bottom: 4px;
   font-size: 14px;
+  display: flex;
 }
+
+.user-name {
+  display: flex;
+  line-height: 14px;
+  height: 20px;
+
+  a {
+    color: silver;
+  }
+
+  a:hover {
+    color: white;
+  }
+}
+
+.reply-target {
+  width: 80px;
+  overflow: hidden;
+  display: flex;
+  white-space: nowrap; /* 禁止换行 */
+  text-overflow: ellipsis; /* 显示省略号 */
+}
+
 
 .comment-text {
   width: 100%;
@@ -173,7 +223,7 @@ const onClickLike = () => {
 }
 
 .comment-time {
-  color: #bbbfc6;
+  color: #756666;
   font-size: 12px;
   margin-bottom: 8px !important;
 }

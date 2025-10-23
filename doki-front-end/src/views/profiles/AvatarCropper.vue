@@ -3,6 +3,7 @@ import {ref, watch, defineProps, defineEmits} from 'vue';
 import 'vue-cropper/dist/index.css';
 import {VueCropper} from "vue-cropper";
 
+
 const cropper = ref();
 
 let sliderValue = 0; // 初始值
@@ -13,7 +14,7 @@ const props = defineProps({
   image: String,
   notice: Boolean
 });
-const emit = defineEmits(['cropResult']);
+const emit = defineEmits(['cropResult', 'cropPreview']);
 
 const cropLayout = ref({
   width: 250,
@@ -24,9 +25,54 @@ watch(() => props.notice, () => {
   if (props.notice) {
     // 通知父组件截图完成，返回截图结果
     cropper.value.getCropData(data => {
-      console.log(data);
       emit('cropResult', data);
     });
+  }
+});
+
+// 实时预览功能
+const updatePreview = () => {
+  if (cropper.value) {
+    cropper.value.getCropData(data => {
+      emit('cropPreview', data);
+    });
+  }
+};
+
+// 监听图片变化，初始化预览
+watch(() => props.image, () => {
+  if (props.image) {
+    updatePreview();
+  }
+});
+
+// 添加一个简单的定时器来定期更新预览
+let previewTimer = null;
+
+// 开始预览更新
+const startPreview = () => {
+  if (previewTimer) clearInterval(previewTimer);
+  previewTimer = setInterval(() => {
+    updatePreview();
+  }, 10); // 每100ms更新一次，更流畅
+};
+
+// 停止预览更新
+const stopPreview = () => {
+  if (previewTimer) {
+    clearInterval(previewTimer);
+    previewTimer = null;
+  }
+};
+
+// 监听裁剪器状态
+watch(() => props.image, (newVal) => {
+  if (newVal) {
+    setTimeout(() => {
+      startPreview();
+    }, 1000);
+  } else {
+    stopPreview();
   }
 });
 // 缩放比例
@@ -46,8 +92,13 @@ const handleZoom = (value) => {
     direction = "未滑动";
   }
   lastValue = value; // 更新上一次的值
-  console.log(`当前值：${value}，滑动方向：${direction}`);
 };
+
+// 暴露方法给父组件
+defineExpose({
+  updatePreview,
+  cropper
+});
 </script>
 
 <template>
@@ -64,6 +115,14 @@ const handleZoom = (value) => {
         :fixedBox="true"
         :centerBox="true"
         :canMoveBox="false"
+        @crop-moving="updatePreview"
+        @crop-end="updatePreview"
+        @crop-start="updatePreview"
+        @crop-change="updatePreview"
+        @crop="updatePreview"
+        @crop-move="updatePreview"
+        @crop-move-end="updatePreview"
+        @crop-move-start="updatePreview"
     >
     </VueCropper>
   </div>
@@ -72,9 +131,10 @@ const handleZoom = (value) => {
 <style scoped>
 
 .container {
-  border-radius: 50%;
+  border-radius: 8px;
   overflow: hidden;
   margin: 0 auto; /* 让内容居中 */
+  border: 2px solid #fe2c55;
 }
 </style>
 

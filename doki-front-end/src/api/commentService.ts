@@ -21,25 +21,27 @@ export interface VideoComments {
     parentCommentId: string;
     replyTargetId: string
     isRoot: boolean;
-    score: number;
 }
 
 export interface CommentListResponse {
     list: VideoCommentsVO[];
     hasMore: boolean;
+    cursor: string | null;
+}
+
+export interface User {
+    username: string;
+    bio: string;
+    id: number;
+    avatarUrl: string;
+    reply_to?: User | null // 额外的属性，当可能存在回复目标时，添加这个属性
 }
 
 export interface VideoCommentsVO {
     comments: VideoComments,
     liked: boolean;
-    user: {
-        username: string;
-        bio: string;
-        id: number;
-        avatarUrl: string;
-    };
-    // 额外的属性，可选的子评论列表
-    replies: CommentListResponse;
+    user: User;
+    replies: CommentListResponse; // 额外的属性，可选的子评论列表
 }
 
 
@@ -59,8 +61,7 @@ export default {
     // 获取视频评论列表
     getComments: (params: {
         videoId: number;
-        score?: number;
-        lastId?: string;
+        cursor?: string | null;
         parentCommentId?: string;
     }) => request<CommentListResponse>('/comment/get', {
         method: 'GET',

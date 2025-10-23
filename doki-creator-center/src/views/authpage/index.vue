@@ -14,15 +14,16 @@ onMounted(async () => {
   // 从URL中获取授权码
   const params = new URLSearchParams(window.location.search)
   const code = params.get('auth');
+  const userId = params.get('userId')
   // 调用接口获取token
-  if (code) {
+  if (code && userId) {
     await handleRequest(userService.getTokenByAuthCode, {
       onSuccess(data) {
         // 设置token
         localStorage.setItem('token', data);
         // 跳转到首页
         router.replace('/home')
-      }, params: code
+      }, params: {code, userId}
     })
   }
   // 跳转到首页
