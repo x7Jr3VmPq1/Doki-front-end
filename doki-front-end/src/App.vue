@@ -9,7 +9,7 @@
       <TitleBar></TitleBar>
       <!-- 一级路由出口!-->
       <div class="router-view">
-        <router-view></router-view>
+        <router-view :key="$route.fullPath"></router-view>
       </div>
     </div>
   </div>

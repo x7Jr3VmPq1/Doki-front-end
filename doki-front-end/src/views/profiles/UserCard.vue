@@ -9,7 +9,13 @@ import { useUserStore } from '../../store/userInfoStore.ts'
 import FollowModal from '../../components/FollowModal.vue';
 import EditProfileModal from './EditProfileModal.vue';
 import { Edit } from '@icon-park/vue-next'
+import router from '../../router/index.ts';
 const userStore = useUserStore();
+
+const props = defineProps<{
+  mode: string,
+  uid: number
+}>()
 
 const userInfo = reactive<userInfo>({
   id: -1,
@@ -37,7 +43,7 @@ onMounted(() => {
   handleRequest(userService.getUserinfoById, {
     onSuccess(data) {
       Object.assign(userInfo, data[0]);
-    }, params: [userStore.userInfo.id]
+    }, params: props.mode == 'my' ? [userStore.userInfo.id] : [props.uid]
   })
 
   handleRequest(analyticsService.getUserStatById, {
@@ -45,6 +51,8 @@ onMounted(() => {
       Object.assign(userStat, data);
     }, params: userStore.userInfo.id
   })
+
+
 });
 
 // 处理编辑按钮点击
@@ -77,9 +85,9 @@ const handleProfileUpdated = (updatedData: any) => {
       </div>
       <div class="stats">
         <div class="stat-item" @click="state.followModal = !state.followModal">关注 <span class="stat-value">{{
-            userStat.followingCount }}</span></div>
+          userStat.followingCount }}</span></div>
         <div class="stat-item" @click="state.followModal = !state.followModal">粉丝 <span class="stat-value">{{
-            userStat.followerCount }}</span></div>
+          userStat.followerCount }}</span></div>
         <div class="stat-item">获赞 <span class="stat-value">{{ userStat.likeCount }}</span></div>
       </div>
       <div class="user-bio">

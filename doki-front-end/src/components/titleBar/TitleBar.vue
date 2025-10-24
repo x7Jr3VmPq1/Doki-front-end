@@ -3,8 +3,8 @@
 // (通知按钮，消息按钮，投稿按钮，登录/个人信息按钮)
 import MyDirectMessage from "./MyDirectMessage.vue";
 import MyPopover from "../MyPopover.vue";
-import SearchComponent from "./searchComponent.vue";
-import Notification from "./notification.vue";
+import SearchComponent from "./SearchComponent.vue";
+import Notification from "./Notification.vue";
 import LoginRegisterDialog from "./LoginRegisterDialog.vue";
 import { Message, Remind, AddMusic } from '@icon-park/vue-next';
 import { ref, onMounted, watch } from "vue";

@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-
+import {useUserStore } from '../store/userInfoStore';
 const routes = [
   {
     path: '/',
@@ -17,7 +17,12 @@ const routes = [
   {
     path: '/my',
     name: 'my',
-    component: () => import('../views/my/index.vue'),
+    component: () => import('../views/profiles/index.vue'),
+  },
+  {
+    path: '/profiles',
+    name: 'profiles',
+    component: () => import('../views/profiles/index.vue'),
   },
   {
     path: '/404',
@@ -55,4 +60,8 @@ router.beforeEach((to, _, next): void => {
     next();
   }
 });
+
+router.beforeEach((to, _, next): void => {
+
+})
 export default router
