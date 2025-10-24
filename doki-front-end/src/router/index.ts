@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import {useUserStore } from '../store/userInfoStore';
+
 const routes = [
   {
     path: '/',
@@ -61,7 +61,14 @@ router.beforeEach((to, _, next): void => {
   }
 });
 
-router.beforeEach((to, _, next): void => {
+router.beforeEach(async (to, _, next) => {
+  const { useUserStore } = await import('../store/userInfoStore')
+  const userStore = useUserStore()
 
+  if (to.path === '/profiles' && Number(to.query.uid) === userStore.userInfo.id) {
+    next('/my')
+  } else {
+    next()
+  }
 })
 export default router

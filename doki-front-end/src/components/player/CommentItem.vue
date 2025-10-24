@@ -2,8 +2,7 @@
   <div class="comment-item">
     <div class="comment-content">
       <!-- 自定义评论组件 -->
-      <div class="custom-comment"
-           :class="{'comment-highlight':status.isReplying}">
+      <div class="custom-comment" :class="{ 'comment-highlight': status.isReplying }">
         <div class="comment-avatar" @click="handleClickAvatar(commentObject.user.id)">
           <a-avatar :src=commentObject.user.avatarUrl></a-avatar>
         </div>
@@ -15,9 +14,8 @@
               <!-- 回复目标 -->
               <!-- 只有回复目标不是自己的时候，或者回复目标不是根评论，才显示 -->
               <div v-if="commentObject.user.reply_to
-              && commentObject.comments.parentCommentId !== commentObject.comments.replyTargetId
-              && commentObject.user.reply_to.id !== commentObject.user.id"
-                   class="reply-target">
+                && commentObject.comments.parentCommentId !== commentObject.comments.replyTargetId
+                && commentObject.user.reply_to.id !== commentObject.user.id" class="reply-target">
                 <p style="color: silver">
                   <Right></Right>
                 </p>
@@ -29,10 +27,9 @@
           </div>
           <div class="comment-text">
             <p>{{ commentObject.comments.content }}</p>
-            <a-image
-                v-if="commentObject.comments.imgUrl != '' && commentObject.comments.imgUrl!=null"
-                :src="commentObject.comments.imgUrl" :height="80" :width="80" :preview-mask="false"
-                style="object-fit: cover;border-radius: 10px;"/>
+            <a-image v-if="commentObject.comments.imgUrl != '' && commentObject.comments.imgUrl != null"
+              :src="commentObject.comments.imgUrl" :height="80" :width="80" :preview-mask="false"
+              style="object-fit: cover;border-radius: 10px;" />
             <p class="comment-time">{{ dayUtils.formatTimestamp(commentObject.comments.createdAt) }}</p>
             <div class="comment-actions">
               <!-- 回复按钮 -->
@@ -43,53 +40,52 @@
               <!-- 点赞按钮 -->
               <span class="action-btn" @click="onClickLike">
                 <Like v-if="commentObject.liked" theme="filled" fill="#FF0000"></Like>
-                <Like v-else/>
-                <span v-if="commentObject.comments.likeCount>0" style="padding-left: 5px">
-                {{ commentObject.comments.likeCount }}
+                <Like v-else />
+                <span v-if="commentObject.comments.likeCount > 0" style="padding-left: 5px">
+                  {{ commentObject.comments.likeCount }}
                 </span>
               </span>
               <!-- 不喜欢（功能待实现） -->
               <!--              <span class="action-btn"><Dislike/></span>-->
               <!-- 分享 -->
-              <a-popover trigger="click" :arrow="false" :overlayInnerStyle="{backgroundColor:'#252632'}"
-                         style="user-select: none" :destroyTooltipOnHide="true">
+              <a-popover trigger="click" :arrow="false" :overlayInnerStyle="{ backgroundColor: '#252632' }"
+                style="user-select: none" :destroyTooltipOnHide="true">
                 <template #content>
                   <div style="color: white">
                     <div
-                        style="display: flex;text-align: center;background-color: grey;padding: 5px;border-radius: 10px">
+                      style="display: flex;text-align: center;background-color: grey;padding: 5px;border-radius: 10px">
                       <div style="display: flex;flex-direction: column; justify-content: center;padding: 2px">
-                        <Search/>
+                        <Search />
                       </div>
                       <a-input style="outline: none;border: none;background-color: transparent;color: white"
-                               placeholder="搜索"/>
+                        placeholder="搜索" />
                     </div>
                     <div style="margin-top: 10px;padding-bottom: 10px; color: grey">分享给朋友</div>
                     <div class="share-targets">
                       <div style="display: flex;gap: 10px;padding-bottom: 10px" v-for="_ in 3">
-                        <a-avatar src="https://joeschmoe.io/api/v1/random"/>
+                        <a-avatar src="https://joeschmoe.io/api/v1/random" />
                         <div style="height: 32px;line-height: 32px;flex: 1">昵称1</div>
                         <div style="height: 32px;line-height: 32px">分享</div>
                       </div>
                     </div>
                   </div>
                 </template>
-                <span class="action-btn"><ShareTwo style="margin-right: 3px"/>分享</span>
+                <span class="action-btn">
+                  <ShareTwo style="margin-right: 3px" />分享
+                </span>
               </a-popover>
             </div>
           </div>
           <div class="report-delete-btn">
-            <a-popover :arrow="false" :overlayInnerStyle="{backgroundColor:'#252632'}" :destroyTooltipOnHide="true">
+            <a-popover :arrow="false" :overlayInnerStyle="{ backgroundColor: '#252632' }" :destroyTooltipOnHide="true">
               <template #content>
-                <span
-                    style="color: white;cursor: pointer;user-select: none"
-                    v-if="commentObject.user.id === userStore.userInfo.id"
-                    @click="onClickDelete"
-                >
+                <span style="color: white;cursor: pointer;user-select: none"
+                  v-if="commentObject.user.id === userStore.userInfo.id" @click="onClickDelete">
                   删除
                 </span>
                 <span style="color: white" v-else>举报</span>
               </template>
-              <More/>
+              <More />
             </a-popover>
           </div>
 
@@ -101,11 +97,12 @@
 </template>
 
 <script setup lang="ts">
-import {Message, ShareTwo, Like, Search, More, Right} from '@icon-park/vue-next'
-import type {VideoCommentsVO} from '../../api/commentService.ts'
-import {defineProps, defineEmits, ref} from 'vue';
-import {dayUtils} from '../../utils/dayUtils.ts'
-import {useUserStore} from '../../store/userInfoStore.ts'
+import { Message, ShareTwo, Like, Search, More, Right } from '@icon-park/vue-next'
+import type { VideoCommentsVO } from '../../api/commentService.ts'
+import { defineProps, defineEmits, ref } from 'vue';
+import { dayUtils } from '../../utils/dayUtils.ts'
+import { useUserStore } from '../../store/userInfoStore.ts'
+import router from '../../router/index.ts';
 
 const userStore = useUserStore();
 
@@ -145,10 +142,21 @@ const onClickLike = () => {
 }
 
 const handleClickUsername = (uid: number) => {
-  console.log(uid);
+  toProfiles(uid);
+
 }
 const handleClickAvatar = (uid: number) => {
-  console.log(uid);
+  toProfiles(uid);
+}
+// 跳转到个人资料页方法
+const toProfiles = (uid: number) => {
+  // 生成完整 URL
+  const url = router.resolve({
+    path: uid === userStore.userInfo.id ? '/my' : '/profiles',
+    ...(uid !== userStore.userInfo.id && { query: { uid } })
+  }).href;
+  // 在新标签页打开
+  window.open(url, '_blank');
 }
 
 
@@ -207,8 +215,10 @@ const handleClickAvatar = (uid: number) => {
   width: 80px;
   overflow: hidden;
   display: flex;
-  white-space: nowrap; /* 禁止换行 */
-  text-overflow: ellipsis; /* 显示省略号 */
+  white-space: nowrap;
+  /* 禁止换行 */
+  text-overflow: ellipsis;
+  /* 显示省略号 */
 }
 
 
@@ -277,5 +287,4 @@ const handleClickAvatar = (uid: number) => {
   background-color: transparent !important;
   color: rgba(255, 255, 255, 0.5) !important;
 }
-
 </style>

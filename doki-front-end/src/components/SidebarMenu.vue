@@ -1,11 +1,7 @@
 <template>
   <div class="sidebar-menu">
-    <div
-        v-for="item in menuItemsTop"
-        :key="item.key"
-        :class="['menu-item', { 'is-selected': selectedKey === item.key }]"
-        @click="selectItem(item.key)"
-    >
+    <div v-for="item in menuItemsTop" :key="item.key"
+      :class="['menu-item', { 'is-selected': selectedKey === item.key }]" @click="selectItem(item.key)">
       <div class="icon-placeholder">
         <component :is="item.icon" :size="24"></component>
       </div>
@@ -14,12 +10,8 @@
 
     <div class="divider"></div>
 
-    <div
-        v-for="item in menuItemsMiddle"
-        :key="item.key"
-        :class="['menu-item', { 'is-selected': selectedKey === item.key }]"
-        @click="selectItem(item.key)"
-    >
+    <div v-for="item in menuItemsMiddle" :key="item.key"
+      :class="['menu-item', { 'is-selected': selectedKey === item.key }]" @click="selectItem(item.key)">
       <div class="icon-placeholder">
         <component :is="item.icon" :size="24"></component>
       </div>
@@ -27,59 +19,63 @@
     </div>
 
     <div class="divider"></div>
-
-    <div
-        v-for="item in menuItemsBottom"
-        :key="item.key"
-        :class="['menu-item', { 'is-selected': selectedKey === item.key }]"
-        @click="selectItem(item.key)"
-    >
-      <div class="icon-placeholder">
-        <component :is="item.icon" :size="24"></component>
-      </div>
-      <span class="menu-label">{{ item.label }}</span>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref,} from 'vue';
-import type {ComponentPublicInstance} from 'vue';
-import {Fireworks, PersonalCollection, Me, PeoplePlus, Tv} from '@icon-park/vue-next'
-import router from "../router";
+import { ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import router from '../router';
+import { Fireworks, PeoplePlus, PersonalCollection, Me } from '@icon-park/vue-next';
 
-// 定义菜单项的接口
 interface MenuItem {
   key: string;
   label: string;
-  icon?: ComponentPublicInstance | any;
+  icon?: any;
 }
 
-// 顶部菜单项
-const menuItemsTop: MenuItem[] = [
-  {key: 'home', label: '推荐', icon: Fireworks},
-];
-
-// 中部菜单项
+// 顶部菜单
+const menuItemsTop: MenuItem[] = [{ key: 'home', label: '推荐', icon: Fireworks }];
+// 中部菜单
 const menuItemsMiddle: MenuItem[] = [
-  {key: 'followed', label: '关注', icon: PeoplePlus},
-  {key: 'friends', label: '朋友', icon: PersonalCollection},
-  {key: 'my', label: '我的', icon: Me},
+  { key: 'followed', label: '关注', icon: PeoplePlus },
+  { key: 'friends', label: '朋友', icon: PersonalCollection },
+  { key: 'my', label: '我的', icon: Me },
 ];
 
-// 底部菜单项
-const menuItemsBottom: MenuItem[] = [
-  // {key: 'live-stream', label: '直播', icon: Tv},
-];
+const selectedKey = ref<string>('');
 
-// 默认选中的菜单项，这里设置为 'my' 以匹配图片
-const selectedKey = ref<string>('home');
+// 合并所有菜单项
+const allMenuItems = [...menuItemsTop, ...menuItemsMiddle];
 
+const updateSelectedKey = (path: string) => {
+  const lowerPath = path.toLowerCase();
+  const matched = allMenuItems.find(item =>
+    lowerPath.startsWith(`/${item.key.toLowerCase()}`)
+  );
+  selectedKey.value = matched ? matched.key : '';
+};
+
+// 点击菜单项
 const selectItem = (key: string) => {
   selectedKey.value = key;
-  // 可以在这里添加路由跳转或其他逻辑
-  router.push(`/${key}`);
+  router.push(key === 'home' ? '/' : `/${key}`);
 };
+
+// 初始化选中项
+const route = useRoute();
+onMounted(() => {
+  updateSelectedKey(route.path);
+});
+
+// 监听路由变化，保持菜单选中同步
+watch(
+  () => route.path,
+  (newPath) => {
+    updateSelectedKey(newPath);
+  }
+);
+
 </script>
 
 <style scoped>
@@ -87,12 +83,14 @@ const selectItem = (key: string) => {
   height: 100%;
   background-color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-  Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   color: #333;
   padding: 16px 10px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05); /* 轻微阴影 */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+  /* 轻微阴影 */
   border-right: 1px solid #eee;
-  box-sizing: border-box; /* 确保padding和border不增加额外宽度 */
+  box-sizing: border-box;
+  /* 确保padding和border不增加额外宽度 */
   transition: all 0.3s ease;
 }
 
@@ -106,31 +104,41 @@ const selectItem = (key: string) => {
   transition: background-color 0.2s ease;
   font-size: 16px;
   color: #333;
-  position: relative; /* 为了live-tag定位 */
+  position: relative;
+  /* 为了live-tag定位 */
   box-sizing: border-box;
 }
 
 .menu-item:hover {
   background-color: #f5f5f5;
-  border-radius: 10px; /* 轻微圆角 */
+  border-radius: 10px;
+  /* 轻微圆角 */
 }
 
 /* 选中项的样式 */
 .menu-item.is-selected {
   font-weight: bold;
-  background-color: #f0f0f0; /* 选中时的背景色 */
-  color: #333; /* 选中时文字颜色不变 */
-  border-radius: 10px; /* 轻微圆角 */
+  background-color: #f0f0f0;
+  /* 选中时的背景色 */
+  color: #333;
+  /* 选中时文字颜色不变 */
+  border-radius: 10px;
+  /* 轻微圆角 */
 }
 
 
 .icon-placeholder {
-  width: 24px; /* 图标占位符大小 */
+  width: 24px;
+  /* 图标占位符大小 */
   height: 24px;
-  border-radius: 50%; /* 圆形图标 */
-  margin-right: 12px; /* 图标与文字间距 */
-  flex-shrink: 0; /* 防止图标被压缩 */
-  display: flex; /* 让其内容居中，虽然目前没有内容 */
+  border-radius: 50%;
+  /* 圆形图标 */
+  margin-right: 12px;
+  /* 图标与文字间距 */
+  flex-shrink: 0;
+  /* 防止图标被压缩 */
+  display: flex;
+  /* 让其内容居中，虽然目前没有内容 */
   align-items: center;
   justify-content: center;
 }
@@ -141,14 +149,16 @@ const selectItem = (key: string) => {
   font-size: 10px;
   padding: 2px 5px;
   border-radius: 3px;
-  margin-left: 8px; /* 与文字的距离 */
+  margin-left: 8px;
+  /* 与文字的距离 */
   font-weight: bold;
 }
 
 .divider {
   height: 1px;
   background-color: #eee;
-  margin: 16px 20px; /* 分隔线上下的间距和左右内缩 */
+  margin: 16px 20px;
+  /* 分隔线上下的间距和左右内缩 */
 }
 
 .menu-label {
@@ -173,7 +183,8 @@ const selectItem = (key: string) => {
   }
 
   .menu-label {
-    display: none; /* 隐藏文字，只显示图标 */
+    display: none;
+    /* 隐藏文字，只显示图标 */
   }
 
 }
@@ -189,7 +200,8 @@ const selectItem = (key: string) => {
   }
 
   .menu-label {
-    display: none; /* 隐藏文字，只显示图标 */
+    display: none;
+    /* 隐藏文字，只显示图标 */
   }
 
   .icon-placeholder {
@@ -216,7 +228,8 @@ const selectItem = (key: string) => {
   }
 
   .menu-label {
-    display: none; /* 隐藏文字，只显示图标 */
+    display: none;
+    /* 隐藏文字，只显示图标 */
   }
 
 }

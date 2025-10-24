@@ -39,17 +39,26 @@ const state = reactive({
 })
 
 // 获取用户信息
-onMounted(() => {
-  handleRequest(userService.getUserinfoById, {
+onMounted(async () => {
+  // 基本信息（用户名，头像，bio）
+  await handleRequest(userService.getUserinfoById, {
     onSuccess(data) {
+      // 没有查询到任何信息，跳转到404
+      if (data.length === 0) {
+        router.push('/404');
+      }
+      // 初始化用户信息
       Object.assign(userInfo, data[0]);
-    }, params: props.mode == 'my' ? [userStore.userInfo.id] : [props.uid]
+    }, params: props.mode == 'my' ? [userStore.userInfo.id] : [props.uid],
+    onError() {
+      router.push('/404');
+    }
   })
-
-  handleRequest(analyticsService.getUserStatById, {
+  // 统计信息（关注，粉丝，点赞数量）
+  await handleRequest(analyticsService.getUserStatById, {
     onSuccess(data) {
       Object.assign(userStat, data);
-    }, params: userStore.userInfo.id
+    }, params: userInfo.id
   })
 
 
@@ -79,7 +88,7 @@ const handleProfileUpdated = (updatedData: any) => {
     <div class="user-info">
       <div class="name-change-info">
         <h1 class="user-name">{{ userInfo.username }}</h1>
-        <div class="edit-button" @click="handleEditClick">
+        <div class="edit-button" @click="handleEditClick" v-if="mode == 'my'">
           <edit></edit>
         </div>
       </div>

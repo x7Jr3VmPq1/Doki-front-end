@@ -5,7 +5,7 @@
 
 <template>
   <div class="header-actions">
-    <button class="action-button share-button">分享主页</button>
+    <!-- <button class="action-button share-button">分享主页</button> -->
   </div>
 </template>
 
