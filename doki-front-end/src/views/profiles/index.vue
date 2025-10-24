@@ -8,6 +8,10 @@ import WorksGrid from "./WorksGrid.vue";
 import { useRoute } from 'vue-router'
 import { onMounted, ref } from "vue";
 import DokiLoading from "../../components/Doki-Loading.vue";
+import { handleRequest } from "../../api/handleRequest";
+import userService from "../../api/userService";
+import type { userInfo } from "../../api/userService";
+import { useUserStore } from "../../store/userInfoStore.ts";
 const route = useRoute()
 
 const mode = ref<string>('my'); // 页面的模式，分为当前用户和其它用户
@@ -16,40 +20,60 @@ const currentUid = ref(0);  // 如果是其它用户，需要获取地址栏上�
 
 const loading = ref(false);
 
+// 定义用户对象
+const userInfoData = ref<userInfo>({
+  id: 0,
+  username: '',
+  avatarUrl: '',
+  bio: '',
+  followed: false
+});
+
+
 onMounted(async () => {
   // 等待一下。
   await new Promise(resolve => setTimeout(resolve, 500));
   loading.value = true;
 
-  // 获取路径名
-  mode.value = route.path;
-  if (route.path.startsWith('/my')) {
-    mode.value = 'my';
+  // 设置页面模式
+  mode.value = route.path.startsWith('/my') ? 'my' : 'other';
+
+  // 如果是'/my'模式，直接使用store中的用户信息
+  if (mode.value === 'my') {
+    const store = useUserStore();
+    Object.assign(userInfoData.value, store.userInfo);
     return;
   }
-
-  if (route.path.startsWith('/profiles')) {
-    const params = new URLSearchParams(window.location.search);
-    const uid = params.get('uid');
-
-    if (uid) {
-      const numUid = Number(uid);
-
-      // 检查是否为有效数字（不是 NaN 且为正整数）
-      if (!isNaN(numUid) && Number.isInteger(numUid) && numUid > 0) {
-        currentUid.value = numUid;
-      } else {
-        // 无效 UID，跳转到 404
-        window.location.href = '/404';
-      }
+  // 如果是'/profiles?id=xxx'模式，获取id参数，获取失败则跳转到404
+  if (mode.value === 'other' && route.query.uid) {
+    // 获取URL上的查询参数，并且判断它是不是一个合法的正整数
+    const idParam = route.query.uid as string;
+    const idNumber = Number(idParam);
+    if (!isNaN(idNumber) && Number.isInteger(idNumber) && idNumber > 0) {
+      currentUid.value = idNumber;
     } else {
-      // 缺少 uid 参数，跳转到 404
+      // 无效 UID，跳转到 404
       window.location.href = '/404';
     }
+  }
+  // 如果currentUid.value是自己，跳转到'/my'页面
+  const store = useUserStore();
+  if (currentUid.value === store.userInfo.id) {
+    window.location.href = '/my';
     return;
   }
-  // 即不是/my开头也不是/profiles开头，跳转到 404
-  window.location.href = '/404';
+  await handleRequest(userService.getUserinfoById, {
+    onSuccess(data) {
+      if (data.length === 0) {
+        // 没有查询到任何信息，跳转到404
+        window.location.href = '/404';
+      }
+      userInfoData.value = data[0];
+
+      console.log('用户信息：', userInfoData.value);
+
+    }, params: [currentUid.value]
+  })
 })
 </script>
 <!-- “我的”页面 -->
@@ -57,12 +81,12 @@ onMounted(async () => {
   <div class="profile-page" v-if="loading">
     <header class="header">
       <!-- 用户信息 -->
-      <user-card :uid="currentUid" :mode="mode"></user-card>
+      <user-card :info="userInfoData"></user-card>
       <!-- 用户操作 -->
       <header-actions :mode="mode"></header-actions>
     </header>
     <!-- 关注/私信按钮 -->
-    <follow-and-d-m v-if="mode != 'my'"></follow-and-d-m>
+    <follow-and-d-m v-if="mode !== 'my'" :is-following="userInfoData.followed ?? false"></follow-and-d-m>
     <!-- 菜单按钮 -->
     <main-menu></main-menu>
     <!-- 筛选作品类型按钮 -->

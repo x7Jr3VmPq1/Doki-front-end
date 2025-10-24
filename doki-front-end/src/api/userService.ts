@@ -5,6 +5,7 @@ export interface userInfo {
     username: string,
     avatarUrl: string,
     bio: string,
+    followed?: boolean,
 }
 
 export interface loginSuccessData {

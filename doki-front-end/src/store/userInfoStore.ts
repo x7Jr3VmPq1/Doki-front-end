@@ -5,14 +5,15 @@ import userService from '../api/userService'
 import { handleRequest } from '../api/handleRequest'
 export const useUserStore = defineStore('user', {
   state: () => ({
+    // 用户信息
     userInfo: {
-      isLogin: false,
-      id: 0,
-      username: '',
-      avatarUrl: '',
-      bio: '',
-      followingCount: 0,
-      followerCount: 0
+      isLogin: false, // 是否登录
+      id: 0, // 用户ID
+      username: '', // 用户名
+      avatarUrl: '', // 头像URL
+      bio: '', // 个人简介
+      followingCount: 0, // 关注数
+      followerCount: 0 // 粉丝数
     }
   }),
   actions: {

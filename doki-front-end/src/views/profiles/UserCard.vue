@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue';
+import { reactive, onMounted, watch } from 'vue';
 import userService from '../../api/userService.ts';
 import analyticsService from '../../api/analyticsService.ts'
 import type { UserStatistics } from '../../api/analyticsService.ts'
@@ -13,56 +13,31 @@ import router from '../../router/index.ts';
 const userStore = useUserStore();
 
 const props = defineProps<{
-  mode: string,
-  uid: number
+  info: userInfo
 }>()
 
-const userInfo = reactive<userInfo>({
-  id: -1,
-  username: '',
-  avatarUrl: '',
-  bio: '',
-});
-
+const state = reactive({
+  followModal: false,
+  editModal: false
+})
+// 创建userStat
 const userStat = reactive<UserStatistics>({
-  userId: -1,
+  userId: 0,
   followingCount: 0,
   followerCount: 0,
   likeCount: 0,
   createdAt: 0,
   updatedAt: 0
 });
-
-const state = reactive({
-  followModal: false,
-  editModal: false
-})
-
-// 获取用户信息
-onMounted(async () => {
-  // 基本信息（用户名，头像，bio）
-  await handleRequest(userService.getUserinfoById, {
-    onSuccess(data) {
-      // 没有查询到任何信息，跳转到404
-      if (data.length === 0) {
-        router.push('/404');
-      }
-      // 初始化用户信息
-      Object.assign(userInfo, data[0]);
-    }, params: props.mode == 'my' ? [userStore.userInfo.id] : [props.uid],
-    onError() {
-      router.push('/404');
-    }
-  })
-  // 统计信息（关注，粉丝，点赞数量）
-  await handleRequest(analyticsService.getUserStatById, {
-    onSuccess(data) {
+// 监听props.info的变化，获取用户统计数据
+watch(() => props.info, (newInfo) => {
+  handleRequest(analyticsService.getUserStatById, {
+    onSuccess(data: UserStatistics) {
       Object.assign(userStat, data);
-    }, params: userInfo.id
-  })
-
-
-});
+    },
+    params: newInfo.id
+  });
+}, { immediate: false });
 
 // 处理编辑按钮点击
 const handleEditClick = () => {
@@ -71,7 +46,6 @@ const handleEditClick = () => {
 
 // 处理资料更新
 const handleProfileUpdated = (updatedData: any) => {
-  Object.assign(userInfo, updatedData);
   // 可以在这里添加其他更新逻辑，比如重新获取统计数据
 }
 
@@ -79,16 +53,16 @@ const handleProfileUpdated = (updatedData: any) => {
 
 <template>
   <FollowModal :visible="state.followModal" @update:visible="state.followModal = $event"></FollowModal>
-  <EditProfileModal :visible="state.editModal" :userInfo="userInfo" @update:visible="state.editModal = $event"
+  <EditProfileModal :visible="state.editModal" :userInfo="props.info" @update:visible="state.editModal = $event"
     @profileUpdated="handleProfileUpdated" />
   <div class="user-card">
     <div class="avatar-container">
-      <img :src="userInfo.avatarUrl" class="avatar" />
+      <img :src="props.info.avatarUrl" class="avatar" />
     </div>
     <div class="user-info">
       <div class="name-change-info">
-        <h1 class="user-name">{{ userInfo.username }}</h1>
-        <div class="edit-button" @click="handleEditClick" v-if="mode == 'my'">
+        <h1 class="user-name">{{ props.info.username }}</h1>
+        <div class="edit-button" @click="handleEditClick" v-if="props.info.id === userStore.userInfo.id">
           <edit></edit>
         </div>
       </div>
@@ -100,7 +74,7 @@ const handleProfileUpdated = (updatedData: any) => {
         <div class="stat-item">获赞 <span class="stat-value">{{ userStat.likeCount }}</span></div>
       </div>
       <div class="user-bio">
-        {{ userInfo.bio }}
+        {{ props.info.bio }}
       </div>
     </div>
   </div>
