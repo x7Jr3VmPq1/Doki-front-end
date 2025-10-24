@@ -26,6 +26,10 @@ const commentForm = reactive<VideoCommentDTO>({
   image: ''
 });
 
+// 字符限制
+const MAX_CHARS = 200;
+const isOverLimit = ref(false);
+
 // 删除回复目标事件
 const onClickDeleteReply = () => {
   // 删除表单中可能存在的父评论和回复目标评论id
@@ -64,6 +68,12 @@ watch(() => props.status, () => {
 
 // 处理提交评论
 const handleClickSend = async () => {
+  // 检查字符限制
+  if (commentForm.content.length > MAX_CHARS) {
+    isOverLimit.value = true;
+    return;
+  }
+  
   // 如果存在回复目标，添加根评论ID和目标评论ID
   if (targetComment) {
     // 从status中获取回复目标评论对象
@@ -84,6 +94,7 @@ const handleClickSend = async () => {
   commentForm.image = '';
   delete commentForm.parentCommentId;
   delete commentForm.replyTargetId;
+  isOverLimit.value = false;
 }
 </script>
 
@@ -100,12 +111,13 @@ const handleClickSend = async () => {
       <!-- 评论输入框 -->
       <a-textarea :auto-size="{ minRows: 1, maxRows: 8 }" @keyup.stop
                   v-model:value="commentForm.content"
+                  :maxlength="MAX_CHARS"
                   style="background-color: transparent;color: white;border: none;outline: none;box-shadow: none;"
                   placeholder="留下你的评论吧~"/>
     </div>
     <div class="functions">
       <!-- 提交评论按钮 -->
-      <div class="send-button" @click="handleClickSend" v-if="commentForm.content || commentForm.image">
+      <div class="send-button" @click="handleClickSend" v-if="(commentForm.content || commentForm.image) && !isOverLimit">
         <arrow-circle-up/>
       </div>
       <!-- 表情选择器（暂不可用） -->
@@ -122,6 +134,10 @@ const handleClickSend = async () => {
       <div @click="triggerFileSelect">
         <Picture/>
         <input type="file" ref="fileInput" accept="image/*" @change="handlePictureUpload" style="display: none"/>
+      </div>
+      <!-- 字符计数器 -->
+      <div class="char-counter" :class="{ 'over-limit': isOverLimit }" v-if="commentForm.content">
+        {{ commentForm.content.length }}/{{ MAX_CHARS }}
       </div>
       <div class="upload-picture" v-if="commentForm.image!=''">
         <a-image :src="commentForm.image" :height="80" :width="80" :preview-mask="false"
@@ -229,5 +245,18 @@ const handleClickSend = async () => {
 
 .comment-input:hover {
   border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* 字符计数器样式 */
+.char-counter {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.3s ease;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.char-counter.over-limit {
+  color: #ff4d4f;
 }
 </style>

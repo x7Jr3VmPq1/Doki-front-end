@@ -112,12 +112,93 @@ const toggleFullScreen = () => {
     isFullScreen.value = false;
   }
 };
+
+// 画中画状态管理
+const isPictureInPicture = ref(false);
+const togglePictureInPicture = async () => {
+  if (!videoRef.value) return;
+  
+  try {
+    if (document.pictureInPictureElement) {
+      // 如果已经在画中画模式，退出画中画
+      await document.exitPictureInPicture();
+      isPictureInPicture.value = false;
+    } else {
+      // 进入画中画模式
+      await videoRef.value.requestPictureInPicture();
+      isPictureInPicture.value = true;
+    }
+  } catch (error) {
+    console.error('画中画操作失败:', error);
+  }
+};
 // 监听全屏状态
 document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement) {
     isFullScreen.value = false;
   }
 });
+
+// 监听画中画状态变化
+document.addEventListener("enterpictureinpicture", () => {
+  isPictureInPicture.value = true;
+});
+
+document.addEventListener("leavepictureinpicture", () => {
+  isPictureInPicture.value = false;
+});
+
+// 网页全屏状态管理
+const isWebFullScreen = ref(false);
+const toggleWebFullScreen = () => {
+  if (!isWebFullScreen.value) {
+    // 进入网页全屏 - 让播放器占据整个浏览器窗口
+    document.body.style.overflow = 'hidden';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    
+    // 隐藏侧边栏和标题栏
+    const sidebar = document.querySelector('.sidebar-container');
+    const titleBar = document.querySelector('.title-bar');
+    const mainContainer = document.querySelector('.main-container');
+    
+    if (sidebar) sidebar.style.display = 'none';
+    if (titleBar) titleBar.style.display = 'none';
+    if (mainContainer) {
+      mainContainer.style.position = 'fixed';
+      mainContainer.style.top = '0';
+      mainContainer.style.left = '0';
+      mainContainer.style.width = '100vw';
+      mainContainer.style.height = '100vh';
+      mainContainer.style.zIndex = '9999';
+    }
+    
+    isWebFullScreen.value = true;
+  } else {
+    // 退出网页全屏 - 恢复原始布局
+    document.body.style.overflow = '';
+    document.body.style.margin = '';
+    document.body.style.padding = '';
+    
+    // 显示侧边栏和标题栏
+    const sidebar = document.querySelector('.sidebar-container');
+    const titleBar = document.querySelector('.title-bar');
+    const mainContainer = document.querySelector('.main-container');
+    
+    if (sidebar) sidebar.style.display = '';
+    if (titleBar) titleBar.style.display = '';
+    if (mainContainer) {
+      mainContainer.style.position = '';
+      mainContainer.style.top = '';
+      mainContainer.style.left = '';
+      mainContainer.style.width = '';
+      mainContainer.style.height = '';
+      mainContainer.style.zIndex = '';
+    }
+    
+    isWebFullScreen.value = false;
+  }
+};
 // 倍速相关
 const speeds = [2, 1.75, 1.5, 1, 0.75, 0.5]; // 倍速列表
 const currentSpeed = ref(1); // 当前的速度
@@ -215,6 +296,8 @@ const favoriteVideo = async (videoId: number) => {
           :currentSpeed="currentSpeed"
           :volume="volume"
           :isFullScreen="isFullScreen"
+          :isPictureInPicture="isPictureInPicture"
+          :isWebFullScreen="isWebFullScreen"
           :videoDuration="videoRef?.duration"
           :shrink="open"
           @togglePlay="onPlay"
@@ -224,6 +307,8 @@ const favoriteVideo = async (videoId: number) => {
           @changeVolume="(v:any)=>{ volume=v; handleVolumeChange(); }"
           @toggleFullscreen="toggleFullScreen"
           @toggleMute="toggleMute"
+          @togglePictureInPicture="togglePictureInPicture"
+          @toggleWebFullscreen="toggleWebFullScreen"
       />
     </div>
     <!-- 评论区抽屉 -->

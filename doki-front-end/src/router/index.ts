@@ -25,6 +25,11 @@ const routes = [
     component: () => import('../views/profiles/index.vue'),
   },
   {
+    path: '/search',
+    name: 'search',
+    component: () => import('../views/search/index.vue'),
+  },
+  {
     path: '/404',
     component: () => import('../views/404/index.vue'),
     meta: { fullPage: true }

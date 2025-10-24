@@ -212,7 +212,7 @@ const toProfiles = (uid: number) => {
 }
 
 .reply-target {
-  width: 80px;
+
   overflow: hidden;
   display: flex;
   white-space: nowrap;

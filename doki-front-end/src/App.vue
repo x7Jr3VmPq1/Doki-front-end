@@ -54,6 +54,7 @@ onMounted(async () => {
 .router-view {
   flex: 1;
   overflow: hidden;
+  background-color: #f8f9fa; /* 比白色稍微深一点的浅灰色 */
 }
 
 .sidebar-container {

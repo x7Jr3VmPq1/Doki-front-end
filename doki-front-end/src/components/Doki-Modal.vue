@@ -9,7 +9,7 @@
         </div>
         
         <!-- 内容区域 - 支持插槽 -->
-        <div class="modal-content">
+        <div class="modal-content" @click.stop>
           <slot></slot>
         </div>
         

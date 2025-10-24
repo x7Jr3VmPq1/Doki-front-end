@@ -1,25 +1,25 @@
 <script setup lang="ts">
 
 import SwiperPlayer from "./swiper-player.vue";
-import {onMounted, ref} from "vue";
+import { onMounted, ref } from "vue";
 
 import feedService from '../../api/feedService.ts'
-import type {VideoInfo} from '../../api/feedService.ts'
-import {handleRequest} from '../../api/handleRequest.ts'
+import type { VideoInfo } from '../../api/feedService.ts'
+import { handleRequest } from '../../api/handleRequest.ts'
 import videoProcessingService from '../../api/videoProcessingService.ts'
 import DokiLoading from "../../components/Doki-Loading.vue";
 
 const isLoading = ref(true);
 const videos = ref<VideoInfo[]>([]);
 onMounted(async () => {
-  // await axios.get('/videos')
-  //     .then(Response => {
-  //       // 保留完整的视频信息，同时处理 videoUrl
-  //       videos.value = Response.data.data.map((item: any) => ({
-  //         ...item,
-  //         videoUrl: item.videoUrl.replace(/^"|"$/g, '').replace(/\\/g, '/')
-  //       }));
-  //     })
+
+  // await handleRequest(feedService.getRandomVideos, {
+  //   onSuccess(data) {
+  //     videos.value = data; 
+  //   },
+  //   params: 10
+  // })
+
   await handleRequest(videoProcessingService.getVideoInfo, {
     onSuccess(data) {
       videos.value[0] = data; // ID为10的视频用来测试
@@ -46,5 +46,4 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
 }
-
 </style>
