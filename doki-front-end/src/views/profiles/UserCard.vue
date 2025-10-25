@@ -9,7 +9,6 @@ import { useUserStore } from '../../store/userInfoStore.ts'
 import FollowModal from '../../components/FollowModal.vue';
 import EditProfileModal from './EditProfileModal.vue';
 import { Edit } from '@icon-park/vue-next'
-import router from '../../router/index.ts';
 const userStore = useUserStore();
 
 const props = defineProps<{
@@ -52,7 +51,10 @@ const handleProfileUpdated = (updatedData: any) => {
 </script>
 
 <template>
-  <FollowModal :visible="state.followModal" @update:visible="state.followModal = $event"></FollowModal>
+  <!-- 关注/粉丝列表模态框 -->
+  <FollowModal :tid="props.info.id" :visible="state.followModal" @update:visible="state.followModal = $event">
+  </FollowModal>
+  <!-- 编辑资料模态框 -->
   <EditProfileModal :visible="state.editModal" :userInfo="props.info" @update:visible="state.editModal = $event"
     @profileUpdated="handleProfileUpdated" />
   <div class="user-card">

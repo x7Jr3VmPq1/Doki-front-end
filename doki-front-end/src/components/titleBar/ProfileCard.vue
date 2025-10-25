@@ -1,26 +1,21 @@
 <template>
   <div class="profile-card" ref="container">
     <div class="profile-header">
-      <img :src="user.avatarUrl" alt="User Avatar" class="user-avatar"/>
+      <img :src="user.avatarUrl" alt="User Avatar" class="user-avatar" />
       <div class="user-details">
         <div class="username">{{ userStore.userInfo.username }}</div>
         <div class="follow-info">
-          <follow-modal
-              v-model:visible="openFollowingList"
-              :fans-list="fansList"
-              :following-list="followingList">
-          </follow-modal>
+          <follow-modal v-model:visible="openFollowingList" :tid="userStore.userInfo.id" />
           <span class="follow-item" @click="openFollowingList = true">关注 {{
-              userStore.userInfo.followingCount
-            }}</span>
+            userStore.userInfo.followingCount
+          }}</span>
           <span class="follow-divider">|&nbsp;</span>
           <span class="follow-item" @click="openFollowingList = true">粉丝 {{ userStore.userInfo.followerCount }}</span>
         </div>
       </div>
     </div>
 
-    <div class="section my-likes"
-         @mouseenter="expandSection('likes')">
+    <div class="section my-likes" @mouseenter="expandSection('likes')">
       <div class="section-header">
         <div class="section-title">
           <span class="icon red-heart"></span>
@@ -35,7 +30,7 @@
         <div v-if="expandedSection === 'likes'" class="likes-grid-wrapper">
           <div class="likes-grid">
             <div v-for="item in placeholderItems" :key="item.id" class="like-item">
-              <img :src="item.image" :alt="item.title" class="like-item-image"/>
+              <img :src="item.image" :alt="item.title" class="like-item-image" />
               <div class="like-item-title">{{ item.title }}</div>
             </div>
           </div>
@@ -45,8 +40,7 @@
 
     <div class="section-list">
       <div class="section-item-wrapper">
-        <div class="section-item"
-             @mouseenter="expandSection('collections')">
+        <div class="section-item" @mouseenter="expandSection('collections')">
           <div class="section-title">
             <span class="icon yellow-star"></span>
             我的收藏
@@ -60,7 +54,7 @@
           <div v-if="expandedSection === 'collections'" class="likes-grid-wrapper">
             <div class="likes-grid">
               <div v-for="item in placeholderItems" :key="item.id" class="like-item">
-                <img :src="item.image" :alt="item.title" class="like-item-image"/>
+                <img :src="item.image" :alt="item.title" class="like-item-image" />
                 <div class="like-item-title">{{ item.title }}</div>
               </div>
             </div>
@@ -69,8 +63,7 @@
       </div>
 
       <div class="section-item-wrapper">
-        <div class="section-item"
-             @mouseenter="expandSection('watchHistory')">
+        <div class="section-item" @mouseenter="expandSection('watchHistory')">
           <div class="section-title">
             <span class="icon green-history"></span>
             观看历史
@@ -84,7 +77,7 @@
           <div v-if="expandedSection === 'watchHistory'" class="likes-grid-wrapper">
             <div class="likes-grid">
               <div v-for="item in placeholderItems" :key="item.id" class="like-item">
-                <img :src="item.image" :alt="item.title" class="like-item-image"/>
+                <img :src="item.image" :alt="item.title" class="like-item-image" />
                 <div class="like-item-title">{{ item.title }}</div>
               </div>
             </div>
@@ -93,8 +86,7 @@
       </div>
 
       <div class="section-item-wrapper">
-        <div class="section-item"
-             @mouseenter="expandSection('watchLater')">
+        <div class="section-item" @mouseenter="expandSection('watchLater')">
           <div class="section-title">
             <span class="icon purple-watch-later"></span>
             稍后再看
@@ -108,7 +100,7 @@
           <div v-if="expandedSection === 'watchLater'" class="likes-grid-wrapper">
             <div class="likes-grid">
               <div v-for="item in placeholderItems" :key="item.id" class="like-item">
-                <img :src="item.image" :alt="item.title" class="like-item-image"/>
+                <img :src="item.image" :alt="item.title" class="like-item-image" />
                 <div class="like-item-title">{{ item.title }}</div>
               </div>
             </div>
@@ -117,8 +109,7 @@
       </div>
 
       <div class="section-item-wrapper">
-        <div class="section-item"
-             @mouseenter="expandSection('myWorks')">
+        <div class="section-item" @mouseenter="expandSection('myWorks')">
           <div class="section-title">
             <span class="icon blue-my-works"></span>
             我的作品
@@ -132,7 +123,7 @@
           <div v-if="expandedSection === 'myWorks'" class="likes-grid-wrapper">
             <div class="likes-grid">
               <div v-for="item in placeholderItems" :key="item.id" class="like-item">
-                <img :src="item.image" :alt="item.title" class="like-item-image"/>
+                <img :src="item.image" :alt="item.title" class="like-item-image" />
                 <div class="like-item-title">{{ item.title }}</div>
               </div>
             </div>
@@ -149,7 +140,7 @@
       <div class="remember-login">
         <span>保存登录信息</span>
         <label class="switch">
-          <input type="checkbox" v-model="rememberLogin"/>
+          <input type="checkbox" v-model="rememberLogin" />
           <span class="slider round"></span>
         </label>
       </div>
@@ -158,13 +149,13 @@
 </template>
 
 <script setup lang="ts">
-import {createVNode, ref, onMounted} from 'vue';
+import { createVNode, ref, onMounted } from 'vue';
 import FollowModal from "../FollowModal.vue";
-import {useUserStore} from "../../store/userInfoStore.ts";
+import { useUserStore } from "../../store/userInfoStore.ts";
 import analyticsService from '../../api/analyticsService.ts';
-import {handleRequest} from '../../api/handleRequest.ts'
-import {Modal} from "ant-design-vue";
-import {ExclamationCircleOutlined} from "@ant-design/icons-vue";
+import { handleRequest } from '../../api/handleRequest.ts'
+import { Modal } from "ant-design-vue";
+import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
 
 onMounted(async () => {
   await handleRequest(analyticsService.getUserStatById, {
@@ -195,9 +186,9 @@ const rememberLogin = ref(false);
 const expandedSection = ref<string | null>(null); // State to track which section is expanded
 
 const placeholderItems: LikedItem[] = [
-  {id: 101, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容一'},
-  {id: 102, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容二'},
-  {id: 103, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容三'},
+  { id: 101, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容一' },
+  { id: 102, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容二' },
+  { id: 103, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容三' },
 ];
 
 const expandSection = (sectionName: string) => {
@@ -254,7 +245,8 @@ const handleLogout = () => {
   border-radius: 50%;
   margin-right: 15px;
   object-fit: cover;
-  border: 2px solid #fff; /* White border for avatar */
+  border: 2px solid #fff;
+  /* White border for avatar */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -393,11 +385,13 @@ const handleLogout = () => {
 
 /* My Likes Specific Styling */
 .my-likes {
-  margin-bottom: 0; /* Ensures it sits tightly with other sections when collapsed */
+  margin-bottom: 0;
+  /* Ensures it sits tightly with other sections when collapsed */
 }
 
 .likes-grid-wrapper {
-  padding: 0 20px 15px; /* Padding for the content inside the expanded section */
+  padding: 0 20px 15px;
+  /* Padding for the content inside the expanded section */
 }
 
 .likes-grid {
@@ -416,7 +410,8 @@ const handleLogout = () => {
 
 .like-item-image {
   width: 100%;
-  height: 100px; /* Fixed height for images */
+  height: 100px;
+  /* Fixed height for images */
   object-fit: cover;
   border-radius: 8px;
 }
@@ -464,14 +459,16 @@ const handleLogout = () => {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  margin-bottom: 20px; /* Space at the bottom */
+  margin-bottom: 20px;
+  /* Space at the bottom */
 }
 
 .logout-button {
   display: flex;
   align-items: center;
   font-size: 16px;
-  color: #fe2c55; /* TikTok red */
+  color: #fe2c55;
+  /* TikTok red */
   cursor: pointer;
   font-weight: 500;
 }
@@ -522,15 +519,15 @@ const handleLogout = () => {
   transition: .4s;
 }
 
-input:checked + .slider {
+input:checked+.slider {
   background-color: #fe2c55;
 }
 
-input:focus + .slider {
+input:focus+.slider {
   box-shadow: 0 0 1px #fe2c55;
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
   -webkit-transform: translateX(20px);
   -ms-transform: translateX(20px);
   transform: translateX(20px);
@@ -546,13 +543,16 @@ input:checked + .slider:before {
 
 
 /* Transition Styles for Expansion */
-.expand-enter-active, .expand-leave-active {
+.expand-enter-active,
+.expand-leave-active {
   transition: all 0.3s ease-out;
-  max-height: 200px; /* Adjust max-height based on content height */
+  max-height: 200px;
+  /* Adjust max-height based on content height */
   overflow: hidden;
 }
 
-.expand-enter-from, .expand-leave-to {
+.expand-enter-from,
+.expand-leave-to {
   max-height: 0;
   opacity: 0;
   padding-top: 0;

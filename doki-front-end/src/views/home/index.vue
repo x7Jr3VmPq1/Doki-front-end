@@ -26,6 +26,7 @@ onMounted(async () => {
     },
     params: 10
   })
+
   isLoading.value = false;
 
 })

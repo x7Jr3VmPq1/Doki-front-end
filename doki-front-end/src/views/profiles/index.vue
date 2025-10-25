@@ -6,7 +6,7 @@ import MainMenu from "./MainMenu.vue";
 import WorksFilters from "./WorksFilters.vue";
 import WorksGrid from "./WorksGrid.vue";
 import { useRoute } from 'vue-router'
-import { onMounted, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import DokiLoading from "../../components/Doki-Loading.vue";
 import { handleRequest } from "../../api/handleRequest";
 import userService from "../../api/userService";
@@ -21,7 +21,7 @@ const currentUid = ref(0);  // 如果是其它用户，需要获取地址栏上�
 const loading = ref(false);
 
 // 定义用户对象
-const userInfoData = ref<userInfo>({
+const userInfoData = reactive<userInfo>({
   id: 0,
   username: '',
   avatarUrl: '',
@@ -41,7 +41,7 @@ onMounted(async () => {
   // 如果是'/my'模式，直接使用store中的用户信息
   if (mode.value === 'my') {
     const store = useUserStore();
-    Object.assign(userInfoData.value, store.userInfo);
+    Object.assign(userInfoData, store.userInfo);
     return;
   }
   // 如果是'/profiles?id=xxx'模式，获取id参数，获取失败则跳转到404
@@ -68,13 +68,16 @@ onMounted(async () => {
         // 没有查询到任何信息，跳转到404
         window.location.href = '/404';
       }
-      userInfoData.value = data[0];
+      Object.assign(userInfoData, data[0]);
 
-      console.log('用户信息：', userInfoData.value);
+      console.log('用户信息：', userInfoData);
 
     }, params: [currentUid.value]
   })
 })
+const handleUpdateFollowState = (newState: boolean) => {
+  userInfoData.followed = newState;
+}
 </script>
 <!-- “我的”页面 -->
 <template>
@@ -86,7 +89,8 @@ onMounted(async () => {
       <header-actions :mode="mode"></header-actions>
     </header>
     <!-- 关注/私信按钮 -->
-    <follow-and-d-m v-if="mode !== 'my'" :is-following="userInfoData.followed ?? false"></follow-and-d-m>
+    <follow-and-d-m @update:is-following="handleUpdateFollowState" :uid="userInfoData.id" v-if="mode !== 'my'"
+      :is-following="userInfoData.followed ?? false"></follow-and-d-m>
     <!-- 菜单按钮 -->
     <main-menu></main-menu>
     <!-- 筛选作品类型按钮 -->
