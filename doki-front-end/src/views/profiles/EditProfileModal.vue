@@ -6,12 +6,6 @@
       <div class="avatar-section">
         <div class="avatar-container" @click="handleAvatarClick">
           <img v-if="formData.avatarUrl" :src="formData.avatarUrl" class="avatar" />
-          <div v-else class="avatar-placeholder">
-            <div class="camera-icon">📷</div>
-          </div>
-          <div class="camera-overlay">
-            <div class="camera-icon">📷</div>
-          </div>
         </div>
         <p class="avatar-hint">点击修改头像</p>
       </div>

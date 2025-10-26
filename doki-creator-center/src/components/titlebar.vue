@@ -1,10 +1,13 @@
 <script setup lang="ts">
-
+import { useUserStore } from '../store/userStore';
+const userStore = useUserStore();
 </script>
 
 <template>
   <div class="main-wrapper">
-    <a-avatar></a-avatar>
+    <a-avatar>
+      <img :src="userStore.userInfo.avatarUrl"></img>
+    </a-avatar>
   </div>
 </template>
 

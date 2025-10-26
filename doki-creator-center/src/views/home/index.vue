@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import {Right} from '@icon-park/vue-next'
+import { Right } from '@icon-park/vue-next'
 import router from '../../router/router'
 import draftService from '../../api/draftService.ts'
-import {Message} from '@arco-design/web-vue';
-import type {VideoDraft} from '../../api/draftService.ts'
-
-import {onMounted, ref} from "vue";
+import analyticsService from '../../api/analyticsService.ts';
+import { handleRequest } from '../../api/handleRequest.ts';
+import { Message } from '@arco-design/web-vue';
+import type { VideoDraft } from '../../api/draftService.ts'
+import { useUserStore } from '../../store/userStore.ts';
+import { onMounted, ref } from "vue";
+import UserStat from './UserStat.vue';
+const userStore = useUserStore();
 
 const hasUnPublish = ref(false);
 const UnPublishDraft = ref<VideoDraft | null>(null);
@@ -49,13 +53,10 @@ const handleContinueEdit = () => {
 <template>
   <div class="main-wrapper">
     <div class="user-info">
-      <a-avatar></a-avatar>
-      <div class="user-stat">
-        <div>用户123456</div>
-        <span>关注 234</span>
-        <span>粉丝 221</span>
-        <span>获赞 20</span>
-      </div>
+      <a-avatar>
+        <img :src="userStore.userInfo.avatarUrl">
+      </a-avatar>
+      <UserStat></UserStat>
     </div>
     <div class="works">
       <div class="title">
@@ -71,7 +72,7 @@ const handleContinueEdit = () => {
       <div class="upload-items">
         <div class="to-upload-video" @click="router.push('/upload')">
           <span>
-          发布视频
+            发布视频
           </span>
           <div style="color: #777880;margin-top: 5px">支持常用格式，推荐mp4</div>
         </div>
@@ -100,7 +101,8 @@ const handleContinueEdit = () => {
   }
 }
 
-.works, .data-center {
+.works,
+.data-center {
   width: 90%;
   background-color: #fff;
   border-radius: 15px;
@@ -137,7 +139,8 @@ const handleContinueEdit = () => {
     height: 80%;
     margin-top: 20px;
 
-    .to-upload-video, .to-upload-image {
+    .to-upload-video,
+    .to-upload-image {
       cursor: pointer;
       width: 200px;
       height: 50px;

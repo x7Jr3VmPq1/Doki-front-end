@@ -14,7 +14,7 @@ const draftForm = useDraftFormStore(); // 引入表单数据
 
 const draftCreated = ref(false);  // 是否创建了草稿
 
-const uploadComponentRef = ref(null);  // 上传组件引用
+const uploadComponentRef = ref<any>(null);  // 上传组件引用
 
 
 const isUploadSuccess = ref(false); // 上传成功标记
@@ -99,7 +99,7 @@ const handleReUpload = () => {
 
   // 用户选择文件后
   input.addEventListener('change', (event) => {
-    const files = Array.from(event.target?.files);
+    const files = Array.from((event.target as HTMLInputElement).files!);
     uploadComponentRef.value?.upload(files);
   });
   // 触发文件选择器

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import Sidebar from "./components/sidebar.vue";
 import Titlebar from "./components/titlebar.vue";
+import { onMounted } from "vue";
+onMounted(async () => {
+  document.title = "Doki 创作者中心";
+});
 </script>
 
 <template>
@@ -20,7 +24,6 @@ import Titlebar from "./components/titlebar.vue";
 </template>
 
 <style scoped>
-
 .content {
   height: calc(100vh - 50px);
   overflow-y: auto;
