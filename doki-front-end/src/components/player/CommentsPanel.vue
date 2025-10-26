@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import {defineProps, onMounted, ref, onBeforeUnmount, createVNode, watch} from 'vue'
+import { defineProps, onMounted, ref, onBeforeUnmount, createVNode, watch } from 'vue'
 
-import {type CommentListResponse, type VideoComments, type VideoCommentsVO} from '../../api/commentService.js'
+import { type CommentListResponse, type VideoComments, type VideoCommentsVO } from '../../api/commentService.js'
 import commentService from '../../api/commentService.js'
-import {handleRequest} from '../../api/handleRequest.ts'
-import {useUserStore} from '../../store/userInfoStore'
+import { handleRequest } from '../../api/handleRequest.ts'
+import { useUserStore } from '../../store/userInfoStore'
 import CommentItem from './CommentItem.vue'
-import type {commentStatus} from './CommentItem.vue'
+import type { commentStatus } from './CommentItem.vue'
 import CommentInput from "./CommentInput.vue";
 import DokiLoading from "../Doki-Loading.vue"
-import {Modal, message} from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
+import { useInfiniteScroll } from '../../utils/infiniteScroll.ts'
 
 const userStore = useUserStore();
 
 
-const loadMoreRef = ref(); // 需要判断这个DOM是否出现在视口内，决定是否触发加载评论
 const commentLoaded = ref(false); // 初始评论是否加载完毕标记
 
 // 父组件传递来的视频ID和评论区抽屉开启状态
@@ -29,10 +29,23 @@ const commentsArray = ref<CommentListResponse>({
   hasMore: false, // 是否还有更多评论
   cursor: ''
 });
-const InnerCommentsArea = ref<HTMLDivElement | null>(null); // 评论展示区盒子引用
 
 // 初始化方法
+// 绑定无限滚动
 let observer: IntersectionObserver | null = null;
+const InnerCommentsArea = ref<HTMLDivElement | null>(null); // 评论展示区盒子引用
+const loadMoreRef = ref(); // 需要判断这个DOM是否出现在视口内，决定是否触发加载评论
+
+onMounted(() => {
+  observer = useInfiniteScroll(loadMore, loadMoreRef, InnerCommentsArea);
+})
+// 解绑无限滚动
+onBeforeUnmount(() => {
+  if (observer) {
+    observer.disconnect();
+  }
+})
+
 const isRootLoading = ref(true); // 根评论正在加载标记
 // 只有在评论抽屉打开，并且还没初始化评论时才开始加载评论
 watch(() => props.open, async () => {
@@ -41,69 +54,48 @@ watch(() => props.open, async () => {
       delay: 500,
       async onSuccess(data) {
         // 给每一条评论初始化一个可能存在的回复列表
-        data.list.forEach(c => c.replies = {list: [], hasMore: c.comments.childCount > 0, cursor: ''})
+        data.list.forEach(c => c.replies = { list: [], hasMore: c.comments.childCount > 0, cursor: '' })
         commentsArray.value = data;
         loadCursor = data.cursor; // 保存游标
         commentLoaded.value = true; // 初始评论加载完毕
       },
-      params: {videoId: props.videoId!}
+      params: { videoId: props.videoId! }
     })
     isRootLoading.value = false;
   }
 })
-
-// 添加无限滚动方法
+// 游标相关变量
 let loadCursor: string | null = null; // 游标，加载根评论时以这个为基准
 let RepliesLoadCursors = new Map<string, string>(); // 这个map存储每条根评论的回复列表游标
-onMounted(async () => {
-  if (!loadMoreRef.value) return;
 
-  observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        // 滚动到底触发拉取更多评论
-        if (entry.isIntersecting) {
-          if (commentsArray.value) {
-            // 没有更多了，不再加载。
-            if (!commentsArray.value.hasMore)
-              return;
-            isRootLoading.value = true;
-            handleRequest(commentService.getComments, {
-              delay: 500,
-              async onSuccess(data) {
-                if (commentsArray.value) {
-                  // 去重
-                  data.list = data.list.filter(c => !userAddedComments.some(u => u.comments.id === c.comments.id));
-                  // 追加更多评论
-                  commentsArray.value.list.push(...data.list);
-                  // 更新hasMore状态
-                  commentsArray.value.hasMore = data.hasMore;
-                  // 更新loadCursor
-                  loadCursor = data.cursor;
-                  isRootLoading.value = false;
-                }
-              }, params: {
-                videoId: props.videoId!,
-                cursor: loadCursor
-              }
-            })
-          }
+// 无限滚动加载评论的回调方法：
+const loadMore = async () => {
+  if (commentsArray.value) {
+    // 没有更多了，不再加载。
+    if (!commentsArray.value.hasMore)
+      return;
+    isRootLoading.value = true;
+    handleRequest(commentService.getComments, {
+      delay: 500,
+      async onSuccess(data) {
+        if (commentsArray.value) {
+          // 去重
+          data.list = data.list.filter(c => !userAddedComments.some(u => u.comments.id === c.comments.id));
+          // 追加更多评论
+          commentsArray.value.list.push(...data.list);
+          // 更新hasMore状态
+          commentsArray.value.hasMore = data.hasMore;
+          // 更新loadCursor
+          loadCursor = data.cursor;
+          isRootLoading.value = false;
         }
-      },
-      {
-        root: InnerCommentsArea.value, // 监听评论展示盒子
-        rootMargin: "50px", // 距离底部50px时触发加载
-        threshold: 0,
+      }, params: {
+        videoId: props.videoId!,
+        cursor: loadCursor
       }
-  );
-  observer.observe(loadMoreRef.value);
-})
-onBeforeUnmount(() => {
-  if (observer && loadMoreRef.value) {
-    observer.unobserve(loadMoreRef.value);
-    observer.disconnect();
+    })
   }
-});
+}
 
 // 当前active评论组件的状态
 const currentCommentStatus = ref<commentStatus | null>();
@@ -184,7 +176,7 @@ const handleDelete = async (status: commentStatus) => {
   // 获取目标评论引用
   const targetComment = status.commentObject.comments
   Modal.confirm({
-    content: createVNode('div', {style: 'color:black;'}, '确定要删除这条评论吗？'),
+    content: createVNode('div', { style: 'color:black;' }, '确定要删除这条评论吗？'),
     onOk() {
       handleRequest(commentService.deleteComment, {
         onSuccess(_) {
@@ -269,35 +261,20 @@ const handleAddReply = (newCommentObject: any) => {
   <div class="comments">
     <div style="flex: 1;overflow-y: auto;position: relative" ref="InnerCommentsArea">
       <div class="comment-list" v-if="commentLoaded">
-        <div
-            v-for="(roots) in commentsArray?.list"
-        >
+        <div v-for="(roots) in commentsArray?.list">
           <!-- 根评论 -->
           <div class="root-comments">
-            <CommentItem
-                :commentObject="roots"
-                :key="roots.comments.id"
-                @clickReply="handleReply"
-                @clickDelete="handleDelete"
-                @clickLike="handleLike"
-            />
+            <CommentItem :commentObject="roots" :key="roots.comments.id" @clickReply="handleReply"
+              @clickDelete="handleDelete" @clickLike="handleLike" />
           </div>
           <!-- 回复列表 -->
           <div class="replies">
             <div class="reply-list" v-if="roots.replies?.list">
-              <CommentItem
-                  v-for="(reply) in roots.replies.list"
-                  :commentObject="reply"
-                  :key="reply.comments.id"
-                  @clickReply="handleReply"
-                  @clickDelete="handleDelete"
-                  @clickLike="handleLike"
-              />
+              <CommentItem v-for="(reply) in roots.replies.list" :commentObject="reply" :key="reply.comments.id"
+                @clickReply="handleReply" @clickDelete="handleDelete" @clickLike="handleLike" />
             </div>
-            <span v-if="roots.comments.childCount > 0 && isRepliesLoading == ''"
-                  class="getMoreText"
-                  @click="handleGetReplies(roots)"
-            >{{
+            <span v-if="roots.comments.childCount > 0 && isRepliesLoading == ''" class="getMoreText"
+              @click="handleGetReplies(roots)">{{
                 RepliesLoadCursors.get(roots.comments.id) ? "—— 展开更多" : "—— 展开" + roots.comments.childCount + "条回复"
               }}
             </span>
@@ -311,15 +288,11 @@ const handleAddReply = (newCommentObject: any) => {
       <!-- 加载更多标记 -->
       <div ref="loadMoreRef" v-show="!isRootLoading"></div>
       <!-- 没有更多评论提示语 -->
-      <div class="noMoreText" v-if="!commentsArray?.hasMore && isRootLoading==false">没有更多了~！</div>
+      <div class="noMoreText" v-if="!commentsArray?.hasMore && isRootLoading == false">没有更多了~！</div>
     </div>
     <!-- 评论输入框 -->
-    <CommentInput
-        :status="currentCommentStatus ?? null"
-        :videoId="props.videoId!"
-        @deleteReply="handleDeleteReply"
-        @addComment="handleAddReply"
-    ></CommentInput>
+    <CommentInput :status="currentCommentStatus ?? null" :videoId="props.videoId!" @deleteReply="handleDeleteReply"
+      @addComment="handleAddReply"></CommentInput>
   </div>
 </template>
 
@@ -363,8 +336,4 @@ const handleAddReply = (newCommentObject: any) => {
 .getMoreText:hover {
   color: white;
 }
-
-
 </style>
-
-

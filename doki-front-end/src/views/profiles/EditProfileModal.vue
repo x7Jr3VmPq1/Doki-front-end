@@ -91,9 +91,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import DokiModal from '../../components/Doki-Modal.vue'
+import userService, { type userInfo } from '../../api/userService'
+import { handleRequest } from '../../api/handleRequest'
 import AvatarCropper from './AvatarCropper.vue'
-// import userService from '../api/userService'
-// import { handleRequest } from '../api/handleRequest'
 import { message } from 'ant-design-vue'
 
 // Props
@@ -109,8 +109,10 @@ interface EditProfileModalProps {
 
 const props = defineProps<EditProfileModalProps>()
 
-// Emits
-const emit = defineEmits(['update:visible', 'profileUpdated'])
+const emit = defineEmits<{
+  (e: 'update:visible', value: boolean): void,
+  (e: 'update:userInfo', value: userInfo): void
+}>()
 
 // 表单数据
 const formData = reactive({
@@ -221,7 +223,7 @@ const startModalPreview = () => {
     if (avatarCropperRef.value) {
       avatarCropperRef.value.updatePreview()
     }
-  }, 50) // 每50ms更新一次，非常流畅
+  }, 50) // 每50ms更新一次
 }
 
 // 停止预览更新
@@ -281,26 +283,38 @@ const handleSave = async () => {
     message.warning('请检查输入内容')
     return
   }
+  // 如果没有更改任何内容，直接关闭
+  if (formData.username === props.userInfo.username &&
+    formData.bio === props.userInfo.bio &&
+    formData.avatarUrl === props.userInfo.avatarUrl) {
+    emit('update:visible', false)
+    return
+  }
+  // 如果没有修改头像，则把 avatarUrl 设置为null。
+  if (formData.avatarUrl === props.userInfo.avatarUrl) {
+    formData.avatarUrl = null as any;
+  }
 
   try {
-    // TODO: 实现用户信息更新API
-    // await handleRequest(userService.updateUserInfo, {
-    //   onSuccess: () => {
-    //     message.success('资料更新成功')
-    //     emit('profileUpdated', { ...formData })
-    //     emit('update:visible', false)
-    //   },
-    //   params: {
-    //     username: formData.username,
-    //     bio: formData.bio,
-    //     avatarUrl: formData.avatarUrl
-    //   }
-    // })
-
-    // 临时实现：直接更新本地状态
-    message.success('资料更新成功')
-    emit('profileUpdated', { ...formData })
-    emit('update:visible', false)
+    await handleRequest(userService.updateProfile, {
+      onSuccess: (_) => {
+        // 修改成功后，通知父组件关闭模态框
+        emit('update:visible', false)
+        // 通知父组件更新用户信息
+        emit('update:userInfo', {
+          id: props.userInfo.id,
+          username: formData.username,
+          avatarUrl: formData.avatarUrl || props.userInfo.avatarUrl,
+          bio: formData.bio
+        })
+      },
+      params: {
+        id: props.userInfo.id,
+        username: formData.username,
+        bio: formData.bio,
+        avatarUrl: formData.avatarUrl
+      }
+    })
   } catch (error) {
     message.error('更新失败，请重试')
   }
@@ -354,7 +368,6 @@ const handleSave = async () => {
 .avatar-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;

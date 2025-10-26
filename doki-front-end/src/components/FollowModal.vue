@@ -11,10 +11,8 @@
             粉丝 ({{ props.followerCount }})
           </div>
         </div>
-      </div>
-
-      <div class="modal-content">
-        <div class="search-sort-bar">
+        <!-- 搜索和排序工具栏，只有查看自己的关注和粉丝时才显示 -->
+        <div class="search-sort-bar" v-if="props.tid === userStore.userInfo.id">
           <!-- 搜索框 -->
           <div class="search-input-wrapper">
             <input type="text" placeholder="搜索用户名或简介" class="search-input" v-model="searchTerm" />
@@ -36,18 +34,18 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="modal-content" ref="loadMoreContainer">
         <!-- 用户列表 -->
         <div class="user-list">
-          <div v-if="isLoading" class="loading-sign">
-            <DokiLoading></DokiLoading>
-          </div>
-          <div v-else>
+          <div>
             <div v-if="usersToDisplay.length > 0">
               <div v-for="user in usersToDisplay" :key="user.id" class="user-item">
                 <img @click="handleClickUserInfo(user)" :src="user.avatarUrl" alt="User Avatar" class="user-avatar" />
                 <div class="user-info">
                   <span class="user-name" @click="handleClickUserInfo(user)">{{ user.username }}</span>
-                  <span class="user-description">{{ user.bio }}</span>
+                  <div class="user-description">{{ user.bio }}</div>
                 </div>
                 <!-- 操作按钮，如果这一项是自己，则不显示 -->
                 <div v-if="user.id !== userStore.userInfo.id" @click="handleClickFollowButton(user)">
@@ -58,9 +56,14 @@
               </div>
             </div>
             <div v-else class="no-more-data">
-              <p>暂时没有更多了</p>
+              <p v-if="!isLoading">暂时没有更多了</p>
             </div>
           </div>
+          <div v-if="isLoading" class="loading-sign">
+            <DokiLoading></DokiLoading>
+          </div>
+          <!-- 加载更多区域 -->
+          <div v-show="hasMore && !isLoading" ref="loadMoreRef"></div>
         </div>
       </div>
     </div>
@@ -71,15 +74,38 @@
 // 组件说明：
 // 这是一个关注/粉丝列表模态框组件，允许用户查看和管理他们的关注和粉丝列表。
 // 用户可以在模态框中切换查看关注列表和粉丝列表，搜索用户，并根据不同的排序方式查看列表。
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import type { userInfo } from '../api/userService.ts'
 import socialService from '../api/socialService.ts'
 import DokiLoading from "./Doki-Loading.vue";
 import DokiModal from "./Doki-Modal.vue";
 import { handleRequest } from '../api/handleRequest';
 import { useUserStore } from '../store/userInfoStore.ts';
+import { useInfiniteScroll } from '../utils/infiniteScroll.ts';
 
 const userStore = useUserStore();
+
+
+const loadMoreUsers = async () => {
+  if (isLoading.value) return; // 如果已经在加载，直接返回
+  isLoading.value = true;
+  await handleRequest(
+    activeTab.value === 'following' ? socialService.getFollowingList : socialService.getFollowersList,
+    {
+      onSuccess(data) {
+        if (activeTab.value === 'following') {
+          followingList.value.push(...data.list);
+        } else {
+          fansList.value.push(...data.list);
+        }
+        cursor.value = data.cursor ?? '';
+        hasMore.value = data.hasMore;
+      },
+      delay: 300,
+      params: { tid: props.tid, mode: currentSort.value as SortOptionValue, cursor: cursor.value == '' ? null : cursor.value }
+    });
+  isLoading.value = false;
+}
 
 // 定义 Props
 interface FollowModalProps {
@@ -101,6 +127,17 @@ const props = withDefaults(defineProps<FollowModalProps>(), {
 
 // 定义 Emits
 const emit = defineEmits(['update:visible']);
+
+const loadMoreRef = ref();
+const loadMoreContainer = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
+watch(() => props.visible, async (newVal) => {
+  if (newVal) {
+    await nextTick();
+    observer = useInfiniteScroll(loadMoreUsers, loadMoreRef, loadMoreContainer);
+  }
+});
+
 
 type SortOptionValue = 1 | 2 | 3; // 定义排序选项的值类型 1: 综合排序, 2: 最近关注, 3: 最早关注
 const activeTab = ref<'following' | 'followers'>('following'); // 当前激活的标签页
@@ -148,20 +185,35 @@ const closeModal = () => {
 
 // 分页游标
 const cursor = ref('');
+const hasMore = ref(true);
 
 // 监听状态属性变化，加载数据
 // 每当 visible、activeTab 或 currentSort 变化时，重新加载数据
 watch(() => [props.visible, activeTab.value, currentSort.value], async ([open, newTab, newSort]) => {
 
-  isLoading.value = true;
-  await handleRequest(socialService.getFollowList, {
-    onSuccess(data) {
-      followingList.value = data.list;
-    },
-    delay: 300,
-    params: { tid: props.tid, mode: newSort as SortOptionValue, cursor: cursor.value == '' ? null : cursor.value }
-  });
-  isLoading.value = false;
+  if (open) {
+    // 重置列表和游标
+    followingList.value = [];
+    fansList.value = [];
+    cursor.value = '';
+    isLoading.value = true;
+    await handleRequest(
+      newTab === 'following' ? socialService.getFollowingList : socialService.getFollowersList,
+      {
+        onSuccess(data) {
+          if (newTab === 'following') {
+            followingList.value = data.list;
+          } else {
+            fansList.value = data.list;
+          }
+          cursor.value = data.cursor ?? '';
+          hasMore.value = data.hasMore;
+        },
+        delay: 300,
+        params: { tid: props.tid, mode: newSort as SortOptionValue, cursor: cursor.value == '' ? null : cursor.value }
+      });
+    isLoading.value = false;
+  }
 
 });
 // 处理跳转到用户信息页面，从新窗口打开
@@ -173,8 +225,6 @@ const handleClickUserInfo = (user: userInfo) => {
 const handleClickFollowButton = async (user: userInfo) => {
   await handleRequest(user.followed ? socialService.unFollowUser : socialService.followUser, {
     onSuccess() {
-      console.log("关注了吗？");
-
       user.followed = !user.followed;
     },
     params: user.id
@@ -199,7 +249,6 @@ const handleClickFollowButton = async (user: userInfo) => {
 }
 
 .modal-header {
-  display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px;
@@ -234,11 +283,9 @@ const handleClickFollowButton = async (user: userInfo) => {
   width: 60%;
   height: 3px;
   background-color: #fe2c55;
-  /* TikTok red color */
   border-radius: 2px;
 }
 
-/* close-button 样式已由 Doki-Modal 提供 */
 
 .modal-content {
   padding: 16px;
@@ -250,10 +297,9 @@ const handleClickFollowButton = async (user: userInfo) => {
 .search-sort-bar {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
   gap: 10px;
+  margin-top: 10px;
   position: relative;
-  /* 为排序菜单定位提供上下文 */
 }
 
 .search-input-wrapper {
@@ -371,6 +417,9 @@ const handleClickFollowButton = async (user: userInfo) => {
 
 .user-info {
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .user-name {

@@ -42,10 +42,10 @@ watch(() => props.info, (newInfo) => {
 const handleEditClick = () => {
   state.editModal = true;
 }
-
-// 处理资料更新
-const handleProfileUpdated = (updatedData: any) => {
-  // 可以在这里添加其他更新逻辑，比如重新获取统计数据
+// 处理更新用户信息
+const handleUpdateInfo = (_: userInfo) => {
+  // 刷新页面
+  window.location.reload();
 }
 
 </script>
@@ -55,8 +55,8 @@ const handleProfileUpdated = (updatedData: any) => {
   <FollowModal :tid="props.info.id" :visible="state.followModal" @update:visible="state.followModal = $event">
   </FollowModal>
   <!-- 编辑资料模态框 -->
-  <EditProfileModal :visible="state.editModal" :userInfo="props.info" @update:visible="state.editModal = $event"
-    @profileUpdated="handleProfileUpdated" />
+  <EditProfileModal :visible="state.editModal" :userInfo="props.info" @update:user-info="handleUpdateInfo"
+    @update:visible="state.editModal = $event" />
   <div class="user-card">
     <div class="avatar-container">
       <img :src="props.info.avatarUrl" class="avatar" />

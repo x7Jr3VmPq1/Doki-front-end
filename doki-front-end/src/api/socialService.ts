@@ -34,11 +34,24 @@ export default {
    * @param param  请求参数
    * @returns  关注列表
    */
-  getFollowList: async (param: {
+  getFollowingList: async (param: {
     tid: number, // 目标用户ID
     mode: 1 | 2 | 3 // 1. 综合排序 2. 最近关注 3. 最早关注
     cursor?: string | null // 分页游标
   }) => await request<FollowListResponse>('/social/followings', {
+    method: 'GET',
+    data: param
+  }),
+  /**
+   * 获取粉丝列表
+   * @param param  请求参数
+   * @returns  粉丝列表
+   */
+  getFollowersList: async (param: {
+    tid: number, // 目标用户ID
+    mode: 1 | 2 | 3 // 1. 综合排序 2. 最近关注 3. 最早关注
+    cursor?: string | null // 分页游标
+  }) => await request<FollowListResponse>('/social/followers', {
     method: 'GET',
     data: param
   })

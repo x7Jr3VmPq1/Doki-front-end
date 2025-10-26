@@ -64,15 +64,12 @@ onMounted(async () => {
   }
   await handleRequest(userService.getUserinfoById, {
     onSuccess(data) {
-      if (data.length === 0) {
-        // 没有查询到任何信息，跳转到404
-        window.location.href = '/404';
-      }
       Object.assign(userInfoData, data[0]);
-
-      console.log('用户信息：', userInfoData);
-
-    }, params: [currentUid.value]
+    }, params: [currentUid.value],
+    onError() {
+      // 获取用户信息失败，跳转到404页面
+      window.location.href = '/404';
+    }
   })
 })
 const handleUpdateFollowState = (newState: boolean) => {
