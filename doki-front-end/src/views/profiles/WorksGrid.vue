@@ -1,22 +1,41 @@
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { reactive, onMounted } from 'vue';
+import videoInfoService from '../../api/videoInfoService.ts'
+import type { VideoInfo } from '../../api/feedService.ts'
+import { handleRequest } from '../../api/handleRequest.ts';
+// 定义组件属性
+const props = defineProps<{
+  userId: number // 用户ID
+}>();
 
+onMounted(async () => {
+  await handleRequest(videoInfoService.getVideosInfoByUserId, {
+    onSuccess(data) {
+      userWorks.list = data;
+    },
+    params: props.userId
+  }
+  )
+})
 const userWorks = reactive({
-  list: []
+  list: [] as VideoInfo[]
 })
 </script>
 
 <template>
   <div class="works-grid">
-
     <div v-for="item in userWorks.list" class="work-card">
       <div class="image-container">
-        <img src="http://localhost:8081/cat.jpeg" alt="" class="work-image" />
+        <img v-if="true" :src="item.coverName" alt="" class="work-image" />
+        <video v-else autoplay controls class="work-video-pre"
+          src="http://localhost:10010/video/play/dc160900-87b8-4522-9672-9087913bbbbd"></video>
       </div>
-      <div class="work-description">{{ "这是视频的描述..." }}</div>
+      <div class="work-description">{{ item.title }}</div>
     </div>
-
   </div>
+
+  <div style="height: 100px;color: grey;" class="flex-center">没有更多了</div>
+
 
 </template>
 
@@ -30,6 +49,7 @@ const userWorks = reactive({
 
 /* 单个作品卡片样式 */
 .work-card {
+  cursor: pointer;
   background-color: #fff;
   border-radius: 8px;
   overflow: hidden;
@@ -46,7 +66,8 @@ const userWorks = reactive({
   overflow: hidden;
 }
 
-.work-image {
+.work-image,
+.work-video-pre {
   position: absolute;
   top: 0;
   left: 0;

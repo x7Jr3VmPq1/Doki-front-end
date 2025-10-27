@@ -13,7 +13,6 @@ const props = defineProps<{
   volume: number,
   isFullScreen: boolean,
   isPictureInPicture: boolean,
-  isWebFullScreen: boolean,
   videoDuration?: number,
   shrink?: boolean,
 }>()

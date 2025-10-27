@@ -189,18 +189,25 @@ const hasMore = ref(true);
 
 // 监听状态属性变化，加载数据
 // 每当 visible、activeTab 或 currentSort 变化时，重新加载数据
+let requestId = 0;
 watch(() => [props.visible, activeTab.value, currentSort.value], async ([open, newTab, newSort]) => {
+  isLoading.value = true;
 
+
+  const currentRequest = ++requestId; // 每次请求递增标识
+
+  // 重置列表和游标
+  followingList.value = [];
+  fansList.value = [];
+  cursor.value = '';
   if (open) {
-    // 重置列表和游标
-    followingList.value = [];
-    fansList.value = [];
-    cursor.value = '';
-    isLoading.value = true;
     await handleRequest(
       newTab === 'following' ? socialService.getFollowingList : socialService.getFollowersList,
       {
         onSuccess(data) {
+
+          if (currentRequest !== requestId) return; // 不是最新请求直接忽略
+
           if (newTab === 'following') {
             followingList.value = data.list;
           } else {
@@ -212,7 +219,7 @@ watch(() => [props.visible, activeTab.value, currentSort.value], async ([open, n
         delay: 300,
         params: { tid: props.tid, mode: newSort as SortOptionValue, cursor: cursor.value == '' ? null : cursor.value }
       });
-    isLoading.value = false;
+    if (currentRequest === requestId) isLoading.value = false;
   }
 
 });

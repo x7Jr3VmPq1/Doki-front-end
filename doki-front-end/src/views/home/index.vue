@@ -6,7 +6,7 @@ import { onMounted, ref } from "vue";
 import feedService from '../../api/feedService.ts'
 import type { VideoInfo } from '../../api/feedService.ts'
 import { handleRequest } from '../../api/handleRequest.ts'
-import videoProcessingService from '../../api/videoProcessingService.ts'
+import videoProcessingService from '../../api/videoInfoService.ts'
 import DokiLoading from "../../components/Doki-Loading.vue";
 
 const isLoading = ref(true);

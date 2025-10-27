@@ -18,7 +18,7 @@ const mode = ref<string>('my'); // 页面的模式，分为当前用户和其它
 
 const currentUid = ref(0);  // 如果是其它用户，需要获取地址栏上的查询参数
 
-const loading = ref(false);
+const loading = ref(true);
 
 // 定义用户对象
 const userInfoData = reactive<userInfo>({
@@ -42,6 +42,7 @@ onMounted(async () => {
   if (mode.value === 'my') {
     const store = useUserStore();
     Object.assign(userInfoData, store.userInfo);
+    loading.value = false;
     return;
   }
   // 如果是'/profiles?id=xxx'模式，获取id参数，获取失败则跳转到404
@@ -71,6 +72,9 @@ onMounted(async () => {
       window.location.href = '/404';
     }
   })
+
+  loading.value = false;
+
 })
 const handleUpdateFollowState = (newState: boolean) => {
   userInfoData.followed = newState;
@@ -78,24 +82,28 @@ const handleUpdateFollowState = (newState: boolean) => {
 </script>
 <!-- “我的”页面 -->
 <template>
-  <div class="profile-page" v-if="loading">
+  <div style="height: 100%;" class="flex-center" v-if="loading">
+    <DokiLoading></DokiLoading>
+  </div>
+  <div class="profile-page" v-if="!loading">
     <header class="header">
       <!-- 用户信息 -->
       <user-card :info="userInfoData"></user-card>
       <!-- 用户操作 -->
       <header-actions :mode="mode"></header-actions>
+      <!-- 关注/私信按钮 -->
+      <follow-and-d-m @update:is-following="handleUpdateFollowState" :uid="userInfoData.id" v-if="mode !== 'my'"
+        :is-following="userInfoData.followed ?? false"></follow-and-d-m>
     </header>
-    <!-- 关注/私信按钮 -->
-    <follow-and-d-m @update:is-following="handleUpdateFollowState" :uid="userInfoData.id" v-if="mode !== 'my'"
-      :is-following="userInfoData.followed ?? false"></follow-and-d-m>
     <!-- 菜单按钮 -->
-    <main-menu></main-menu>
+    <main-menu :user-id="userInfoData.id"></main-menu>
     <!-- 筛选作品类型按钮 -->
-    <works-filters></works-filters>
+    <works-filters :user-id="userInfoData.id"></works-filters>
     <!-- 作品列表区域 -->
-    <works-grid></works-grid>
+    <div class="works-list">
+      <works-grid :user-id="userInfoData.id"></works-grid>
+    </div>
   </div>
-  <DokiLoading v-if="!loading"></DokiLoading>
 </template>
 
 <style scoped>
@@ -105,6 +113,10 @@ const handleUpdateFollowState = (newState: boolean) => {
 }
 
 .profile-page {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* 防止整体出现滚动条 */
   height: 100%;
   width: 95%;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -112,7 +124,6 @@ const handleUpdateFollowState = (newState: boolean) => {
   padding: 20px;
   margin: 0 auto;
   border-radius: 10px;
-  overflow-y: auto;
 }
 
 /* 顶部用户卡片的样式 */
@@ -121,5 +132,10 @@ const handleUpdateFollowState = (newState: boolean) => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.works-list {
+  flex: 1;
+  overflow-y: auto;
 }
 </style>

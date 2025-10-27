@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {onMounted, ref} from 'vue'
-import {Close, Like} from '@icon-park/vue-next';
-import type {Video} from '../../store/videoStore.ts'
-import type {VideoInfo} from '../../api/feedService.ts'
-import {useUserStore} from "../../store/userInfoStore.ts";
+import { onMounted, ref } from 'vue'
+import { Close, Like } from '@icon-park/vue-next';
+import type { Video } from '../../store/videoStore.ts'
+import type { VideoInfo } from '../../api/feedService.ts'
+import { useUserStore } from "../../store/userInfoStore.ts";
 
 const userStore = useUserStore();
 // 子组件
@@ -11,14 +11,13 @@ import InteractionButtons from './InteractionButtons.vue'
 import VideoInfoComponent from './VideoInfo.vue'
 import Controls from './Controls.vue'
 import CommentsPanel from './CommentsPanel.vue'
+import { VideoCameraFilled } from '@ant-design/icons-vue';
 // 当前登录用户ID
 const userId = ref(userStore.userInfo?.id);
 // 获取视频数据
-const {video} = defineProps<{
+const { video } = defineProps<{
   video: VideoInfo
 }>()
-// 视频流请求地址
-const videoStreamPath = 'http://localhost:10010/video/play/'
 // 获取播放器HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
 // TA的作品集合
@@ -117,7 +116,7 @@ const toggleFullScreen = () => {
 const isPictureInPicture = ref(false);
 const togglePictureInPicture = async () => {
   if (!videoRef.value) return;
-  
+
   try {
     if (document.pictureInPictureElement) {
       // 如果已经在画中画模式，退出画中画
@@ -148,57 +147,6 @@ document.addEventListener("leavepictureinpicture", () => {
   isPictureInPicture.value = false;
 });
 
-// 网页全屏状态管理
-const isWebFullScreen = ref(false);
-const toggleWebFullScreen = () => {
-  if (!isWebFullScreen.value) {
-    // 进入网页全屏 - 让播放器占据整个浏览器窗口
-    document.body.style.overflow = 'hidden';
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
-    
-    // 隐藏侧边栏和标题栏
-    const sidebar = document.querySelector('.sidebar-container');
-    const titleBar = document.querySelector('.title-bar');
-    const mainContainer = document.querySelector('.main-container');
-    
-    if (sidebar) sidebar.style.display = 'none';
-    if (titleBar) titleBar.style.display = 'none';
-    if (mainContainer) {
-      mainContainer.style.position = 'fixed';
-      mainContainer.style.top = '0';
-      mainContainer.style.left = '0';
-      mainContainer.style.width = '100vw';
-      mainContainer.style.height = '100vh';
-      mainContainer.style.zIndex = '9999';
-    }
-    
-    isWebFullScreen.value = true;
-  } else {
-    // 退出网页全屏 - 恢复原始布局
-    document.body.style.overflow = '';
-    document.body.style.margin = '';
-    document.body.style.padding = '';
-    
-    // 显示侧边栏和标题栏
-    const sidebar = document.querySelector('.sidebar-container');
-    const titleBar = document.querySelector('.title-bar');
-    const mainContainer = document.querySelector('.main-container');
-    
-    if (sidebar) sidebar.style.display = '';
-    if (titleBar) titleBar.style.display = '';
-    if (mainContainer) {
-      mainContainer.style.position = '';
-      mainContainer.style.top = '';
-      mainContainer.style.left = '';
-      mainContainer.style.width = '';
-      mainContainer.style.height = '';
-      mainContainer.style.zIndex = '';
-    }
-    
-    isWebFullScreen.value = false;
-  }
-};
 // 倍速相关
 const speeds = [2, 1.75, 1.5, 1, 0.75, 0.5]; // 倍速列表
 const currentSpeed = ref(1); // 当前的速度
@@ -266,53 +214,32 @@ const favoriteVideo = async (videoId: number) => {
 
 
 <template>
-  <div class="player-container" tabindex="-1"
-       @keyup.space.stop="onPlay"
-       @keyup.x.stop="openComments"
-       @keyup.f.stop="openUserPage"
-  >
+  <div class="player-container" tabindex="-1" @keyup.space.stop="onPlay" @keyup.x.stop="openComments"
+    @keyup.f.stop="openUserPage" :style="{
+      '--bg-url': `url(${video.coverName})`
+    }">
     <!-- 视频区域绑定动态 class 控制宽度 -->
     <div :class="['player-video', { shrink: open }]" @click="onPlay">
       <div class="video-wrapper">
-        <video :src="videoStreamPath + video.videoFilename" ref="videoRef" loop
-               preload="auto"></video>
+        <video :src="video.videoFilename" ref="videoRef" loop preload="auto"></video>
         <!-- 交互按钮 -->
-        <InteractionButtons
-            :video="video"
-            :onOpenComments="openComments"
-        />
+        <InteractionButtons :video="video" :onOpenComments="openComments" />
       </div>
       <!-- 视频主信息 -->
-      <VideoInfoComponent v-if="!clearScreen" :video="video"/>
+      <VideoInfoComponent v-if="!clearScreen" :video="video" />
       <!--  遮罩层    -->
       <div v-if="!clearScreen" class="cover"></div>
       <!--  控件  -->
-      <Controls
-          :isPlaying="isPlaying"
-          :currentTime="currentTime"
-          :durationTime="durationTime"
-          :clearScreen="clearScreen"
-          :speeds="speeds"
-          :currentSpeed="currentSpeed"
-          :volume="volume"
-          :isFullScreen="isFullScreen"
-          :isPictureInPicture="isPictureInPicture"
-          :isWebFullScreen="isWebFullScreen"
-          :videoDuration="videoRef?.duration"
-          :shrink="open"
-          @togglePlay="onPlay"
-          @setTime="setVideoTime"
-          @toggleClear="(v:any)=>clearScreen=v"
-          @setSpeed="setSpeed"
-          @changeVolume="(v:any)=>{ volume=v; handleVolumeChange(); }"
-          @toggleFullscreen="toggleFullScreen"
-          @toggleMute="toggleMute"
-          @togglePictureInPicture="togglePictureInPicture"
-          @toggleWebFullscreen="toggleWebFullScreen"
-      />
+      <Controls :isPlaying="isPlaying" :currentTime="currentTime" :durationTime="durationTime"
+        :clearScreen="clearScreen" :speeds="speeds" :currentSpeed="currentSpeed" :volume="volume"
+        :isFullScreen="isFullScreen" :isPictureInPicture="isPictureInPicture" :videoDuration="videoRef?.duration"
+        :shrink="open" @togglePlay="onPlay" @setTime="setVideoTime" @toggleClear="(v: any) => clearScreen = v"
+        @setSpeed="setSpeed" @changeVolume="(v: any) => { volume = v; handleVolumeChange(); }"
+        @toggleFullscreen="toggleFullScreen" @toggleMute="toggleMute"
+        @togglePictureInPicture="togglePictureInPicture" />
     </div>
     <!-- 评论区抽屉 -->
-    <div class="other-draw" :class="['other-draw',{ shrink: open }]" @wheel.stop>
+    <div class="other-draw" :class="['other-draw', { shrink: open }]" @wheel.stop>
       <a-tabs v-model:activeKey="activeKey" size="large" @change="handleTabChange(activeKey)">
         <a-tab-pane key="1" tab="TA的作品">
           <div style="display: flex;flex-direction: column;width: 100%;height: 100%" v-if="isInitUserItemsLoaded">
@@ -337,8 +264,8 @@ const favoriteVideo = async (videoId: number) => {
             <div class="user-videos">
               <div class="user-video-item" v-for="(item) in userItems">
                 <img style="object-fit: cover;width: 100%;height: 100%"
-                     :src="item.thumbnailUrl ?? 'http://localhost:8081/videos/defaultCover.jpg'"
-                     alt="http://localhost:8081/videos/defaultCover.jpg">
+                  :src="item.thumbnailUrl ?? 'http://localhost:8081/videos/defaultCover.jpg'"
+                  alt="http://localhost:8081/videos/defaultCover.jpg">
                 <div class="like-number">
                   <Like></Like>
                   <span style="margin-left: 5px">{{ item.likeCount }}</span>
@@ -349,7 +276,7 @@ const favoriteVideo = async (videoId: number) => {
 
         </a-tab-pane>
         <a-tab-pane key="2" :tab='`评论`' force-render>
-          <CommentsPanel :videoId="video.id" :open="open"/>
+          <CommentsPanel :videoId="video.id" :open="open" />
         </a-tab-pane>
         <a-tab-pane key="3" tab="相关推荐">Content...</a-tab-pane>
       </a-tabs>
@@ -378,7 +305,8 @@ const favoriteVideo = async (videoId: number) => {
 }
 
 ::v-deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
-  color: white; /*按钮文字*/
+  color: white;
+  /*按钮文字*/
 }
 
 ::v-deep(.ant-tabs-tab-btn:hover) {
@@ -386,7 +314,8 @@ const favoriteVideo = async (videoId: number) => {
 }
 
 ::v-deep(.ant-tabs-tab) {
-  color: #403d3d; /*按钮文字*/
+  color: #403d3d;
+  /*按钮文字*/
 }
 
 ::v-deep(.ant-tabs) {
@@ -402,7 +331,8 @@ const favoriteVideo = async (videoId: number) => {
 }
 
 ::v-deep(.ant-tabs-ink-bar) {
-  background-color: red; /*按钮背景*/
+  background-color: red;
+  /*按钮背景*/
 }
 
 ::v-deep(.ant-tabs-nav-wrap) {
@@ -509,7 +439,8 @@ const favoriteVideo = async (videoId: number) => {
     width: 30%;
     top: 0;
     right: -30%;
-    background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色 */
+    background-color: rgba(0, 0, 0, 0.5);
+    /* 半透明黑色 */
 
     .followed-button,
     .follow-button {
@@ -587,13 +518,14 @@ const favoriteVideo = async (videoId: number) => {
 .player-container::before {
   content: "";
   position: absolute;
-  inset: 0; /* top:0; right:0; bottom:0; left:0 */
-  background-image: url('http://localhost:10010/image/cover/202300803-ProjectSEKAI-HatsuneMiku.jpg');
+  inset: 0;
+  /* top:0; right:0; bottom:0; left:0 */
+  background-image: var(--bg-url);
+  /* 使用 CSS 变量 */
   background-size: cover;
   background-position: center;
-  filter: blur(80px); /* 高斯模糊 */
+  filter: blur(80px);
+  /* 高斯模糊 */
   z-index: -1;
 }
-
 </style>
-

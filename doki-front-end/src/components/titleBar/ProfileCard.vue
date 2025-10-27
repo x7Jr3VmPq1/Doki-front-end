@@ -85,7 +85,7 @@
         </transition>
       </div>
 
-      <div class="section-item-wrapper">
+      <!-- <div class="section-item-wrapper">
         <div class="section-item" @mouseenter="expandSection('watchLater')">
           <div class="section-title">
             <span class="icon purple-watch-later"></span>
@@ -106,7 +106,7 @@
             </div>
           </div>
         </transition>
-      </div>
+      </div> -->
 
       <div class="section-item-wrapper">
         <div class="section-item" @mouseenter="expandSection('myWorks')">
