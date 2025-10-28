@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import SwiperPlayer from "./swiper-player.vue";
+import SwiperPlayer from "../../components/player/index.vue";
 import { onMounted, ref } from "vue";
 
 import feedService from '../../api/feedService.ts'
@@ -8,6 +8,7 @@ import type { VideoInfo } from '../../api/feedService.ts'
 import { handleRequest } from '../../api/handleRequest.ts'
 import videoProcessingService from '../../api/videoInfoService.ts'
 import DokiLoading from "../../components/Doki-Loading.vue";
+const emit = defineEmits(['_virtualUpdated'])
 
 const isLoading = ref(true);
 const videos = ref<VideoInfo[]>([]);
@@ -15,9 +16,9 @@ onMounted(async () => {
 
   // await handleRequest(feedService.getRandomVideos, {
   //   onSuccess(data) {
-  //     videos.value = data; 
+  //     videos.value = data;
+  //     console.log(data);
   //   },
-  //   params: 10
   // })
 
   await handleRequest(videoProcessingService.getVideoInfo, {

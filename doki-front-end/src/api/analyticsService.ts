@@ -30,7 +30,7 @@ export interface UserStatistics {
 const analyticsService = {
   // 获取指定视频的统计信息
   getVideoStatById: async (ids: number[]) =>
-    await request<VideoStatistics>('/analytics/stat/videos', {
+    await request<VideoStatistics[]>('/analytics/stat/videos', {
       method: 'POST',
       data: ids
     }),

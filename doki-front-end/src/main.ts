@@ -7,6 +7,9 @@ import router from "./router";
 import 'ant-design-vue/dist/reset.css';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import './assets/style.css'
+
+
+
 // @ts-ignore
 import { RecycleScroller } from 'vue-virtual-scroller'
 const app = createApp(App)

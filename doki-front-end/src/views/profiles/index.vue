@@ -12,6 +12,8 @@ import { handleRequest } from "../../api/handleRequest";
 import userService from "../../api/userService";
 import type { userInfo } from "../../api/userService";
 import { useUserStore } from "../../store/userInfoStore.ts";
+
+const userStore = useUserStore();
 const route = useRoute()
 
 const mode = ref<string>('my'); // 页面的模式，分为当前用户和其它用户
@@ -79,6 +81,12 @@ onMounted(async () => {
 const handleUpdateFollowState = (newState: boolean) => {
   userInfoData.followed = newState;
 }
+
+
+const currentTab = ref('works');
+const handleChangeTab = (type: string) => {
+  currentTab.value = type;
+}
 </script>
 <!-- “我的”页面 -->
 <template>
@@ -96,21 +104,18 @@ const handleUpdateFollowState = (newState: boolean) => {
         :is-following="userInfoData.followed ?? false"></follow-and-d-m>
     </header>
     <!-- 菜单按钮 -->
-    <main-menu :user-id="userInfoData.id"></main-menu>
+    <main-menu :user-id="userInfoData.id" @change-tab="handleChangeTab"></main-menu>
     <!-- 筛选作品类型按钮 -->
-    <works-filters :user-id="userInfoData.id"></works-filters>
+    <works-filters v-if="userInfoData.id === userStore.userInfo.id && currentTab === 'works'"></works-filters>
     <!-- 作品列表区域 -->
     <div class="works-list">
-      <works-grid :user-id="userInfoData.id"></works-grid>
+      <works-grid :tab="currentTab" :user-id="userInfoData.id"></works-grid>
     </div>
   </div>
 </template>
 
 <style scoped>
 /* 整个页面容器的样式 */
-::-webkit-scrollbar {
-  display: none;
-}
 
 .profile-page {
   display: flex;
@@ -135,7 +140,7 @@ const handleUpdateFollowState = (newState: boolean) => {
 }
 
 .works-list {
-  flex: 1;
   overflow-y: auto;
+  flex: 1;
 }
 </style>

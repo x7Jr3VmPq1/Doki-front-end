@@ -2,16 +2,20 @@
 
 import locale from "ant-design-vue/es/date-picker/locale/zh_CN";
 import { useUserStore } from "../../store/userInfoStore";
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, watch } from "vue";
 import 'dayjs/locale/zh-cn'
 const userStore = useUserStore();
 const props = defineProps<{
   userId: number
 }>();
+
+const emit = defineEmits<{
+  (e: 'changeTab', value: string): string
+}>();
 const pageData = reactive({
   menu: [
     { title: '作品', count: 330, type: 'works' },
-    { title: '喜欢', count: 0, type: 'likes' },
+    { title: '喜欢', count: 123, type: 'likes' },
     { title: '收藏', count: 12, type: 'favorites' },
   ],
 });
@@ -26,13 +30,21 @@ const currentClick = ref("works")
 const searchInput = ref("")
 const dateSelected = ref(null)
 
+
+const handleClickTab = (type: string) => {
+  currentClick.value = type;
+}
+
+watch(() => currentClick.value, (newValue) => {
+  emit('changeTab', newValue);
+})
 </script>
 
 <template>
   <nav class="main-menu">
     <ul class="menu-list">
       <li v-for="item in pageData.menu" :key="item.type" class="menu-item"
-        :class="{ active: item.type === currentClick }" @click="currentClick = item.type">
+        :class="{ active: item.type === currentClick }" @click="handleClickTab(item.type)">
         <div>
           {{ item.title }} <span class="count">{{ item.count }}</span>
         </div>

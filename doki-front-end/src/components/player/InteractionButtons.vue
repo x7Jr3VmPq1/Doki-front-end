@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import {HeartFilled, MessageFilled, PlusCircleFilled, StarFilled} from "@ant-design/icons-vue";
-import {IconMore, IconShareInternal} from '@arco-design/web-vue/es/icon';
-import type {VideoInfo} from '../../api/feedService.ts'
-import {onMounted} from 'vue';
+import { HeartFilled, MessageFilled, PlusCircleFilled, StarFilled } from "@ant-design/icons-vue";
+import { IconMore, IconShareInternal } from '@arco-design/web-vue/es/icon';
+import type { VideoInfo } from '../../api/feedService.ts'
+import { onMounted } from 'vue';
 import analyticsService from '../../api/analyticsService.ts';
 import userService from '../../api/userService.ts'
-import type {VideoStatistics} from '../../api/analyticsService.ts'
-import type {userInfo} from '../../api/userService.ts'
-import {ref} from 'vue'
+import type { VideoStatistics } from '../../api/analyticsService.ts'
+import type { userInfo } from '../../api/userService.ts'
+import { ref } from 'vue'
 import LikeFavoriteService from "../../api/likeFavoriteService.ts";
-import {handleRequest} from '../../api/handleRequest.ts'
+import { handleRequest } from '../../api/handleRequest.ts'
 
 const props = defineProps<{
   video: VideoInfo,
@@ -38,8 +38,6 @@ const uploaderInfo = ref<userInfo>({
   username: '',
   avatarUrl: '',
   bio: '',
-  createdAt: 0,
-  updatedAt: 0
 })
 
 const loaded = ref(false);
@@ -47,7 +45,7 @@ onMounted(() => {
   // 获取视频统计信息
   handleRequest(analyticsService.getVideoStatById, {
     onSuccess(data) {
-      stat.value = data;
+      stat.value = data[0];
     },
     params: [props.video.id]
   })
@@ -85,16 +83,16 @@ const onLike = async (videoId: number) => {
         <div style="display: flex;line-height: 1.2em;padding: 8px">
           进入作者首页
           <div
-              style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 30%;text-align: center;line-height: 1.2em;margin-left: 5px">
+            style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 30%;text-align: center;line-height: 1.2em;margin-left: 5px">
             F
           </div>
         </div>
       </template>
       <div class="user-avatar">
         <div class="follow-button">
-          <PlusCircleFilled/>
+          <PlusCircleFilled />
         </div>
-        <a-avatar :src="uploaderInfo.avatarUrl" size="large" class="bounce-on-click"/>
+        <a-avatar :src="uploaderInfo.avatarUrl" size="large" class="bounce-on-click" />
       </div>
     </a-tooltip>
 
@@ -103,14 +101,14 @@ const onLike = async (videoId: number) => {
         <div style="display: flex;line-height: 1.2em;padding: 8px">
           点赞
           <div
-              style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 30%;text-align: center;line-height: 1.2em;margin-left: 5px">
+            style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 30%;text-align: center;line-height: 1.2em;margin-left: 5px">
             Z
           </div>
         </div>
       </template>
       <div class="like bounce-on-click" @click="onLike(props.video.id)">
-        <heart-filled v-if="stat.userLiked" style="color: red"/>
-        <heart-filled v-else/>
+        <heart-filled v-if="stat.userLiked" style="color: red" />
+        <heart-filled v-else />
         <div style="font-size: 20px;padding-top: 5px">{{ stat.likeCount }}</div>
       </div>
     </a-tooltip>
@@ -120,13 +118,13 @@ const onLike = async (videoId: number) => {
         <div style="display: flex;line-height: 1.2em;padding: 8px">
           评论
           <div
-              style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
+            style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
             X
           </div>
         </div>
       </template>
       <div class="comment bounce-on-click" @click="props.onOpenComments">
-        <message-filled/>
+        <message-filled />
         <div style="font-size: 20px;padding-top: 5px">{{ stat.commentCount }}</div>
       </div>
     </a-tooltip>
@@ -136,14 +134,14 @@ const onLike = async (videoId: number) => {
         <div style="display: flex;line-height: 1.2em;padding: 8px">
           收藏
           <div
-              style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 30%;text-align: center;line-height: 1.2em;margin-left: 5px">
+            style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 30%;text-align: center;line-height: 1.2em;margin-left: 5px">
             X
           </div>
         </div>
       </template>
       <div class="star bounce-on-click">
-        <star-filled v-if="false" style="color: goldenrod"/>
-        <star-filled v-else/>
+        <star-filled v-if="false" style="color: goldenrod" />
+        <star-filled v-else />
         <div style="font-size: 20px;padding-top: 5px">{{ stat.favoriteCount }}</div>
       </div>
     </a-tooltip>
@@ -153,13 +151,13 @@ const onLike = async (videoId: number) => {
         <div style="display: flex;line-height: 1.2em;padding: 8px">
           进入作者首页
           <div
-              style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
+            style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
             F
           </div>
         </div>
       </template>
       <div class="share bounce-on-click">
-        <icon-share-internal/>
+        <icon-share-internal />
       </div>
     </a-tooltip>
 
@@ -168,13 +166,13 @@ const onLike = async (videoId: number) => {
         <div style="display: flex;line-height: 1.2em;padding: 8px">
           进入作者首页
           <div
-              style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
+            style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
             F
           </div>
         </div>
       </template>
       <div class="more bounce-on-click">
-        <icon-more/>
+        <icon-more />
       </div>
     </a-tooltip>
   </div>
@@ -197,7 +195,10 @@ const onLike = async (videoId: number) => {
   text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
 }
 
-.interaction-buttons .like, .interaction-buttons .comment, .interaction-buttons .star, .interaction-buttons .share {
+.interaction-buttons .like,
+.interaction-buttons .comment,
+.interaction-buttons .star,
+.interaction-buttons .share {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -218,5 +219,3 @@ const onLike = async (videoId: number) => {
   z-index: 1;
 }
 </style>
-
-

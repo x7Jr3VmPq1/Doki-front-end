@@ -1,47 +1,114 @@
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue';
+import { reactive, onMounted, ref, watch } from 'vue';
 import videoInfoService from '../../api/videoInfoService.ts'
+import type { videoInfoWithStat } from '../../api/videoInfoService.ts'
 import type { VideoInfo } from '../../api/feedService.ts'
 import { handleRequest } from '../../api/handleRequest.ts';
+import DokiLoading from '../../components/Doki-Loading.vue';
+import { useInfiniteScroll } from '../../utils/infiniteScroll.ts'
+import DokiVideoPre from '../../components/Doki-Video-Pre.vue';
 // 定义组件属性
 const props = defineProps<{
-  userId: number // 用户ID
+  userId: number, // 用户ID
+  tab: string // 当前的tab，可以是works,likes,favorites,history
 }>();
 
-onMounted(async () => {
-  await handleRequest(videoInfoService.getVideosInfoByUserId, {
-    onSuccess(data) {
-      userWorks.list = data;
-    },
-    params: props.userId
+const cursor = ref<string | null>(null);
+const hasMore = ref(true);
+const worksArea = ref<HTMLElement | null>(null);
+const loadMore = ref<HTMLElement | null>(null);
+const loading = ref(true);
+
+
+watch(() => props.tab, (newValue) => {
+  userWorks.list = [];
+  cursor.value = null;
+  hasMore.value = true;
+  loadMoreWorks();
+})
+
+let requestId = 0;
+const loadMoreWorks = async () => {
+
+  if (!hasMore.value) {
+    return;
   }
-  )
+
+  let requestFn = null;
+  switch (props.tab) {
+    case 'works': requestFn = videoInfoService.getVideosInfoByUserId;
+      break;
+    case 'likes': requestFn = videoInfoService.getLikeVideosInfoByUserId;
+      break;
+    default: return;
+  }
+
+  const currentRequest = ++requestId;
+  loading.value = true;
+  await handleRequest(requestFn, {
+    onSuccess(data) {
+      if (currentRequest !== requestId) {
+        return;
+      }
+      userWorks.list.push(...data.list);
+      cursor.value = data.cursor;
+      hasMore.value = data.hasMore;
+    }, params: {
+      tid: props.userId,
+      cursor: cursor.value
+    },
+    delay: 500
+  })
+
+  if (currentRequest === requestId) {
+    loading.value = false;
+  }
+}
+
+onMounted(async () => {
+  useInfiniteScroll(loadMoreWorks, loadMore, worksArea)
+  await loadMoreWorks();
 })
 const userWorks = reactive({
-  list: [] as VideoInfo[]
+  list: [] as videoInfoWithStat[]
 })
 </script>
 
 <template>
-  <div class="works-grid">
-    <div v-for="item in userWorks.list" class="work-card">
-      <div class="image-container">
-        <img v-if="true" :src="item.coverName" alt="" class="work-image" />
-        <video v-else autoplay controls class="work-video-pre"
-          src="http://localhost:10010/video/play/dc160900-87b8-4522-9672-9087913bbbbd"></video>
+  <div ref="worksArea" class="main">
+    <div class="works-grid">
+      <div v-for="item in userWorks.list" class="work-card">
+        <div class="image-container">
+          <DokiVideoPre :item="item"></DokiVideoPre>
+        </div>
+        <div class="work-description">{{ item.title }}</div>
       </div>
-      <div class="work-description">{{ item.title }}</div>
     </div>
-  </div>
 
-  <div style="height: 100px;color: grey;" class="flex-center">没有更多了</div>
+    <div class="flex-center">
+      <DokiLoading v-if="loading"></DokiLoading>
+    </div>
+
+    <!-- 加载标记 -->
+    <div ref=loadMore v-show="!loading"></div>
+
+    <div v-if="!hasMore && !loading" style="height: 100px;color: grey;" class="flex-center">没有更多了</div>
+
+  </div>
 
 
 </template>
 
 <style scoped>
+.main {
+  height: 100%;
+  overflow-y: auto;
+}
+
 /* 作品网格布局 */
 .works-grid {
+  flex: 1;
+  overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 20px;
@@ -66,15 +133,6 @@ const userWorks = reactive({
   overflow: hidden;
 }
 
-.work-image,
-.work-video-pre {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
 
 .work-description {
   color: #666;

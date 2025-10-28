@@ -1,531 +1,196 @@
-<script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { Close, Like } from '@icon-park/vue-next';
-import type { Video } from '../../store/videoStore.ts'
-import type { VideoInfo } from '../../api/feedService.ts'
-import { useUserStore } from "../../store/userInfoStore.ts";
-
-const userStore = useUserStore();
-// 子组件
-import InteractionButtons from './InteractionButtons.vue'
-import VideoInfoComponent from './VideoInfo.vue'
-import Controls from './Controls.vue'
-import CommentsPanel from './CommentsPanel.vue'
-import { VideoCameraFilled } from '@ant-design/icons-vue';
-// 当前登录用户ID
-const userId = ref(userStore.userInfo?.id);
-// 获取视频数据
-const { video } = defineProps<{
-  video: VideoInfo
-}>()
-// 获取播放器HTML元素
-const videoRef = ref<HTMLVideoElement | null>(null);
-// TA的作品集合
-const userItems = ref<Video[]>([]);
-// 初始作品集合加载完毕标志
-const isInitUserItemsLoaded = ref(false);
-// 评论统计从子组件回传增量
-
-// 播放器初始化钩子
-onMounted(async () => {
-  if (videoRef.value) {
-    // 获取视频时长
-    videoRef.value.addEventListener('loadedmetadata', () => {
-      durationTime.value = videoRef.value?.duration ?? 0;
-      currentTime.value = videoRef.value?.currentTime ?? 0;
-    });
-    // 监听进度，获得更新的视频时间
-    videoRef.value.addEventListener('timeupdate', () => {
-      currentTime.value = videoRef.value?.currentTime ?? 0;
-      progressPercent.value = (currentTime.value / durationTime.value) * 100;
-    });
-  }
-});
-
-// 滚动、分页逻辑由子组件处理
-
-// 评论区抽屉控制
-const open = ref(false)
-const showDrawer = () => {
-  open.value = !open.value;
-}
-
-// 播放暂停控制
-const isPlaying = ref(false);
-const onPlay = () => {
-  isPlaying.value = !isPlaying.value;
-  if (videoRef.value) {
-    isPlaying.value ? videoRef.value.play() : videoRef.value.pause();
-  }
-}
-// 向外暴露播放器的播放和暂停方法
-defineExpose({
-  play: () => {
-    videoRef.value?.play();
-    isPlaying.value = true;
-  },
-  pause: () => {
-    videoRef.value?.pause();
-    isPlaying.value = false;
-  }
-});
-
-// 时长
-const durationTime = ref(0);
-const currentTime = ref(0);
-// 进度条
-const progressPercent = ref(0);
-// 音量
-const volume = ref(100);
-const muteVolume = ref(0.01);
-// 改变音量方法
-const handleVolumeChange = () => {
-  if (videoRef.value) {
-    videoRef.value.muted = false;
-    videoRef.value.volume = (volume.value / 100) + 0.01; // 0.01 是为了防止频繁静音卡顿
-  }
-}
-// 切换静音方法
-const toggleMute = () => {
-  if (videoRef.value) {
-    const temp = volume.value;
-    volume.value = muteVolume.value;
-    muteVolume.value = temp;
-    videoRef.value.volume = volume.value / 100;
-  }
-};
-// 切换全屏显示方法
-const isFullScreen = ref(false);
-const toggleFullScreen = () => {
-  const element = document.querySelector('.video-container');
-
-  if (!document.fullscreenElement) {
-    // 进入全屏
-    if (element) {
-      element.requestFullscreen?.();
-      isFullScreen.value = true;
-    }
-  } else {
-    // 退出全屏
-    document.exitFullscreen?.();
-    isFullScreen.value = false;
-  }
-};
-
-// 画中画状态管理
-const isPictureInPicture = ref(false);
-const togglePictureInPicture = async () => {
-  if (!videoRef.value) return;
-
-  try {
-    if (document.pictureInPictureElement) {
-      // 如果已经在画中画模式，退出画中画
-      await document.exitPictureInPicture();
-      isPictureInPicture.value = false;
-    } else {
-      // 进入画中画模式
-      await videoRef.value.requestPictureInPicture();
-      isPictureInPicture.value = true;
-    }
-  } catch (error) {
-    console.error('画中画操作失败:', error);
-  }
-};
-// 监听全屏状态
-document.addEventListener("fullscreenchange", () => {
-  if (!document.fullscreenElement) {
-    isFullScreen.value = false;
-  }
-});
-
-// 监听画中画状态变化
-document.addEventListener("enterpictureinpicture", () => {
-  isPictureInPicture.value = true;
-});
-
-document.addEventListener("leavepictureinpicture", () => {
-  isPictureInPicture.value = false;
-});
-
-// 倍速相关
-const speeds = [2, 1.75, 1.5, 1, 0.75, 0.5]; // 倍速列表
-const currentSpeed = ref(1); // 当前的速度
-// 设置倍速
-const setSpeed = (speed: number) => {
-  if (!videoRef.value) return;
-  currentSpeed.value = speed;
-  videoRef.value.playbackRate = speed;
-};
-// 播放进度相关
-const setVideoTime = (time: number) => {
-  if (videoRef.value) {
-    videoRef.value.currentTime = time;
-    currentTime.value = time;
-  }
-}
-
-
-// 控制清屏标记
-const clearScreen = ref(false);
-
-// 拓展面板key
-const activeKey = ref('2');
-// 处理选项卡切换时的逻辑
-// const handleTabChange = async (key: string) => {
-//   if (key === '1' && !isInitUserItemsLoaded.value) {
-//     // 获取用户作品
-//     const res = await getUserInfo(video.userName);
-//     userItems.value.push(...res.data.videos);
-//     isInitUserItemsLoaded.value = true;
-//   }
-// }
-
-// 打开用户信息选项卡
-const openUserPage = () => {
-  // TODO 后续在这里发异步请求获取用户信息
-  if (open.value && activeKey.value == '2') {
-    activeKey.value = '1';
-    return;
-  }
-  activeKey.value = '1';
-  showDrawer();
-}
-// 打开评论选项卡
-const openComments = async () => {
-
-  if (open.value && activeKey.value == '1') {
-    activeKey.value = '2';
-    return;
-  }
-  activeKey.value = '2';
-  showDrawer();
-  // 评论加载交给子组件
-}
-
-// 评论相关逻辑已下放至 CommentsPanel 组件
-
-
-// 给视频收藏
-const favoriteVideo = async (videoId: number) => {
-  // TODO 收藏方法
-}
-
-</script>
-
-
 <template>
-  <div class="player-container" tabindex="-1" @keyup.space.stop="onPlay" @keyup.x.stop="openComments"
-    @keyup.f.stop="openUserPage" :style="{
-      '--bg-url': `url(${video.coverName})`
-    }">
-    <!-- 视频区域绑定动态 class 控制宽度 -->
-    <div :class="['player-video', { shrink: open }]" @click="onPlay">
-      <div class="video-wrapper">
-        <video :src="video.videoFilename" ref="videoRef" loop preload="auto"></video>
-        <!-- 交互按钮 -->
-        <InteractionButtons :video="video" :onOpenComments="openComments" />
-      </div>
-      <!-- 视频主信息 -->
-      <VideoInfoComponent v-if="!clearScreen" :video="video" />
-      <!--  遮罩层    -->
-      <div v-if="!clearScreen" class="cover"></div>
-      <!--  控件  -->
-      <Controls :isPlaying="isPlaying" :currentTime="currentTime" :durationTime="durationTime"
-        :clearScreen="clearScreen" :speeds="speeds" :currentSpeed="currentSpeed" :volume="volume"
-        :isFullScreen="isFullScreen" :isPictureInPicture="isPictureInPicture" :videoDuration="videoRef?.duration"
-        :shrink="open" @togglePlay="onPlay" @setTime="setVideoTime" @toggleClear="(v: any) => clearScreen = v"
-        @setSpeed="setSpeed" @changeVolume="(v: any) => { volume = v; handleVolumeChange(); }"
-        @toggleFullscreen="toggleFullScreen" @toggleMute="toggleMute"
-        @togglePictureInPicture="togglePictureInPicture" />
-    </div>
-    <!-- 评论区抽屉 -->
-    <div class="other-draw" :class="['other-draw', { shrink: open }]" @wheel.stop>
-      <a-tabs v-model:activeKey="activeKey" size="large" @change="handleTabChange(activeKey)">
-        <a-tab-pane key="1" tab="TA的作品">
-          <div style="display: flex;flex-direction: column;width: 100%;height: 100%" v-if="isInitUserItemsLoaded">
-            <div class="title" style="display: flex">
-              <div class="user-info" style="flex: 1">
-                <div class="user-name" style="font-size: 20px;display: flex;margin-left: 10%">
-                  <a style="color: white">@admin</a>
-                </div>
-                <div class="user-like-number" style="font-size: 15px;display: flex;margin-left: 10%;color: white">
-                  <span>1000粉丝 | </span>
-                  <span>1000获赞</span>
-                </div>
-              </div>
-              <div>
-                <div style="margin-right: 50px">
-                  <button class="followed-button" v-if="false">已关注
-                  </button>
-                  <button class="follow-button" v-else>关注</button>
-                </div>
-              </div>
-            </div>
-            <div class="user-videos">
-              <div class="user-video-item" v-for="(item) in userItems">
-                <img style="object-fit: cover;width: 100%;height: 100%"
-                  :src="item.thumbnailUrl ?? 'http://localhost:8081/videos/defaultCover.jpg'"
-                  alt="http://localhost:8081/videos/defaultCover.jpg">
-                <div class="like-number">
-                  <Like></Like>
-                  <span style="margin-left: 5px">{{ item.likeCount }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+  <div class="video-container">
+    <!-- <swiper ref="swiperRef" direction="vertical" :modules="[Pagination, Virtual]" :allowTouchMove="false" virtual
+      class="video-swiper" @keyup="handleChange" @wheel="handleChange" @swiper="onSwiperInit"
+      @slide-change="onSlideChange">
+      <swiper-slide v-for="(video, index) in props.videos" :key="index" :virtualIndex="index"> -->
+    <Player :video="videos[0]" :index="0" :active="0" v-if="videos.length > 0"></Player>
+    <!-- </swiper-slide>
+    </swiper> -->
 
-        </a-tab-pane>
-        <a-tab-pane key="2" :tab='`评论`' force-render>
-          <CommentsPanel :videoId="video.id" :open="open" />
-        </a-tab-pane>
-        <a-tab-pane key="3" tab="相关推荐">Content...</a-tab-pane>
-      </a-tabs>
-      <!-- 关闭按钮 -->
-      <div class="close-button" @click="showDrawer">
-        <close></close>
-      </div>
-    </div>
+    <!-- 翻页控制组件 - 右侧悬浮 -->
+    <!-- <SwiperController ref="swiperControllerRef" :swiper-instance="swiperInstance" :player-refs="playerRefs"
+      :total-slides="props.videos.length" /> -->
   </div>
 </template>
 
+<script setup lang="ts">
+import { ref, nextTick, watch, onMounted } from 'vue'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import type { SwiperOptions } from 'swiper/types';
+import { Pagination, Virtual } from 'swiper/modules'
+import "swiper/css"
+import "swiper/css/pagination"
+import Player from "./Player.vue";
+import SwiperController from "../../components/player/SwiperController.vue";
+import feedService from '../../api/feedService.ts'
+import type { VideoInfo } from '../../api/feedService.ts'
+import { handleRequest } from '../../api/handleRequest.ts'
+
+
+const swiperOptions: SwiperOptions = {
+  slidesPerView: 3,
+  spaceBetween: 20,
+  loop: true,
+  autoplay: {
+    delay: 2500,
+    disableOnInteraction: false,
+  },
+};
+
+import type { PropType } from 'vue'
+
+const props = defineProps({
+  videos: {
+    type: Array as PropType<VideoInfo[]>,
+    default: () => []
+  },
+  // index: {
+  //   type: Number,
+  //   default: 0
+  // }
+})
+
+
+// const playerRefs = ref([]);
+
+// function setPlayerRef(el, index) {
+//   if (el) {
+//     playerRefs.value[index] = el;
+//   } else {
+//     // 组件销毁时，清空对应引用
+//     playerRefs.value[index] = null;
+//   }
+// }
+
+// const swiperInstance = ref(null)  // 保存 swiper 实例
+// function onSwiperInit(swiper) {
+//   swiperInstance.value = swiper
+// }
+
+// // 节流锁，一秒后才允许翻页
+// const slideLocked = ref(false);
+// // 节流事件ID
+// let throttleId = 0;
+// // 加锁方法
+// const lockSlide = () => {
+//   slideLocked.value = true;
+//   clearTimeout(throttleId);
+//   throttleId = setTimeout(() => {
+//     slideLocked.value = false;
+//   }, 750);
+// }
+// // 翻页方法
+// const handleChange = (event: KeyboardEvent | MouseEvent) => {
+//   // 如果是最后一页，不允许下滑
+//   if (swiperInstance.value.isEnd && event.deltaY > 0) return;
+//   // 如果是第一页，不允许上滑
+//   if (swiperInstance.value.isBeginning && event.deltaY < 0) return;
+//   // 如果事件既不是滚轮也不是上下按键，直接返回
+//   if (!(event instanceof KeyboardEvent && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) &&
+//     !(event instanceof WheelEvent)) {
+//     return;
+//   }
+//   const swiper = swiperInstance.value as Swiper;
+//   if (!swiper) return;
+//   // 如果当前翻页变量处于锁定状态，则返回
+//   if (slideLocked.value) {
+//     // 重新加锁
+//     lockSlide();
+//     return;
+//   }
+//   // 当前幻灯片索引
+//   const currentIndex = swiper.activeIndex;
+//   // 当前播放器组件引用
+//   const currentPlayer = playerRefs.value[currentIndex] as Player;
+
+//   // 翻页方法
+//   function handleNavigation(direction: 'next' | 'prev') {
+//     if (currentPlayer) currentPlayer.pause();
+//     direction === 'next' ? swiper.slideNext() : swiper.slidePrev();
+//   }
+
+//   // 键盘和鼠标事件处理
+//   if (event instanceof KeyboardEvent) {
+//     const { key } = event;
+//     if (key === 'ArrowUp' || key === 'ArrowDown') {
+//       event.preventDefault();
+//       handleNavigation(key === 'ArrowDown' ? 'next' : 'prev');
+//     }
+//   } else if (event instanceof WheelEvent) {
+//     handleNavigation(event.deltaY > 0 ? 'next' : 'prev');
+//   }
+//   // 没翻页，直接返回
+//   nextTick(() => {
+//     const nextPlayer = playerRefs.value[swiper.activeIndex] as Player;
+//     if (nextPlayer) {
+//       nextPlayer.play();
+//     }
+//   });
+//   swiper.update();
+
+//   // 加锁
+//   lockSlide();
+// }
+
+// // 监测视频数组的索引，待观看视频少于两个时，加载新一批视频
+// const onSlideChange = async (swiper) => {
+//   if (swiper.activeIndex >= props.videos.length - 2) {
+//     await handleRequest(feedService.getRandomVideos, {
+//       onSuccess(data) {
+//         console.log("获取新视频成功");
+//         console.log(data);
+//         props.videos.push(...data);
+//       },
+//     })
+//   }
+// }
+
+// onMounted(() => {
+//   watch(() => props.index, (newIndex) => {
+//     nextTick(() => {
+//       if (swiperInstance.value) {
+//         swiperInstance.value.slideTo(newIndex, 0, false);
+//         nextTick(() => {
+//           const player = playerRefs.value[newIndex] as Player;
+//           if (player) player.play();
+//         });
+//       }
+//     });
+//   }, { immediate: true });
+// });
+
+</script>
+
 <style scoped>
-::v-deep(.ant-list-item) {
-  padding: 6px 12px;
-  border-block-end: 0;
-  width: 100%;
-
-  p {
-    text-align: left !important;
-    color: white;
-  }
-
-  span {
-    color: white;
-  }
-}
-
-::v-deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
-  color: white;
-  /*按钮文字*/
-}
-
-::v-deep(.ant-tabs-tab-btn:hover) {
-  color: white;
-}
-
-::v-deep(.ant-tabs-tab) {
-  color: #403d3d;
-  /*按钮文字*/
-}
-
-::v-deep(.ant-tabs) {
-  height: 100%;
-
-  .ant-tabs-content-holder {
-    flex: 1;
-  }
-
-  .ant-tabs-content-top {
-    height: 100%;
-  }
-}
-
-::v-deep(.ant-tabs-ink-bar) {
-  background-color: red;
-  /*按钮背景*/
-}
-
-::v-deep(.ant-tabs-nav-wrap) {
-  padding-left: 10px;
-}
-
-::v-deep(.ant-comment) {
-  width: 100%;
-}
-
-::v-deep(.ant-comment-inner) {
-  width: 100%;
-  padding: 0;
-}
-
-::v-deep(.ant-comment-content) {
-  width: 100%;
-}
-
-::v-deep(.ant-comment-content:hover) {
-  .report-delete-btn {
-    opacity: 1 !important;
-    display: block;
-    z-index: 99;
-    pointer-events: auto;
-  }
-}
-
-::v-deep(.ant-switch-checked) {
-  background-color: #ff0000;
-}
-
-::v-deep(.ant-input:focus) {
-  box-shadow: 0 0 0 0;
-
-}
-
-::v-deep(.ant-input::placeholder) {
-  color: grey;
-  font-style: italic;
-}
-
-.player-container {
-  color: white;
+.video-swiper,
+.swiper-slide {
   width: 100%;
   height: 100%;
-  position: relative;
-  border-radius: 15px;
-  z-index: 0;
   display: flex;
   align-items: center;
-  overflow: hidden;
-
-  .player-video {
-    width: 100%;
-    height: 100%;
-    transition: width 0.32s ease;
-    display: flex;
-    flex-direction: column;
-
-    .video-wrapper {
-      height: calc(100% - 40px);
-      position: relative;
-
-      video {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-      }
-
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-      }
-    }
-
-    .cover {
-      height: 15%;
-      width: 100%;
-      position: absolute;
-      overflow: hidden;
-      z-index: -1;
-      left: 0;
-      bottom: 0;
-      background-image: linear-gradient(180deg, rgba(137, 137, 137, 0.00) 0%, rgba(0, 0, 0, 0.90) 100%);
-    }
-  }
-
-  /* 抽屉打开时缩小视频 */
-
-  .player-video.shrink {
-    width: 70%;
-    height: 100%;
-  }
-
-  /* 强制覆盖抽屉的padding */
-
-  .other-draw {
-    height: 100%;
-    position: absolute;
-    transition: right 0.32s ease;
-    z-index: 5;
-    width: 30%;
-    top: 0;
-    right: -30%;
-    background-color: rgba(0, 0, 0, 0.5);
-    /* 半透明黑色 */
-
-    .followed-button,
-    .follow-button {
-      padding: 8px 15px;
-      border-radius: 4px;
-      font-size: 14px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .followed-button {
-      background-color: #e0e0e0;
-      color: #666;
-      border: 1px solid #d0d0d0;
-    }
-
-    .follow-button {
-      background-color: #fe2c55;
-      color: #fff;
-      border: 1px solid #fe2c55;
-    }
-
-    .user-videos {
-      flex: 1;
-      display: flex;
-      flex-wrap: wrap;
-      overflow-y: auto;
-      margin-top: 5%;
-      margin-left: 5%;
-      justify-content: flex-start;
-      gap: 10px;
-
-      .user-video-item {
-        overflow: hidden;
-        width: 30%;
-        height: 25%;
-        background-color: #fff;
-        border-radius: 20px;
-        position: relative;
-
-        .like-number {
-          font-size: 20px;
-          color: white;
-          position: absolute;
-          left: 20px;
-          bottom: 10px;
-        }
-      }
-
-      .user-video-item:hover {
-        cursor: pointer;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        transform: scale(1.05);
-        transition: all 0.3s ease-in-out;
-      }
-    }
-
-    .close-button {
-      cursor: pointer;
-      height: 25px;
-      position: absolute;
-      color: #ffffff;
-      font-size: 25px;
-      top: -25px;
-      right: 30px;
-    }
-  }
-
-  .other-draw.shrink {
-    right: 0;
-  }
-
+  justify-content: center;
 }
 
-.player-container::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  /* top:0; right:0; bottom:0; left:0 */
-  background-image: var(--bg-url);
-  /* 使用 CSS 变量 */
-  background-size: cover;
-  background-position: center;
-  filter: blur(80px);
-  /* 高斯模糊 */
-  z-index: -1;
+.video-container {
+  height: 100%;
+  position: relative;
+  margin-right: 80px;
+  /* 确保播放器不延伸到控制器区域 */
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .video-container {
+    width: calc(100% - 70px);
+    margin-right: 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  .video-container {
+    width: calc(100% - 60px);
+    margin-right: 60px;
+  }
 }
 </style>
