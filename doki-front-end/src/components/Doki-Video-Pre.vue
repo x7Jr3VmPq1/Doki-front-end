@@ -4,8 +4,9 @@ import { ref } from 'vue';
 import type { videoInfoWithStat } from '../api/videoInfoService'
 import { Like } from '@icon-park/vue-next'
 
-defineProps<{
-  item: videoInfoWithStat
+const props = defineProps<{
+  item: videoInfoWithStat,
+  manage: boolean
 }>();
 
 const isPre = ref(false);
@@ -16,11 +17,10 @@ const handleMouseEnter = () => {
   // 清理可能存在的定时器
   if (enterTimeout) clearTimeout(enterTimeout);
 
-  // 延迟 200ms 后才显示视频
   enterTimeout = window.setTimeout(() => {
     isPre.value = true;
     enterTimeout = null; // 清空引用
-  }, 200);
+  }, 50);
 }
 
 const handleMouseLeave = () => {
@@ -35,7 +35,7 @@ const handleMouseLeave = () => {
 <template>
 
   <div @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
-    <div v-if="!isPre" class="image-container">
+    <div v-if="!isPre || props.manage" class="image-container">
       <img :src=item.coverName class="work-image">
       <span class="like-count">
         <Like />

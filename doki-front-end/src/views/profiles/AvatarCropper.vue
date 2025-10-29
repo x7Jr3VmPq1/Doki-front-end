@@ -54,7 +54,7 @@ const startPreview = () => {
   if (previewTimer) clearInterval(previewTimer);
   previewTimer = setInterval(() => {
     updatePreview();
-  }, 10); // 每100ms更新一次，更流畅
+  }, 10); // 每10ms更新一次，更流畅
 };
 
 // 停止预览更新

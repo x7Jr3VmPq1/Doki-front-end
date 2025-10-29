@@ -11,17 +11,22 @@ import CommentsPanel from './CommentsPanel.vue'
 const props = defineProps<{
   video: VideoInfo,
   index: number,
-  active: number
+  active: number,
 }>();
 // 获取播放器HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
 // 传递给控件的播放/赞停属性
 const isPlaying = ref(true);
+// 用来判断用户有没有实际看到这个视频。
+let watched = false;
 
 watch(() => props.active, async (newIndex) => {
   await nextTick();
   // 判断当前激活的视频是不是这个视频，如果是，改变播放状态。
   isPlaying.value = props.index === newIndex;
+  if (isPlaying.value) {
+    watched = true;
+  }
 }, {
   immediate: true
 })
@@ -30,6 +35,9 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   document.removeEventListener('keyup', handleSpaceUp);
+  if (watched && videoRef.value?.currentTime! > 1) {
+    console.log("上传历史记录...", props.video.id, videoRef.value?.currentTime);
+  }
 });
 
 const handleSpaceUp = (event: KeyboardEvent) => {

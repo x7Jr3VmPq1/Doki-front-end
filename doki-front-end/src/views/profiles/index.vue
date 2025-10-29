@@ -16,11 +16,6 @@ import { useUserStore } from "../../store/userInfoStore.ts";
 const userStore = useUserStore();
 const route = useRoute()
 
-const mode = ref<string>('my'); // 页面的模式，分为当前用户和其它用户
-
-const currentUid = ref(0);  // 如果是其它用户，需要获取地址栏上的查询参数
-
-const loading = ref(true);
 
 // 定义用户对象
 const userInfoData = reactive<userInfo>({
@@ -31,29 +26,34 @@ const userInfoData = reactive<userInfo>({
   followed: false
 });
 
-
+const state = reactive({
+  mode: '',// 页面的模式，分为当前用户和其它用户
+  currentUid: 0,// 如果是其它用户，需要获取地址栏上的查询参数
+  loading: true,
+  currentTab: 'works'
+})
 onMounted(async () => {
   // 等待一下。
   await new Promise(resolve => setTimeout(resolve, 500));
-  loading.value = true;
+  state.loading = true;
 
   // 设置页面模式
-  mode.value = route.path.startsWith('/my') ? 'my' : 'other';
+  state.mode = route.path.startsWith('/my') ? 'my' : 'other';
 
   // 如果是'/my'模式，直接使用store中的用户信息
-  if (mode.value === 'my') {
+  if (state.mode === 'my') {
     const store = useUserStore();
     Object.assign(userInfoData, store.userInfo);
-    loading.value = false;
+    state.loading = false;
     return;
   }
   // 如果是'/profiles?id=xxx'模式，获取id参数，获取失败则跳转到404
-  if (mode.value === 'other' && route.query.uid) {
+  if (state.mode === 'other' && route.query.uid) {
     // 获取URL上的查询参数，并且判断它是不是一个合法的正整数
     const idParam = route.query.uid as string;
     const idNumber = Number(idParam);
     if (!isNaN(idNumber) && Number.isInteger(idNumber) && idNumber > 0) {
-      currentUid.value = idNumber;
+      state.currentUid = idNumber;
     } else {
       // 无效 UID，跳转到 404
       window.location.href = '/404';
@@ -61,55 +61,53 @@ onMounted(async () => {
   }
   // 如果currentUid.value是自己，跳转到'/my'页面
   const store = useUserStore();
-  if (currentUid.value === store.userInfo.id) {
+  if (state.currentUid === store.userInfo.id) {
     window.location.href = '/my';
     return;
   }
   await handleRequest(userService.getUserinfoById, {
     onSuccess(data) {
       Object.assign(userInfoData, data[0]);
-    }, params: [currentUid.value],
+    }, params: [state.currentUid],
     onError() {
       // 获取用户信息失败，跳转到404页面
       window.location.href = '/404';
     }
   })
-
-  loading.value = false;
-
+  state.loading = false;
 })
 const handleUpdateFollowState = (newState: boolean) => {
   userInfoData.followed = newState;
 }
 
 
-const currentTab = ref('works');
 const handleChangeTab = (type: string) => {
-  currentTab.value = type;
+  state.currentTab = type;
 }
 </script>
 <!-- “我的”页面 -->
 <template>
-  <div style="height: 100%;" class="flex-center" v-if="loading">
+  <div style="height: 100%;" class="flex-center" v-if="state.loading">
     <DokiLoading></DokiLoading>
   </div>
-  <div class="profile-page" v-if="!loading">
+  <div class="profile-page" v-if="!state.loading">
     <header class="header">
       <!-- 用户信息 -->
       <user-card :info="userInfoData"></user-card>
       <!-- 用户操作 -->
-      <header-actions :mode="mode"></header-actions>
+      <header-actions :mode="state.mode"></header-actions>
       <!-- 关注/私信按钮 -->
-      <follow-and-d-m @update:is-following="handleUpdateFollowState" :uid="userInfoData.id" v-if="mode !== 'my'"
+      <follow-and-d-m @update:is-following="handleUpdateFollowState" :uid="userInfoData.id" v-if="state.mode !== 'my'"
         :is-following="userInfoData.followed ?? false"></follow-and-d-m>
     </header>
     <!-- 菜单按钮 -->
     <main-menu :user-id="userInfoData.id" @change-tab="handleChangeTab"></main-menu>
     <!-- 筛选作品类型按钮 -->
-    <works-filters v-if="userInfoData.id === userStore.userInfo.id && currentTab === 'works'"></works-filters>
+    <works-filters :tab="state.currentTab"
+      v-if="userInfoData.id === userStore.userInfo.id && !state.loading"></works-filters>
     <!-- 作品列表区域 -->
     <div class="works-list">
-      <works-grid :tab="currentTab" :user-id="userInfoData.id"></works-grid>
+      <works-grid :tab="state.currentTab" :user-id="userInfoData.id"></works-grid>
     </div>
   </div>
 </template>

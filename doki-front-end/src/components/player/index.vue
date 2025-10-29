@@ -1,8 +1,7 @@
 <template>
   <div class="video-container">
-    <swiper ref="swiperRef" @slide-change="handleSlideChange" direction="vertical" @_virtualUpdated="() => { }"
-      :modules="[Pagination, Virtual]" :allowTouchMove="true" virtual class="video-swiper" @wheel.passive="handleWheel"
-      @swiper="onSwiperInit">
+    <swiper ref="swiperRef" direction="vertical" :modules="[Pagination, Virtual]" :allowTouchMove="false" virtual
+      class="video-swiper" @slide-change="handleSlideChange" @wheel.passive="handleWheel" @swiper="onSwiperInit">
       <swiper-slide v-for="(video, index) in props.videos" :key="index" :virtualIndex="index">
         <!-- 在有限模式下，可以选择点击关闭。 -->
         <div class="close-button flex-center" v-if="props.mode == 1" @click="handleClose">
@@ -76,6 +75,7 @@ onBeforeUnmount(() => {
 watch(() => props.startWith, async (newIndex) => {
   await nextTick()
   swiperObject?.slideTo(newIndex, 0);
+  state.active = newIndex;
 }, {
   immediate: true
 })
@@ -110,9 +110,7 @@ const handleWheel = (event: WheelEvent) => {
 };
 
 const handleSlideChange = () => {
-  setLock();
-  if (swiperObject)
-    state.active = swiperObject?.activeIndex
+  setLock(); // 每次翻页后加锁
 }
 
 const getLock = () => state.lock;

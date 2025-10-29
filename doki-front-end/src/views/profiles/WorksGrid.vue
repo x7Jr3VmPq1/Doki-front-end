@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, onMounted, ref, watch } from 'vue';
+import { reactive, onMounted, ref, watch, computed } from 'vue';
 import videoInfoService from '../../api/videoInfoService.ts'
 import type { videoInfoWithStat } from '../../api/videoInfoService.ts'
 import type { VideoInfo } from '../../api/feedService.ts'
@@ -8,6 +8,10 @@ import DokiLoading from '../../components/Doki-Loading.vue';
 import { useInfiniteScroll } from '../../utils/infiniteScroll.ts'
 import DokiVideoPre from '../../components/Doki-Video-Pre.vue';
 import SwiperPlayer from '../../components/player/index.vue';
+import { useShareData } from './ShareData.ts';
+import { CheckSmall, NetworkDrive } from "@icon-park/vue-next"
+
+const shareData = useShareData();
 // 定义组件属性
 const props = defineProps<{
   userId: number, // 用户ID
@@ -23,10 +27,26 @@ const isModalVisible = ref(false);
 
 
 watch(() => props.tab, (_) => {
+  shareData.clear();
   userWorks.list = [];
   cursor.value = null;
   hasMore.value = true;
   loadMoreWorks();
+})
+
+watch(() => shareData.shouldManage, (newValue) => {
+  if (!newValue) {
+    shareData.selectedWorks = [];
+  }
+})
+
+watch(() => shareData.shouldDelete, (newValue) => {
+  if (newValue) {
+    userWorks.list = userWorks.list.filter(video =>
+      !shareData.selectedWorks.some(selected => selected.id === video.id)
+    );
+    shareData.clear();
+  }
 })
 
 let requestId = 0;
@@ -75,8 +95,23 @@ const userWorks = reactive({
 })
 const startWith = ref(0);
 const handleClickPre = (index: number) => {
-  isModalVisible.value = true;
-  startWith.value = index;
+  if (shareData.shouldManage) {
+    return;
+  } else {
+    isModalVisible.value = true;
+    startWith.value = index;
+  }
+}
+
+
+const handleClickPreOnManage = (item: VideoInfo) => {
+  if (shareData.shouldManage) {
+    if (shareData.selectedWorks.includes(item)) {
+      shareData.selectedWorks = shareData.selectedWorks.filter(e => e != item);
+      return;
+    }
+    shareData.selectedWorks.push(item);
+  }
 }
 </script>
 
@@ -87,9 +122,13 @@ const handleClickPre = (index: number) => {
   </div>
   <div ref="worksArea" class="main">
     <div class="works-grid">
-      <div v-for="(item, index) in userWorks.list" class="work-card">
-        <div class="image-container">
-          <DokiVideoPre :item="item" @click="handleClickPre(index)"></DokiVideoPre>
+      <div v-for="(item, index) in userWorks.list" class="work-card" @click=handleClickPreOnManage(item)>
+        <div class="check flex-center" v-if="shareData.shouldManage">
+          <CheckSmall v-if="shareData.selectedWorks.includes(item)"></CheckSmall>
+        </div>
+        <div class="image-container" :class="{ manage: shareData.shouldManage }">
+          <DokiVideoPre :manage="shareData.shouldManage" :item="item" @click="handleClickPre(index)">
+          </DokiVideoPre>
         </div>
         <div class="work-description">{{ item.title }}</div>
       </div>
@@ -126,6 +165,7 @@ const handleClickPre = (index: number) => {
 
 /* 单个作品卡片样式 */
 .work-card {
+  position: relative;
   cursor: pointer;
   background-color: #fff;
   border-radius: 8px;
@@ -133,6 +173,17 @@ const handleClickPre = (index: number) => {
   display: flex;
   flex-direction: column;
   min-width: 150px;
+}
+
+.check {
+  width: 20px;
+  height: 20px;
+  border: 2px black solid;
+  position: absolute;
+  color: red;
+  right: 10px;
+  top: 10px;
+  z-index: 5;
 }
 
 .image-container {
@@ -143,6 +194,23 @@ const handleClickPre = (index: number) => {
   overflow: hidden;
 }
 
+.image-container::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30%;
+  z-index: 5;
+  opacity: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.image-container.manage::before {
+  opacity: 1;
+}
 
 .work-description {
   color: #666;
@@ -159,7 +227,7 @@ const handleClickPre = (index: number) => {
   /* 覆盖整个宽度 */
   height: 100vh;
   /* 覆盖整个高度 */
-  z-index: 9999;
+  z-index: 20;
   /* 确保在最上层 */
   background-color: white;
   /* 可选，避免透明背景显示 */

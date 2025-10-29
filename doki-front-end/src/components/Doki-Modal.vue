@@ -103,8 +103,6 @@ const handleOverlayClick = () => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #eee;
-  background-color: #fafafa;
 }
 
 .modal-title {
@@ -146,8 +144,6 @@ const handleOverlayClick = () => {
 /* 底部区域 */
 .modal-footer {
   padding: 16px 20px;
-  border-top: 1px solid #eee;
-  background-color: #fafafa;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
