@@ -19,4 +19,11 @@ app.use(pinia)
 app.use(router);
 app.use(Antd)
 
+
+app.config.warnHandler = (msg, _, trace) => {
+  if (msg.includes('_virtualUpdated')) return; // 忽略 Swiper 内部事件警告
+  console.warn(msg, trace);                   // 其他警告正常显示
+};
+
+
 app.mount('#app');

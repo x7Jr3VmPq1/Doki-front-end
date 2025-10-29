@@ -7,6 +7,7 @@ import { handleRequest } from '../../api/handleRequest.ts';
 import DokiLoading from '../../components/Doki-Loading.vue';
 import { useInfiniteScroll } from '../../utils/infiniteScroll.ts'
 import DokiVideoPre from '../../components/Doki-Video-Pre.vue';
+import SwiperPlayer from '../../components/player/index.vue';
 // 定义组件属性
 const props = defineProps<{
   userId: number, // 用户ID
@@ -18,9 +19,10 @@ const hasMore = ref(true);
 const worksArea = ref<HTMLElement | null>(null);
 const loadMore = ref<HTMLElement | null>(null);
 const loading = ref(true);
+const isModalVisible = ref(false);
 
 
-watch(() => props.tab, (newValue) => {
+watch(() => props.tab, (_) => {
   userWorks.list = [];
   cursor.value = null;
   hasMore.value = true;
@@ -42,7 +44,6 @@ const loadMoreWorks = async () => {
       break;
     default: return;
   }
-
   const currentRequest = ++requestId;
   loading.value = true;
   await handleRequest(requestFn, {
@@ -72,14 +73,23 @@ onMounted(async () => {
 const userWorks = reactive({
   list: [] as videoInfoWithStat[]
 })
+const startWith = ref(0);
+const handleClickPre = (index: number) => {
+  isModalVisible.value = true;
+  startWith.value = index;
+}
 </script>
 
 <template>
+  <div v-if="isModalVisible" class="fullscreen-box">
+    <SwiperPlayer :start-with="startWith" :videos="userWorks.list" :mode="1" @close="isModalVisible = false">
+    </SwiperPlayer>
+  </div>
   <div ref="worksArea" class="main">
     <div class="works-grid">
-      <div v-for="item in userWorks.list" class="work-card">
+      <div v-for="(item, index) in userWorks.list" class="work-card">
         <div class="image-container">
-          <DokiVideoPre :item="item"></DokiVideoPre>
+          <DokiVideoPre :item="item" @click="handleClickPre(index)"></DokiVideoPre>
         </div>
         <div class="work-description">{{ item.title }}</div>
       </div>
@@ -138,5 +148,20 @@ const userWorks = reactive({
   color: #666;
   margin-top: 5px;
   overflow: hidden;
+}
+
+.fullscreen-box {
+  position: fixed;
+  /* 固定在窗口，不随滚动移动 */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  /* 覆盖整个宽度 */
+  height: 100vh;
+  /* 覆盖整个高度 */
+  z-index: 9999;
+  /* 确保在最上层 */
+  background-color: white;
+  /* 可选，避免透明背景显示 */
 }
 </style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { nextTick, onMounted, reactive, ref, watch } from 'vue';
+import Progress from './Progress.vue';
+import { nextTick, onMounted, reactive, watch } from 'vue';
 import { IconPause, IconPlayArrowFill, IconMuteFill, IconSound, IconSoundFill, IconFullscreen, IconFullscreenExit } from '@arco-design/web-vue/es/icon';
 import formatTime from '../../utils/formatTime.ts'
 const props = defineProps<{
@@ -15,27 +16,50 @@ const state = reactive({
   speeds: [3, 2, 1.5, 1.25, 1, 0.5],
   currentSpeed: 1,
   isPlaying: true,
-  isFullScreen: false
+  isFullScreen: false,
+  bufferd: 0
 })
 // 初始化视频状态
 let videoObject: HTMLVideoElement | null = null;
 onMounted(async () => {
   await nextTick(); // 等待DOM更新
   props.video.addEventListener('loadedmetadata', () => {
-    state.duration = Math.floor(props.video.duration)
+    state.duration = props.video.duration
   })
   props.video.addEventListener('timeupdate', () => {
     state.currentTime = props.video.currentTime;
   })
+
+  props.video.addEventListener('progress', () => {
+    if (!videoObject) return;
+    const buffered = videoObject.buffered;
+    const duration = videoObject.duration;
+    if (buffered.length > 0 && duration > 0) {
+      // 获取最后一个缓冲区间的结束时间
+      const bufferedEnd = buffered.end(buffered.length - 1);
+      // 计算百分比
+      state.bufferd = Math.min((bufferedEnd / duration) * 100, 100);
+    }
+  });
   videoObject = props.video;
 
   // 监听父组件传入的状态，判断是否暂停或播放
-  watch(() => props.isPlaying, (value: boolean) => {
-    value ? videoObject?.play() : videoObject?.pause();
-    state.isPlaying = value;
+  watch(() => props.isPlaying, async (value: boolean) => {
+    try {
+      if (value) {
+        await videoObject?.play();
+      } else {
+        videoObject?.pause();
+      }
+      state.isPlaying = value;
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error('视频播放控制错误:', err);
+      }
+    }
   }, {
     immediate: true
-  })
+  });
 })
 
 // 播放/暂停方法
@@ -50,9 +74,9 @@ const handleChangeSpeed = (speed: number) => {
     videoObject.playbackRate = speed;
 }
 // 改变当前播放时长
-const handleChangeTime = (value: number) => {
+const handleChangeTime = (percent: number) => {
   if (videoObject)
-    videoObject.currentTime = value;
+    videoObject.currentTime = videoObject.duration * percent;
 }
 // 改变音量
 const handleVolumeChange = (value: number) => {
@@ -78,13 +102,9 @@ const handleClickFullScreen = () => {
 
 <template>
   <div class="player-controls" :class="{ shrink: shrink }" @click.stop>
-    <div class="player-progress" @click.stop>
-      <a-slider :min="0" :max="state.duration" :step="0.1" :trackStyle="{ backgroundColor: '#fff' }"
-        :handleStyle="{ backgroundColor: '#fff' }" :dotStyle="{ backgroundColor: '#fff' }"
-        :activeDotStyle="{ backgroundColor: '#fff' }" :tooltipOpen="false" v-model:value="state.currentTime"
-        @change="handleChangeTime" />
-      <div class="handle"></div>
-    </div>
+    <!-- 进度条 -->
+    <Progress :current="(state.currentTime / state.duration) * 100" :bufferd="state.bufferd"
+      @changeProgress="handleChangeTime"></Progress>
     <!-- 播放/暂停 + 时间显示 -->
     <div class="play-and-time-danmaku" style="display: flex">
       <div class="play-button bounce-on-click" @click="onClickPlayButton">
@@ -179,15 +199,6 @@ const handleClickFullScreen = () => {
 
 .player-controls.shrink {
   width: 70%;
-}
-
-.player-controls .player-progress {
-  line-height: 1;
-  position: absolute;
-  width: 100%;
-  left: 0;
-  bottom: 20px;
-  z-index: 5;
 }
 
 .player-controls .play-button {

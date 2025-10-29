@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
 import { Close, Like } from '@icon-park/vue-next';
 import { watch } from 'vue';
 import type { VideoInfo } from '../../api/feedService.ts';
@@ -25,6 +25,21 @@ watch(() => props.active, async (newIndex) => {
 }, {
   immediate: true
 })
+onMounted(() => {
+  document.addEventListener('keyup', handleSpaceUp)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('keyup', handleSpaceUp);
+});
+
+const handleSpaceUp = (event: KeyboardEvent) => {
+  if (event.code === 'Space') {
+    event.preventDefault(); // 阻止页面滚动
+    if (props.index === props.active) {
+      isPlaying.value = !isPlaying.value;
+    }
+  }
+};
 
 // 评论区抽屉控制
 const open = ref(false)
@@ -83,7 +98,7 @@ const openComments = async () => {
       <!--  遮罩层    -->
       <div class="cover"></div>
       <!--  控件，传入视频的引用  -->
-      <Controls :video="videoRef!" :is-playing="isPlaying" :shrink="open"/>
+      <Controls :video="videoRef!" :is-playing="isPlaying" :shrink="open" />
     </div>
     <!-- 评论区抽屉 -->
     <div class="other-draw" :class="['other-draw', { shrink: open }]" @wheel.stop>
@@ -226,7 +241,6 @@ const openComments = async () => {
   width: 100%;
   height: 100%;
   position: relative;
-  border-radius: 15px;
   z-index: 0;
   display: flex;
   align-items: center;

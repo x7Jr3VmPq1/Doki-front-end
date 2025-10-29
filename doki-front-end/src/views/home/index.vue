@@ -14,19 +14,19 @@ const isLoading = ref(true);
 const videos = ref<VideoInfo[]>([]);
 onMounted(async () => {
 
-  // await handleRequest(feedService.getRandomVideos, {
-  //   onSuccess(data) {
-  //     videos.value = data;
-  //     console.log(data);
-  //   },
-  // })
-
-  await handleRequest(videoProcessingService.getVideoInfo, {
+  await handleRequest(feedService.getRandomVideos, {
     onSuccess(data) {
-      videos.value[0] = data; // ID为10的视频用来测试
+      videos.value = data;
+      console.log(data);
     },
-    params: 10
   })
+
+  // await handleRequest(videoProcessingService.getVideoInfo, {
+  //   onSuccess(data) {
+  //     videos.value[0] = data; // ID为10的视频用来测试
+  //   },
+  //   params: 10
+  // })
 
   isLoading.value = false;
 
@@ -34,7 +34,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <swiper-player :videos="videos" v-if="videos.length > 0"></swiper-player>
+  <swiper-player :mode="0" :start-with="0" :videos="videos" v-if="videos.length > 0">
+  </swiper-player>
   <!-- 加载动画 -->
   <div class="loading">
     <DokiLoading v-if="isLoading"></DokiLoading>

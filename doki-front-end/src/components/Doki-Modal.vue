@@ -7,12 +7,12 @@
           <h3 v-if="title" class="modal-title">{{ title }}</h3>
           <button v-if="showCloseButton" class="close-button" @click="closeModal">×</button>
         </div>
-        
+
         <!-- 内容区域 - 支持插槽 -->
         <div class="modal-content" @click.stop>
           <slot></slot>
         </div>
-        
+
         <!-- 底部区域 -->
         <div v-if="$slots.footer" class="modal-footer">
           <slot name="footer"></slot>
@@ -23,7 +23,6 @@
 </template>
 
 <script setup lang="ts">
-// import { computed } from 'vue' // 暂时不需要
 
 // 定义 Props
 interface DokiModalProps {
@@ -209,21 +208,21 @@ const handleOverlayClick = () => {
     max-height: calc(100vh - 20px);
     max-width: calc(100vw - 20px);
   }
-  
+
   .doki-modal.fullscreen {
     margin: 0;
     max-height: 100vh;
     max-width: 100vw;
   }
-  
+
   .modal-header {
     padding: 12px 16px;
   }
-  
+
   .modal-content {
     padding: 16px;
   }
-  
+
   .modal-footer {
     padding: 12px 16px;
   }

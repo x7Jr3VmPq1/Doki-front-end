@@ -1,164 +1,133 @@
 <template>
   <div class="video-container">
-    <!-- <swiper ref="swiperRef" direction="vertical" :modules="[Pagination, Virtual]" :allowTouchMove="false" virtual
-      class="video-swiper" @keyup="handleChange" @wheel="handleChange" @swiper="onSwiperInit"
-      @slide-change="onSlideChange">
-      <swiper-slide v-for="(video, index) in props.videos" :key="index" :virtualIndex="index"> -->
-    <Player :video="videos[0]" :index="0" :active="0" v-if="videos.length > 0"></Player>
-    <!-- </swiper-slide>
-    </swiper> -->
-
-    <!-- 翻页控制组件 - 右侧悬浮 -->
-    <!-- <SwiperController ref="swiperControllerRef" :swiper-instance="swiperInstance" :player-refs="playerRefs"
-      :total-slides="props.videos.length" /> -->
+    <swiper ref="swiperRef" @slide-change="handleSlideChange" direction="vertical" @_virtualUpdated="() => { }"
+      :modules="[Pagination, Virtual]" :allowTouchMove="true" virtual class="video-swiper" @wheel.passive="handleWheel"
+      @swiper="onSwiperInit">
+      <swiper-slide v-for="(video, index) in props.videos" :key="index" :virtualIndex="index">
+        <!-- 在有限模式下，可以选择点击关闭。 -->
+        <div class="close-button flex-center" v-if="props.mode == 1" @click="handleClose">
+          <Close></Close>
+        </div>
+        <Player :video="video" :index="index" :active="state.active" v-if="videos.length > 0"></Player>
+      </swiper-slide>
+    </swiper>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, watch, onMounted } from 'vue'
+import { Close } from '@icon-park/vue-next';
+import { reactive, watch, nextTick, ref, onMounted, onBeforeUnmount } from 'vue'
 import { Swiper, SwiperSlide } from 'swiper/vue'
-import type { SwiperOptions } from 'swiper/types';
+import type { Swiper as SwiperType } from 'swiper';
 import { Pagination, Virtual } from 'swiper/modules'
 import "swiper/css"
 import "swiper/css/pagination"
 import Player from "./Player.vue";
-import SwiperController from "../../components/player/SwiperController.vue";
-import feedService from '../../api/feedService.ts'
 import type { VideoInfo } from '../../api/feedService.ts'
-import { handleRequest } from '../../api/handleRequest.ts'
+import feedService from '../../api/feedService.ts'
+import { handleRequest } from '../../api/handleRequest.ts';
+
+const props = defineProps<{
+  videos: VideoInfo[],
+  mode: number,  // 模式 0=主页无限加载模式，1=其它有限列表模式
+  startWith: number // 从哪个索引位置开始播放
+}>()
 
 
-const swiperOptions: SwiperOptions = {
-  slidesPerView: 3,
-  spaceBetween: 20,
-  loop: true,
-  autoplay: {
-    delay: 2500,
-    disableOnInteraction: false,
-  },
-};
+const emit = defineEmits(['close'])
 
-import type { PropType } from 'vue'
+const state = reactive({
+  active: 0, // 当前播放项索引
+  lock: false,  // 节流锁，以禁止快速翻页
+  timer: 0// 节流定时器的编号
+})
 
-const props = defineProps({
-  videos: {
-    type: Array as PropType<VideoInfo[]>,
-    default: () => []
-  },
-  // index: {
-  //   type: Number,
-  //   default: 0
-  // }
+const swiperRef = ref<HTMLElement | null>(null);
+
+watch(() => state.active, async (newValue) => {
+  // 如果是有限模式，不再追加。
+  if (props.mode === 1) {
+    return;
+  }
+  // 即将触底，加载下一批视频。
+  if (newValue > props.videos.length - 2) {
+    await handleRequest(feedService.getRandomVideos, {
+      onSuccess(data) {
+        props.videos.push(...data);
+      }
+    })
+  }
 })
 
 
-// const playerRefs = ref([]);
+let swiperObject: SwiperType | null = null;
+const onSwiperInit = (swiper: SwiperType) => {
+  swiperObject = swiper;
+}
 
-// function setPlayerRef(el, index) {
-//   if (el) {
-//     playerRefs.value[index] = el;
-//   } else {
-//     // 组件销毁时，清空对应引用
-//     playerRefs.value[index] = null;
-//   }
-// }
+onMounted(() => {
+  document.addEventListener('keyup', handleKeyUp)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('keyup', handleKeyUp)
+})
 
-// const swiperInstance = ref(null)  // 保存 swiper 实例
-// function onSwiperInit(swiper) {
-//   swiperInstance.value = swiper
-// }
 
-// // 节流锁，一秒后才允许翻页
-// const slideLocked = ref(false);
-// // 节流事件ID
-// let throttleId = 0;
-// // 加锁方法
-// const lockSlide = () => {
-//   slideLocked.value = true;
-//   clearTimeout(throttleId);
-//   throttleId = setTimeout(() => {
-//     slideLocked.value = false;
-//   }, 750);
-// }
-// // 翻页方法
-// const handleChange = (event: KeyboardEvent | MouseEvent) => {
-//   // 如果是最后一页，不允许下滑
-//   if (swiperInstance.value.isEnd && event.deltaY > 0) return;
-//   // 如果是第一页，不允许上滑
-//   if (swiperInstance.value.isBeginning && event.deltaY < 0) return;
-//   // 如果事件既不是滚轮也不是上下按键，直接返回
-//   if (!(event instanceof KeyboardEvent && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) &&
-//     !(event instanceof WheelEvent)) {
-//     return;
-//   }
-//   const swiper = swiperInstance.value as Swiper;
-//   if (!swiper) return;
-//   // 如果当前翻页变量处于锁定状态，则返回
-//   if (slideLocked.value) {
-//     // 重新加锁
-//     lockSlide();
-//     return;
-//   }
-//   // 当前幻灯片索引
-//   const currentIndex = swiper.activeIndex;
-//   // 当前播放器组件引用
-//   const currentPlayer = playerRefs.value[currentIndex] as Player;
+watch(() => props.startWith, async (newIndex) => {
+  await nextTick()
+  swiperObject?.slideTo(newIndex, 0);
+}, {
+  immediate: true
+})
 
-//   // 翻页方法
-//   function handleNavigation(direction: 'next' | 'prev') {
-//     if (currentPlayer) currentPlayer.pause();
-//     direction === 'next' ? swiper.slideNext() : swiper.slidePrev();
-//   }
+const handleKeyUp = (event: KeyboardEvent) => {
+  if (getLock()) {
+    setLock();
+    return;
+  }
+  if (event.key != 'ArrowDown' && event.key != 'ArrowUp')
+    return;
+  if (event.key === 'ArrowDown' && state.active < props.videos.length) {
+    swiperObject?.slideNext();
+  }
+  if (event.key === 'ArrowUp' && state.active > 0) {
+    swiperObject?.slidePrev();
+  }
+  state.active = swiperObject?.activeIndex ?? 0;
+}
 
-//   // 键盘和鼠标事件处理
-//   if (event instanceof KeyboardEvent) {
-//     const { key } = event;
-//     if (key === 'ArrowUp' || key === 'ArrowDown') {
-//       event.preventDefault();
-//       handleNavigation(key === 'ArrowDown' ? 'next' : 'prev');
-//     }
-//   } else if (event instanceof WheelEvent) {
-//     handleNavigation(event.deltaY > 0 ? 'next' : 'prev');
-//   }
-//   // 没翻页，直接返回
-//   nextTick(() => {
-//     const nextPlayer = playerRefs.value[swiper.activeIndex] as Player;
-//     if (nextPlayer) {
-//       nextPlayer.play();
-//     }
-//   });
-//   swiper.update();
+const handleWheel = (event: WheelEvent) => {
+  if (getLock()) {
+    setLock();
+    return;
+  }
+  if (event.deltaY > 0) {
+    swiperObject?.slideNext();
+  } else if (event.deltaY < 0) {
+    swiperObject?.slidePrev();
+  }
+  state.active = swiperObject?.activeIndex ?? 0;
+};
 
-//   // 加锁
-//   lockSlide();
-// }
+const handleSlideChange = () => {
+  setLock();
+  if (swiperObject)
+    state.active = swiperObject?.activeIndex
+}
 
-// // 监测视频数组的索引，待观看视频少于两个时，加载新一批视频
-// const onSlideChange = async (swiper) => {
-//   if (swiper.activeIndex >= props.videos.length - 2) {
-//     await handleRequest(feedService.getRandomVideos, {
-//       onSuccess(data) {
-//         console.log("获取新视频成功");
-//         console.log(data);
-//         props.videos.push(...data);
-//       },
-//     })
-//   }
-// }
+const getLock = () => state.lock;
 
-// onMounted(() => {
-//   watch(() => props.index, (newIndex) => {
-//     nextTick(() => {
-//       if (swiperInstance.value) {
-//         swiperInstance.value.slideTo(newIndex, 0, false);
-//         nextTick(() => {
-//           const player = playerRefs.value[newIndex] as Player;
-//           if (player) player.play();
-//         });
-//       }
-//     });
-//   }, { immediate: true });
-// });
+const setLock = () => {
+  state.lock = true;
+  clearTimeout(state.timer);
+  state.timer = window.setTimeout(() => {
+    state.lock = false
+  }, 300);
+}
+
+const handleClose = () => {
+  emit('close');
+}
 
 </script>
 
@@ -175,8 +144,6 @@ const props = defineProps({
 .video-container {
   height: 100%;
   position: relative;
-  margin-right: 80px;
-  /* 确保播放器不延伸到控制器区域 */
 }
 
 /* 响应式设计 */
@@ -192,5 +159,30 @@ const props = defineProps({
     width: calc(100% - 60px);
     margin-right: 60px;
   }
+}
+
+.close-button {
+  opacity: 0;
+  z-index: 100;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.2);
+  ;
+  font-size: 30px;
+  position: absolute;
+  top: 3%;
+  left: 3%;
+}
+
+.video-container:hover .close-button {
+  opacity: 1;
+}
+
+.close-button:hover {
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.4);
 }
 </style>
