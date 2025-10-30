@@ -7,6 +7,8 @@ import InteractionButtons from './InteractionButtons.vue';
 import VideoInfoComponent from './VideoInfo.vue'
 import Controls from './Controls.vue'
 import CommentsPanel from './CommentsPanel.vue'
+import analyticsService from '../../api/analyticsService.ts';
+import { handleRequest } from '../../api/handleRequest.ts';
 // 获取视频数据
 const props = defineProps<{
   video: VideoInfo,
@@ -36,7 +38,13 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('keyup', handleSpaceUp);
   if (watched && videoRef.value?.currentTime! > 1) {
-    console.log("上传历史记录...", props.video.id, videoRef.value?.currentTime);
+    // 组件卸载时上传播放记录
+    handleRequest(analyticsService.updateVideoHistory, {
+      params: {
+        videoId: props.video.id,
+        time: videoRef.value?.currentTime!
+      }
+    })
   }
 });
 

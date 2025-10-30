@@ -48,6 +48,7 @@ onMounted(async () => {
     try {
       if (value) {
         await videoObject?.play();
+        getCurrentTime();
       } else {
         videoObject?.pause();
       }
@@ -62,11 +63,26 @@ onMounted(async () => {
   });
 })
 
+watch(() => state.isPlaying, (newValue) => {
+  if (newValue) {
+    getCurrentTime();
+  }
+})
+
+// 获取当前视频播放时长方法，用于驱动进度条更新。
+const getCurrentTime = () => {
+  if (state.isPlaying) {
+    state.currentTime = videoObject?.currentTime!;
+    requestAnimationFrame(getCurrentTime);
+  }
+}
+
 // 播放/暂停方法
 const onClickPlayButton = () => {
   state.isPlaying ? videoObject?.pause() : videoObject?.play();
   state.isPlaying = !state.isPlaying;
 }
+
 // 改变视频速度
 const handleChangeSpeed = (speed: number) => {
   state.currentSpeed = speed;

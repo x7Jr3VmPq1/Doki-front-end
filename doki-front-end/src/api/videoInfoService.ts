@@ -10,6 +10,16 @@ export interface VideoCursorLoad {
   hasMore: boolean,
   cursor: string | null
 }
+export interface videoInfoWithStatAndWatched extends videoInfoWithStat {
+  watchedTime: number,
+  watchedAt: number
+}
+
+export interface HistoryCursorLoad {
+  list: videoInfoWithStat[],
+  hasMore: boolean,
+  cursor: string
+}
 
 /**
  * 获取视频元数据API
@@ -41,5 +51,14 @@ export default {
   getLikeVideosInfoByUserId: (params: { tid: number, cursor: string | null }) => request<VideoCursorLoad>('/video/info/likes', {
     method: 'GET',
     data: params
+  }),
+  /**
+   * 获取用户的历史观看记录
+   * @param cursor 游标
+   * @returns 
+   */
+  getHistory: (params: { tid: number, cursor: string | null }) => request<VideoCursorLoad>('/video/info/history', {
+    method: 'GET',
+    data: { cursor: params.cursor }
   })
 }

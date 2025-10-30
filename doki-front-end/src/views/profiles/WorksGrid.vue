@@ -62,6 +62,8 @@ const loadMoreWorks = async () => {
       break;
     case 'likes': requestFn = videoInfoService.getLikeVideosInfoByUserId;
       break;
+    case 'history': requestFn = videoInfoService.getHistory;
+      break;
     default: return;
   }
   const currentRequest = ++requestId;

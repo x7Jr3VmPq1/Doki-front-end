@@ -39,6 +39,16 @@ const analyticsService = {
     await request<UserStatistics>('/analytics/stat/user', {
       method: 'GET',
       data: { id }
-    })
+    }),
+  /**
+   * 上传播放记录
+   * @param videoId 视频ID
+   * @param time 时长
+   * @returns 
+   */
+  updateVideoHistory: async (params: { videoId: number, time: number }) => await request<void>('/analytics/history/add', {
+    method: 'GET',
+    data: params
+  })
 }
 export default analyticsService;

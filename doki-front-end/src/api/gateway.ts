@@ -3,7 +3,7 @@ import type {AxiosResponse} from 'axios';
 import type {ApiResponseData, ApiResponse} from '../type/resultType.ts'
 
 const instance = axios.create({
-    baseURL: 'http://localhost:10010', // 网关地址
+    baseURL: 'http://localhost:10011', // 网关地址
     timeout: 0,
     headers: {'X-Custom-Header': 'foobar'}
 });

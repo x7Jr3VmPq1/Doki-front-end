@@ -6,7 +6,9 @@
     </div>
     <!--  顶部工具栏和路由出口  -->
     <div class="main-container">
-      <TitleBar></TitleBar>
+      <div class="title-bar">
+        <TitleBar></TitleBar>
+      </div>
       <!-- 一级路由出口!-->
       <div class="router-view">
         <router-view :key="$route.fullPath"></router-view>
@@ -15,11 +17,11 @@
   </div>
 </template>
 <script lang="ts" setup>
-import {onMounted} from "vue";
-import {useUserStore} from "./store/userInfoStore";
+import { onMounted } from "vue";
+import { useUserStore } from "./store/userInfoStore";
 import TitleBar from "./components/titleBar/TitleBar.vue";
 import userService from './api/userService'
-import {handleRequest} from './api/handleRequest'
+import { handleRequest } from './api/handleRequest'
 import SidebarMenu from "./components/SidebarMenu.vue";
 
 const userStore = useUserStore();
@@ -48,18 +50,20 @@ onMounted(async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0; /* 防止flex子项溢出 */
+  min-width: 0;
+  /* 防止flex子项溢出 */
 }
 
 .router-view {
   flex: 1;
   overflow: hidden;
-  background-color: #f8f9fa; /* 比白色稍微深一点的浅灰色 */
+  background-color: #f8f9fa;
+  /* 比白色稍微深一点的浅灰色 */
 }
+
 
 .sidebar-container {
   background-color: skyblue;
   transition: width 0.3s ease;
 }
-
 </style>

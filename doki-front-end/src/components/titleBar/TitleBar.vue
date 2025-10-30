@@ -111,6 +111,7 @@ const toCreator = async () => {
   width: 100%;
   box-sizing: border-box;
   padding: 5px;
+  
 
   .search-input-area {
     width: 80%;

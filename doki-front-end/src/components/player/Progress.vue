@@ -77,7 +77,7 @@ onBeforeUnmount(() => {
   top: 0;
   width: 100%;
   height: 3px;
-  background-color:rgb(101, 100, 100);
+  background-color: rgb(101, 100, 100);
 }
 
 
@@ -95,7 +95,6 @@ onBeforeUnmount(() => {
 .buffer {
   height: 100%;
   position: absolute;
-  transition: width 0.1s linear;
 }
 
 .current {
