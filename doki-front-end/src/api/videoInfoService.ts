@@ -39,10 +39,13 @@ export default {
    * @param userId  用户ID
    * @returns  视频元数据列表
    */
-  getVideosInfoByUserId: (params: { tid: number, cursor: string | null }) => request<VideoCursorLoad>('/video/info/all', {
-    method: 'GET',
-    data: params
-  }),
+  getVideosInfoByUserId: (params: { tid: number, cursor: string | null }) => {
+    console.log(params);
+    return request<VideoCursorLoad>('/video/info/all', {
+      method: 'GET',
+      data: params
+    })
+  },
   /**
    * 根据用户ID获取该用户的所有点赞视频记录
    * @param params tid：目标用户id，cursor：游标

@@ -5,8 +5,16 @@ export const useShareData = defineStore('ShareData', {
     shouldManage: false,
     selectedWorks: [] as VideoInfo[],
     shouldDelete: false,
+    shouldClearHistory: false,
+    shouldClearHistoryAndClose: false
   }),
   actions: {
-    clear: function () { this.selectedWorks = []; this.shouldManage = false; this.shouldDelete = false }
+    clear: function () {
+      this.selectedWorks = [];
+      this.shouldManage = false;
+      this.shouldDelete = false;
+      this.shouldClearHistory = false;
+      this.shouldClearHistoryAndClose = false;
+    }
   }
 })

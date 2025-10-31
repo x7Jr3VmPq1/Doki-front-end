@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { Lock, SettingTwo } from "@icon-park/vue-next";
+import { Lock, SettingTwo, Clear } from "@icon-park/vue-next";
 import { reactive, ref } from "vue";
 import { useShareData } from "./ShareData";
 import DokiConfirm from "../../components/Doki-Confirm.vue";
@@ -10,7 +10,11 @@ const props = defineProps<{
 }>();
 
 const state = reactive({
-  deleteConfirmVisible: false
+  deleteConfirmVisible: false,
+  clearHistoryConfirmVisible: false,
+  clearHistoryAndCloseFunConfirmVisible: false,
+  clearHistoryMessage: '确认清空历史记录吗？',
+  clearHistoryAndCloseFunMesssage: '确认清空并关闭功能吗？关闭后不会记录新的观看。'
 })
 
 const filterButtonActive = ref(0); // 作品类型过滤
@@ -22,6 +26,16 @@ const handleClickManage = () => {
 const handleDeleteConfirm = () => {
   shareData.shouldDelete = true;
   state.deleteConfirmVisible = false;
+}
+
+const handleConfirmClearHistoryAndCloseFun = () => {
+  shareData.shouldClearHistoryAndClose = true;
+  state.clearHistoryAndCloseFunConfirmVisible = false;
+}
+
+const handleConfirmClearHistory = () => {
+  shareData.shouldClearHistory = true;
+  state.clearHistoryConfirmVisible = false;
 }
 </script>
 
@@ -43,9 +57,27 @@ const handleDeleteConfirm = () => {
         @confirm="handleDeleteConfirm">
       </DokiConfirm>
     </div>
-    <div @click="handleClickManage" class="works-manage-button" :class="{ active: shareData.shouldManage }">
+    <div v-if="props.tab != 'history'" @click="handleClickManage" class="works-manage-button"
+      :class="{ active: shareData.shouldManage }">
       <setting-two theme="filled" fill="#333" />
       <span>{{ shareData.shouldManage ? "取消管理" : "批量管理" }}</span>
+    </div>
+
+    <div v-if="props.tab === 'history'" class="works-manage-button">
+      <div class="clear-history">
+        <div class="clear-option" @click="state.clearHistoryConfirmVisible = true">清空观看历史</div>
+        <div class="clear-option" @click="state.clearHistoryAndCloseFunConfirmVisible = true">清空并关闭功能</div>
+      </div>
+      <DokiConfirm :visible="state.clearHistoryConfirmVisible" :message="state.clearHistoryMessage"
+        @confirm="handleConfirmClearHistory" @close="state.clearHistoryConfirmVisible = false"
+        @cancel="state.clearHistoryConfirmVisible = false">
+      </DokiConfirm>
+      <DokiConfirm :visible="state.clearHistoryAndCloseFunConfirmVisible"
+        :message="state.clearHistoryAndCloseFunMesssage" @confirm="handleConfirmClearHistoryAndCloseFun"
+        @close="state.clearHistoryAndCloseFunConfirmVisible = false"
+        @cancel="state.clearHistoryAndCloseFunConfirmVisible = false">
+      </DokiConfirm>
+      <Clear class="clear-icon"></Clear>
     </div>
   </div>
 </template>
@@ -105,5 +137,29 @@ const handleDeleteConfirm = () => {
 .delete-btn {
   cursor: pointer;
   color: #ff3366;
+}
+
+
+.clear-history {
+  opacity: 0;
+  border-radius: 5px;
+  padding: 10px 10px;
+  gap: 10px;
+  background-color: #fff;
+  z-index: 50;
+  width: 120px;
+  position: absolute;
+  bottom: -60px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.clear-option:hover {
+  color: #ff3366;
+}
+
+.works-manage-button:hover .clear-history {
+  opacity: 1;
 }
 </style>

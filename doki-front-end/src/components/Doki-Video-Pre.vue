@@ -20,7 +20,7 @@ const handleMouseEnter = () => {
   enterTimeout = window.setTimeout(() => {
     isPre.value = true;
     enterTimeout = null; // 清空引用
-  }, 50);
+  }, 100);
 }
 
 const handleMouseLeave = () => {

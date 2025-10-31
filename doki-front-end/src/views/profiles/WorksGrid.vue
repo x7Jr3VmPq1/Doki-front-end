@@ -49,6 +49,23 @@ watch(() => shareData.shouldDelete, (newValue) => {
   }
 })
 
+const clearState = () => {
+  userWorks.list = [];
+  hasMore.value = false;
+  cursor.value = null;
+  shareData.clear();
+}
+watch(() => shareData.shouldClearHistory, (newValue) => {
+  if (newValue) {
+    clearState();
+  }
+})
+watch(() => shareData.shouldClearHistoryAndClose, (newValue) => {
+  if (newValue) {
+    clearState();
+  }
+})
+
 let requestId = 0;
 const loadMoreWorks = async () => {
 
@@ -218,6 +235,8 @@ const handleClickPreOnManage = (item: VideoInfo) => {
   color: #666;
   margin-top: 5px;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .fullscreen-box {

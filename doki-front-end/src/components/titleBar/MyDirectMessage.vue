@@ -1,21 +1,21 @@
 <script setup lang="ts">
 
-import {ref, watch, onMounted, nextTick} from "vue";
-import {ArrowCircleUp, Picture, MenuFold, MenuUnfold, More} from "@icon-park/vue-next";
-import {IconCloseCircleFill} from "@arco-design/web-vue/es/icon";
-import {getConversations, getMessages, sendMessage, delMessage} from "../../api/messsageService.ts";
-import {dayUtils} from "../../utils/dayUtils.ts";
-import {Modal} from 'ant-design-vue';
-import {createVNode} from 'vue';
-import {ExclamationCircleOutlined} from '@ant-design/icons-vue';
-import {useUserStore} from "../../store/userInfoStore.ts";
+import { ref, watch, onMounted, nextTick } from "vue";
+import { ArrowCircleUp, Picture, MenuFold, MenuUnfold, More } from "@icon-park/vue-next";
+import { IconCloseCircleFill } from "@arco-design/web-vue/es/icon";
+import { getConversations, getMessages, sendMessage, delMessage } from "../../api/messsageService.ts";
+import { dayUtils } from "../../utils/dayUtils.ts";
+import { Modal } from 'ant-design-vue';
+import { createVNode } from 'vue';
+import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
+import { useUserStore } from "../../store/userInfoStore.ts";
 import DokiLoading from "../Doki-Loading.vue";
+const userStore = useUserStore();
 
 // 页面加载后，获取聊天列表
 const isConversationsLoading = ref(false);
 const conversations = ref([]);
 const activeConversationIndex = ref(-1);
-const userStore = useUserStore();
 onMounted(async () => {
   isConversationsLoading.value = true;
   // 延迟一秒钟
@@ -162,8 +162,8 @@ const handleDeleteConversation = () => {
       <div v-if="isExpansion" style="font-size: 20px">私信</div>
       <div v-if="!conversationsShow" style="font-size: 20px">私信</div>
       <div v-if="conversationsShow" class="unfold-button" @click.stop="handleHideClick">
-        <menu-unfold theme="outline" size="35" fill="#c7c8ca" v-if="isExpansion"/>
-        <menu-fold theme="outline" size="35" fill="#c7c8ca" v-else/>
+        <menu-unfold theme="outline" size="35" fill="#c7c8ca" v-if="isExpansion" />
+        <menu-fold theme="outline" size="35" fill="#c7c8ca" v-else />
       </div>
 
       <div style="display: flex;margin-left: auto" v-show="conversationsShow">
@@ -186,9 +186,9 @@ const handleDeleteConversation = () => {
     </div>
     <div class="container">
       <!--  会话列表区域  -->
-      <div class="conversations" :class="{'hidden': isHidden}">
-        <div v-if="!isConversationsLoading" class="conversation" v-for="(item,index) in conversations"
-             @click="handleClickConversation(item.conversationId,index)">
+      <div class="conversations" :class="{ 'hidden': isHidden }">
+        <div v-if="!isConversationsLoading" class="conversation" v-for="(item, index) in conversations"
+          @click="handleClickConversation(item.conversationId, index)">
           <a-avatar :src="item.avatarUrl" size="large"></a-avatar>
           <div style="margin-left: 10px">
             <div class="user-name" style="margin-bottom: 5px">{{ item.username }}</div>
@@ -204,11 +204,10 @@ const handleDeleteConversation = () => {
         </div>
       </div>
       <div class="conversation-details" v-show="conversationsShow">
-        <div class="chat-list" :class="{expansion: isExpansion }">
+        <div class="chat-list" :class="{ expansion: isExpansion }">
           <div class="message">
-            <div class="message-item" :class="{active:index ==activeConversationIndex}"
-                 v-for="(item,index) in conversations"
-                 @click="handleClickConversation(item.conversationId,index)">
+            <div class="message-item" :class="{ active: index == activeConversationIndex }"
+              v-for="(item, index) in conversations" @click="handleClickConversation(item.conversationId, index)">
               <a-avatar size="large" :src="item.avatarUrl"></a-avatar>
               <div class="message-content" style="margin-left: 10px" v-if="isMessageContentShow">
                 <div class="message-user-name">{{ item.username }}</div>
@@ -219,20 +218,14 @@ const handleDeleteConversation = () => {
         </div>
         <div class="chat-area">
           <div class="message-items" ref="messageItems">
-            <div v-for="(item,index) in messagesList">
+            <div v-for="(item, index) in messagesList">
               <div class="time" v-if="shouldShowTime(index)">{{ dayUtils.formatDate(item.sentAt) }}</div>
-              <div class="message-item" :class="{me: item.senderId == userId}">
+              <div class="message-item" :class="{ me: item.senderId == userId }">
                 <a-avatar size="large" :src="item.senderAvatarUrl"></a-avatar>
                 <div class="message-content">
-                  <a-image
-                      v-if="item.attachmentUrl"
-                      :src=item.attachmentUrl
-                      :height="80"
-                      :width="80"
-                      :preview-mask="false"
-                      :preview="{getContainer: () => messageItems}"
-                      style="object-fit: cover;border-radius: 10px;"
-                  ></a-image>
+                  <a-image v-if="item.attachmentUrl" :src=item.attachmentUrl :height="80" :width="80"
+                    :preview-mask="false" :preview="{ getContainer: () => messageItems }"
+                    style="object-fit: cover;border-radius: 10px;"></a-image>
                   <div>{{ item.message }}</div>
                 </div>
               </div>
@@ -240,42 +233,29 @@ const handleDeleteConversation = () => {
           </div>
           <div class="message-input" style="max-height: 50%;display: flex;flex-direction: column">
             <div style="flex: 1">
-              <a-textarea :auto-size="{ minRows: 1, maxRows: 8 }"
-                          @keyup.stop
-                          style="background-color: transparent;color: black;border: none;outline: none;box-shadow: none;"
-                          placeholder="想聊点儿什么？"
-                          v-model:value="messageContent"
-                          @keydown.enter.prevent="handleSendMessage"
-              ></a-textarea>
+              <a-textarea :auto-size="{ minRows: 1, maxRows: 8 }" @keyup.stop
+                style="background-color: transparent;color: black;border: none;outline: none;box-shadow: none;"
+                placeholder="想聊点儿什么？" v-model:value="messageContent"
+                @keydown.enter.prevent="handleSendMessage"></a-textarea>
             </div>
             <div style="display: flex">
-              <div class="upload-picture" v-if="previewUrl!=''">
-                <a-image
-                    :src=previewUrl
-                    :height="80"
-                    :width="80"
-                    :preview-mask="false"
-                    style="object-fit: cover;border-radius: 10px;"
-                ></a-image>
-                <div class="delete-btn" @click.stop="previewUrl=''">
+              <div class="upload-picture" v-if="previewUrl != ''">
+                <a-image :src=previewUrl :height="80" :width="80" :preview-mask="false"
+                  style="object-fit: cover;border-radius: 10px;"></a-image>
+                <div class="delete-btn" @click.stop="previewUrl = ''">
                   <icon-close-circle-fill></icon-close-circle-fill>
                 </div>
               </div>
               <div class="functions">
                 <div class="send" @click="handleSendMessage"
-                     style="cursor: pointer;margin-right: 5px;display: flex;flex-direction: column-reverse">
+                  style="cursor: pointer;margin-right: 5px;display: flex;flex-direction: column-reverse">
                   <ArrowCircleUp></ArrowCircleUp>
                 </div>
                 <div class="picture" style="cursor: pointer;display: flex;flex-direction: column-reverse">
                   <div @click="triggerFileSelect">
                     <Picture></Picture>
-                    <input
-                        type="file"
-                        ref="fileInput"
-                        accept="image/*"
-                        @change="handlePictureUpload"
-                        style="display: none"
-                    />
+                    <input type="file" ref="fileInput" accept="image/*" @change="handlePictureUpload"
+                      style="display: none" />
                   </div>
                 </div>
               </div>
@@ -452,9 +432,12 @@ const handleDeleteConversation = () => {
             background-color: #f1ebeb;
             border-radius: 15px;
             max-width: 50%;
-            word-break: break-word; /* 强制在单词内部也可以换行 */
-            white-space: normal; /* 允许自动换行 */
-            overflow-wrap: break-word; /* 更好的兼容性（等效于 word-break） */
+            word-break: break-word;
+            /* 强制在单词内部也可以换行 */
+            white-space: normal;
+            /* 允许自动换行 */
+            overflow-wrap: break-word;
+            /* 更好的兼容性（等效于 word-break） */
           }
         }
 
