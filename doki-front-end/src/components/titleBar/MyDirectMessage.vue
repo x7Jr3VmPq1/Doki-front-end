@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { ref, watch, onMounted, nextTick } from "vue";
+import { ref, watch, onMounted, nextTick, reactive } from "vue";
 import { ArrowCircleUp, Picture, MenuFold, MenuUnfold, More } from "@icon-park/vue-next";
 import { IconCloseCircleFill } from "@arco-design/web-vue/es/icon";
 import { getConversations, getMessages, sendMessage, delMessage } from "../../api/messsageService.ts";
@@ -9,40 +9,49 @@ import { Modal } from 'ant-design-vue';
 import { createVNode } from 'vue';
 import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 import { useUserStore } from "../../store/userInfoStore.ts";
+import notification_dmService from "../../api/notification_dmService.ts";
+import type { Conversation, Message, MessageDTO } from '../../api/notification_dmService.ts'
+import { handleRequest } from "../../api/handleRequest.ts";
 import DokiLoading from "../Doki-Loading.vue";
 const userStore = useUserStore();
 
 // 页面加载后，获取聊天列表
 const isConversationsLoading = ref(false);
-const conversations = ref([]);
+const conversations = ref<Conversation[]>([]);
 const activeConversationIndex = ref(-1);
 onMounted(async () => {
   isConversationsLoading.value = true;
-  // 延迟一秒钟
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const res = await getConversations();
-  conversations.value = res.data;
-  isConversationsLoading.value = false;
+
+  handleRequest(notification_dmService.getConversationList, {
+    onSuccess(data) {
+      console.log(data);
+      conversations.value = data;
+      isConversationsLoading.value = false;
+    }
+  })
 })
 
 // 当前用户ID
-const userId = userStore.userInfo?.userId!;
+const userId = userStore.userInfo.id!;
 // 点击聊天列表时，会进入会话详情
-const messagesList = ref([]);
+const messagesList = ref<Message[]>([]);
 // 是否进入会话详情
 const conversationsShow = ref(false);
 const isHidden = ref(false);
 // 聊天区域盒子引用
-const messageItems = <HTMLElement | null>ref(null);
+const messageItems = ref<HTMLElement | null>(null);
 
 const handleClickConversation = async (conversationId: string, activeIndex: number) => {
   activeConversationIndex.value = activeIndex;
-  const res = await getMessages(conversationId);
-  messagesList.value = res.data;
+  await handleRequest(notification_dmService.getMessages, {
+    onSuccess(data) {
+      messagesList.value = data;
+    }, params: conversationId
+  })
   conversationsShow.value = true;
   isHidden.value = true;
   await nextTick(() => {
-    messageItems.value.scrollTop = messageItems.value.scrollHeight;
+    messageItems.value!.scrollTop = messageItems.value!.scrollHeight;
   })
 };
 const isExpansion = ref(false);
@@ -65,7 +74,7 @@ const handleExitClick = () => {
 
 
 const previewUrl = ref('');
-const fileInput = ref(null)
+const fileInput = ref<HTMLElement | null>(null)
 
 // 点击图标时触发选择文件
 const triggerFileSelect = () => {
@@ -98,8 +107,8 @@ const shouldShowTime = (index: number) => {
     return true;
   }
 
-  const currentTime = new Date(currentMsg.sentAt).getTime();
-  const lastTime = new Date(lastMsg.sentAt).getTime();
+  const currentTime = new Date(currentMsg.timestamp).getTime();
+  const lastTime = new Date(lastMsg.timestamp).getTime();
   const diffInMinutes = (currentTime - lastTime) / 1000 / 60;
 
   return diffInMinutes > 10;
@@ -111,20 +120,19 @@ const handleSendMessage = async () => {
     return;
   }
   const activeConversation = conversations.value[activeConversationIndex.value];
-  const res = await sendMessage({
-    conversationId: activeConversation.conversationId,
-    messageString: messageContent.value,
-    targetUserId: activeConversation.userId,
-    pictureBase64: previewUrl.value == '' ? null : previewUrl.value,
-  });
-  if (res.code == 200) {
-    messagesList.value.push(res.data);
-    activeConversation.lastMessage = previewUrl.value != '' ? '[图片]' + res.data.message : res.data.message;
-    messageContent.value = '';
-    previewUrl.value = '';
-  } else {
-    errorToll.error('发送失败，请检查网络或稍后再试');
-  }
+  handleRequest(notification_dmService.sendMessage, {
+    onSuccess(data) {
+      messagesList.value.push(data);
+      activeConversation.lastMessage.content = previewUrl.value != '' ? '[图片]' + data.content : data.content;
+      messageContent.value = '';
+      previewUrl.value = previewUrl.value;
+    }, params: {
+      conversationId: activeConversation.id,
+      senderId: userId,
+      content: messageContent.value,
+      imgUrl: previewUrl.value
+    }
+  })
 }
 const more = ref(null);
 
@@ -138,7 +146,7 @@ const handleDeleteConversation = () => {
     maskClosable: true,
     getContainer: () => more.value,
     async onOk() {
-      await delMessage(conversations.value[activeConversationIndex.value].conversationId)
+      await delMessage(conversations.value[activeConversationIndex.value].id)
       // 更新会话列表
       conversations.value.splice(activeConversationIndex.value, 1);
       // 如果没有任何会话了，就退出会话详情界面
@@ -146,7 +154,7 @@ const handleDeleteConversation = () => {
         handleExitClick();
       } else {
         // 把当前会话重置回第一个
-        await handleClickConversation(conversations.value[0].conversationId, 0);
+        await handleClickConversation(conversations.value[0].id, 0);
       }
     }
   });
@@ -188,11 +196,11 @@ const handleDeleteConversation = () => {
       <!--  会话列表区域  -->
       <div class="conversations" :class="{ 'hidden': isHidden }">
         <div v-if="!isConversationsLoading" class="conversation" v-for="(item, index) in conversations"
-          @click="handleClickConversation(item.conversationId, index)">
-          <a-avatar :src="item.avatarUrl" size="large"></a-avatar>
+          @click="handleClickConversation(item.id, index)">
+          <a-avatar :src="item.userinfo.avatarUrl" size="large"></a-avatar>
           <div style="margin-left: 10px">
-            <div class="user-name" style="margin-bottom: 5px">{{ item.username }}</div>
-            <div class="last-message">{{ item.lastMessage }}</div>
+            <div class="user-name" style="margin-bottom: 5px">{{ item.userinfo.username }}</div>
+            <div class="last-message">{{ item.lastMessage.content }}</div>
           </div>
         </div>
         <div v-else style="text-align: center">
@@ -207,11 +215,11 @@ const handleDeleteConversation = () => {
         <div class="chat-list" :class="{ expansion: isExpansion }">
           <div class="message">
             <div class="message-item" :class="{ active: index == activeConversationIndex }"
-              v-for="(item, index) in conversations" @click="handleClickConversation(item.conversationId, index)">
-              <a-avatar size="large" :src="item.avatarUrl"></a-avatar>
+              v-for="(item, index) in conversations" @click="handleClickConversation(item.id, index)">
+              <a-avatar size="large" :src="item.userinfo.avatarUrl"></a-avatar>
               <div class="message-content" style="margin-left: 10px" v-if="isMessageContentShow">
-                <div class="message-user-name">{{ item.username }}</div>
-                <div class="message-text">{{ item.lastMessage }}</div>
+                <div class="message-user-name">{{ item.userinfo.username }}</div>
+                <div class="message-text">{{ item.lastMessage.content }}</div>
               </div>
             </div>
           </div>
@@ -219,14 +227,14 @@ const handleDeleteConversation = () => {
         <div class="chat-area">
           <div class="message-items" ref="messageItems">
             <div v-for="(item, index) in messagesList">
-              <div class="time" v-if="shouldShowTime(index)">{{ dayUtils.formatDate(item.sentAt) }}</div>
+              <div class="time" v-if="shouldShowTime(index)">{{ dayUtils.formatTimestamp(item.timestamp) }}</div>
               <div class="message-item" :class="{ me: item.senderId == userId }">
-                <a-avatar size="large" :src="item.senderAvatarUrl"></a-avatar>
+                <a-avatar size="large" :src="item.userinfo?.avatarUrl"></a-avatar>
                 <div class="message-content">
-                  <a-image v-if="item.attachmentUrl" :src=item.attachmentUrl :height="80" :width="80"
-                    :preview-mask="false" :preview="{ getContainer: () => messageItems }"
+                  <a-image v-if="item.imgUrl" :src=item.imgUrl :height="80" :width="80" :preview-mask="false"
+                    :preview="{ getContainer: () => messageItems }"
                     style="object-fit: cover;border-radius: 10px;"></a-image>
-                  <div>{{ item.message }}</div>
+                  <div>{{ item.content }}</div>
                 </div>
               </div>
             </div>
