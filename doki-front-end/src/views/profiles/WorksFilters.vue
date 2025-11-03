@@ -28,12 +28,15 @@ const handleDeleteConfirm = () => {
   state.deleteConfirmVisible = false;
 }
 
+
+// 让WroksGrid组件调用清空接口。
 const handleConfirmClearHistoryAndCloseFun = () => {
   shareData.shouldClearHistoryAndClose = true;
   state.clearHistoryAndCloseFunConfirmVisible = false;
 }
 
 const handleConfirmClearHistory = () => {
+
   shareData.shouldClearHistory = true;
   state.clearHistoryConfirmVisible = false;
 }

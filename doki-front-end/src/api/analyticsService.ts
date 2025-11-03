@@ -49,6 +49,16 @@ const analyticsService = {
   updateVideoHistory: async (params: { videoId: number, time: number }) => await request<void>('/analytics/history/add', {
     method: 'GET',
     data: params
+  }),
+  /**
+   * 清空播放记录
+   * @param close 如果传入close=1，则会关闭记录功能。
+   * @returns 
+   */
+  clearVideoHistory: async (close: number) => await request<void>('/analytics/history/clear', {
+    method: 'DELETE',
+    data: { close }
   })
+
 }
 export default analyticsService;

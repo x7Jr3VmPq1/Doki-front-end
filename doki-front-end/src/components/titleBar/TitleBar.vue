@@ -7,26 +7,49 @@ import SearchComponent from "./SearchComponent.vue";
 import Notification from "./Notification.vue";
 import LoginRegisterDialog from "./LoginRegisterDialog.vue";
 import { Message, Remind, AddMusic } from '@icon-park/vue-next';
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, reactive } from "vue";
 import { getHotSearchList } from "../../api/searchService.ts";
+import notification_dmService from "../../api/notification_dmService.ts";
 import profileCard from "./ProfileCard.vue";
 import { useUserStore } from "../../store/userInfoStore.ts";
 import userService from '../../api/userService.ts'
 import { handleRequest } from '../../api/handleRequest.ts'
-
+import { useShareData } from "./shareData.ts";
+const shareData = useShareData();
 const userStore = useUserStore();
 const avatarUrl = ref('');
-
-// 热搜列表
-const hotSearchList = ref([]);
+const state = reactive({
+  messageUnread: 0,
+  notificationUnread: 0
+})
 
 onMounted(async () => {
-  hotSearchList.value = (await getHotSearchList());
+  watch(() => userStore.userInfo.isLogin, async (newValue) => {
+    if (newValue) {
+      const getUnread = async () => {
+        handleRequest(notification_dmService.getUnreadMessageCount, {
+          onSuccess(data) {
+            shareData.messageUnread = data;
+          }
+        })
+      }
+      await getUnread();
+      setInterval(getUnread, 5000)
+    }
+  })
 })
 
 // 获取头像
 watch(() => userStore.userInfo.isLogin, () => {
   avatarUrl.value = userStore.userInfo.avatarUrl;
+})
+
+const DMRef = ref();
+watch(() => shareData.requestCreatConversationUID, (uid) => {
+  if (uid > 0) {
+    shareData.openMessageFromDMButton = true;
+    DMRef.value.handleEnter();
+  }
 })
 
 // 打开登录页面对话框
@@ -78,9 +101,12 @@ const toCreator = async () => {
         <div class="function-label">投稿</div>
       </div>
       <!-- 消息按钮 -->
-      <my-popover>
+      <my-popover ref="DMRef">
         <template #trigger>
           <div class="function">
+            <div class="unread-wrapper flex-center" v-if="shareData.messageUnread > 0">
+              <span>{{ shareData.messageUnread }}</span>
+            </div>
             <Message theme="outline" size="24" />
             <div class="function-label">消息</div>
           </div>
@@ -96,6 +122,9 @@ const toCreator = async () => {
         </template>
         <template #trigger>
           <div class="function">
+            <div class="unread-wrapper flex-center" v-if="shareData.notificationUnread > 0">
+              <span>{{ shareData.notificationUnread }}</span>
+            </div>
             <Remind theme="outline" size="24" />
             <div class="function-label">通知</div>
           </div>
@@ -111,7 +140,7 @@ const toCreator = async () => {
   width: 100%;
   box-sizing: border-box;
   padding: 5px;
-  
+
 
   .search-input-area {
     width: 80%;
@@ -133,6 +162,7 @@ const toCreator = async () => {
     }
 
     .function {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -217,5 +247,17 @@ const toCreator = async () => {
       font-size: 9px;
     }
   }
+}
+
+.unread-wrapper {
+  bottom: 15px;
+  right: -2px;
+  border-radius: 50%;
+  color: white;
+  font-size: 12px;
+  width: 15px;
+  height: 15px;
+  background-color: #fe2c55;
+  position: absolute;
 }
 </style>

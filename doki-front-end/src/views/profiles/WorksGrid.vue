@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { reactive, onMounted, ref, watch, computed } from 'vue';
+import { reactive, onMounted, ref, watch } from 'vue';
 import videoInfoService from '../../api/videoInfoService.ts'
 import type { videoInfoWithStat } from '../../api/videoInfoService.ts'
 import type { VideoInfo } from '../../api/feedService.ts'
 import { handleRequest } from '../../api/handleRequest.ts';
+import analyticsService from '../../api/analyticsService.ts';
 import DokiLoading from '../../components/Doki-Loading.vue';
 import { useInfiniteScroll } from '../../utils/infiniteScroll.ts'
 import DokiVideoPre from '../../components/Doki-Video-Pre.vue';
 import SwiperPlayer from '../../components/player/index.vue';
 import { useShareData } from './ShareData.ts';
-import { CheckSmall, NetworkDrive } from "@icon-park/vue-next"
+import { CheckSmall } from "@icon-park/vue-next"
 
 const shareData = useShareData();
 // 定义组件属性
@@ -55,13 +56,22 @@ const clearState = () => {
   cursor.value = null;
   shareData.clear();
 }
-watch(() => shareData.shouldClearHistory, (newValue) => {
+watch(() => shareData.shouldClearHistory, async (newValue) => {
   if (newValue) {
-    clearState();
+    handleRequest(analyticsService.clearVideoHistory, {
+      onSuccess() {
+        clearState();
+      }
+    })
   }
 })
 watch(() => shareData.shouldClearHistoryAndClose, (newValue) => {
   if (newValue) {
+    handleRequest(analyticsService.clearVideoHistory, {
+      onSuccess() {
+        clearState();
+      }, params: 1
+    })
     clearState();
   }
 })

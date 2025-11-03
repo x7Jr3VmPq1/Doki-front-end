@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import socialService from '../../api/socialService';
 import { handleRequest } from '../../api/handleRequest';
+import { useShareData } from '../../components/titleBar/shareData';
+
+const titleBarShareData = useShareData();
 // 定义一个属性，用于判断是否已经关注。
 const props = defineProps<{
   isFollowing: boolean, // 是否已关注属性
@@ -20,6 +23,10 @@ const handleClickFollow = async () => {
     params: props.uid
   });
 }
+
+const handleClickDM = () => {
+  titleBarShareData.requestCreatConversationUID = props.uid!;
+}
 </script>
 
 <template>
@@ -30,7 +37,7 @@ const handleClickFollow = async () => {
         <span class="follow-icon">+</span> {{ props.isFollowing ? '已关注' : '关注' }}
       </button>
 
-      <button class="action-button private-message-button">私信</button>
+      <button class="action-button private-message-button" @click.stop="handleClickDM">私信</button>
     </div>
   </div>
 </template>

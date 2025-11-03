@@ -5,7 +5,7 @@
       <div class="all-messages-dropdown" @mouseenter="showDropdown = true" @mouseleave="showDropdown = false">
         <span>全部消息</span>
         <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
+          stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
         <div v-if="showDropdown" class="dropdown-content">
@@ -17,21 +17,21 @@
     </div>
 
     <div class="notification-list">
-      <div class="notification-item">
-        <div class="user-avatar">
-          <img src="http://localhost:8081/avatars/3137ae21-cd4b-4b9f-8426-a2c514273dbf.jpg" alt="User Avatar"/> <span
-            class="online-indicator"></span>
+      <div v-for="item in list" class="notification-item">
+        <div class="user-avatar" @click="toProfiles(item.user.id)">
+          <img :src="item.user.avatarUrl" alt="User Avatar" />
         </div>
         <div class="message-content">
           <div class="user-info">
-            <span class="username">嘟哥哥</span>
-            <span class="author-tag">作者</span>
+            <span class="username" @click="toProfiles(item.user.id)">{{ item.user.username }}</span>
+            <!-- <span class="author-tag">作者</span> -->
           </div>
-          <p class="message-text">是的</p>
-          <span class="reply-timestamp">回复了你的评论 2024-11-17</span>
+          <div class="reply-timestamp">{{ changeNotice(item.type) }}</div>
+          <div class="message-text">{{ item.content }}</div>
+          <div class="reply-timestamp"> {{ dayUtils.formatTimestamp(item.createdAt) }}</div>
         </div>
-        <div class="message-thumbnail">
-          <img src="http://localhost:8081/avatars/3137ae21-cd4b-4b9f-8426-a2c514273dbf.jpg" alt="Message Thumbnail"/>
+        <div class="message-thumbnail" v-if="item.sourceInfo">
+          <img :src="item.sourceInfo.coverName" alt="Message Thumbnail" />
         </div>
       </div>
 
@@ -43,17 +43,51 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue';
-
+import { onMounted, ref } from 'vue';
+import { handleRequest } from '../../api/handleRequest';
+import type { Notification } from '../../api/notification_dmService';
+import notification_dmService from '../../api/notification_dmService';
+import toProfiles from '../../utils/toProfiles';
+import { dayUtils } from '../../utils/dayUtils';
 const showDropdown = ref(false);
 const dropdownOptions = ref([
   '全部消息',
   '粉丝',
-  '@我的',
+  // '@我的',
   '评论',
   '赞',
-  '弹幕'
+  // '弹幕'
 ]);
+
+const list = ref<Notification[]>([]);
+
+onMounted(async () => {
+  await handleRequest(notification_dmService.getNotifications, {
+    onSuccess(data) {
+      console.log(data);
+
+      list.value = data;
+    }
+  })
+})
+
+const changeNotice = (type: number) => {
+
+  let str = '';
+  switch (type) {
+    case 1: str = "关注了你"
+      break;
+    case 2: str = "赞了你的视频"
+      break;
+    case 3: str = "赞了你的评论"
+      break;
+    case 4: str = "评论了你的视频"
+      break;
+    case 5: str = "回复了你的评论"
+      break;
+  }
+  return str;
+}
 </script>
 
 <style scoped>
@@ -114,7 +148,8 @@ const dropdownOptions = ref([
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   min-width: 120px;
   z-index: 10;
-  margin-top: 2px; /* Space between trigger and dropdown */
+  margin-top: 2px;
+  /* Space between trigger and dropdown */
 }
 
 .dropdown-item {
@@ -149,6 +184,7 @@ const dropdownOptions = ref([
 }
 
 .user-avatar {
+  cursor: pointer;
   position: relative;
   margin-right: 15px;
 }
@@ -160,21 +196,6 @@ const dropdownOptions = ref([
   object-fit: cover;
 }
 
-.online-indicator {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 10px;
-  height: 10px;
-  background-color: #4CAF50; /* Example online color */
-  border-radius: 50%;
-  border: 2px solid #fff;
-}
-
-.message-content {
-  flex-grow: 1;
-}
-
 .user-info {
   display: flex;
   align-items: center;
@@ -182,9 +203,14 @@ const dropdownOptions = ref([
 }
 
 .username {
+  cursor: pointer;
   font-weight: bold;
   color: #333;
   margin-right: 8px;
+}
+
+.username:hover {
+  color: #fe2c55;
 }
 
 .author-tag {
@@ -195,6 +221,10 @@ const dropdownOptions = ref([
   font-size: 12px;
 }
 
+.message-content {
+  flex: 1;
+}
+
 .message-text {
   margin: 0 0 5px 0;
   color: #333;
@@ -202,6 +232,7 @@ const dropdownOptions = ref([
 }
 
 .reply-timestamp {
+  margin-top: 5px;
   font-size: 12px;
   color: #999;
 }

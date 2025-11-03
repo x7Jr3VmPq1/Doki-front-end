@@ -153,7 +153,7 @@ const openComments = async () => {
           </div>
         </a-tab-pane>
         <a-tab-pane key="2" :tab='`评论`' force-render>
-          <CommentsPanel :videoId="video.id" :open="open" />
+          <CommentsPanel :videoinfo="props.video" :videoId="video.id" :open="open" />
         </a-tab-pane>
         <a-tab-pane key="3" tab="相关推荐">Content...</a-tab-pane>
       </a-tabs>

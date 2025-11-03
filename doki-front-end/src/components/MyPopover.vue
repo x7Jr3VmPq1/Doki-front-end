@@ -1,36 +1,44 @@
 <script setup lang="ts">
-import {ref, onMounted, onUnmounted} from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
+import { useShareData } from '../components/titleBar/shareData';
 
+const shareData = useShareData();
 const contentShow = ref(false);
 const containerRef = ref<HTMLElement | null>(null);
+
 
 const handleClickOutside = (event: MouseEvent) => {
   if (containerRef.value && !containerRef.value.contains(event.target as Node)) {
     contentShow.value = false;
+    shareData.clearRequst();
   }
 };
 
 
-const handleEnter = () => {
-
+const handleEnter = async () => {
   contentShow.value = !contentShow.value;
 }
 const handleLeave = () => {
-
   contentShow.value = false;
 }
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener("click", handleClickOutside);
 });
 
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
 });
+
+
+defineExpose({
+  handleEnter
+});
+
 </script>
 
 <template>
   <div class="container" ref="containerRef">
-    <div @click="handleEnter">
+    <div @click.stop="handleEnter">
       <slot name="trigger"></slot>
     </div>
     <transition name="slide-down">
@@ -82,5 +90,4 @@ onUnmounted(() => {
   opacity: 0;
   transform: translateY(-20px);
 }
-
 </style>

@@ -48,7 +48,7 @@ onMounted(async () => {
 })
 
 // 视频上传服务器路径
-const videoUploadPath = ref("http://localhost:10010/video/upload?draft_id=");
+const videoUploadPath = ref("http://localhost:10011/video/upload?draft_id=");
 
 // 上传视频前的钩子方法
 const handleBeforeUpload = async (file: File) => {

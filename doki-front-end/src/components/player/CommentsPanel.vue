@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { defineProps, onMounted, ref, onBeforeUnmount, createVNode, watch } from 'vue'
 
-import { type CommentListResponse, type VideoComments, type VideoCommentsVO } from '../../api/commentService.js'
+import { type CommentListResponse, type VideoCommentsVO } from '../../api/commentService.js'
+import type { VideoInfo } from '../../api/feedService.ts'
 import commentService from '../../api/commentService.js'
 import { handleRequest } from '../../api/handleRequest.ts'
 import { useUserStore } from '../../store/userInfoStore'
@@ -18,10 +19,11 @@ const userStore = useUserStore();
 const commentLoaded = ref(false); // 初始评论是否加载完毕标记
 
 // 父组件传递来的视频ID和评论区抽屉开启状态
-const props = defineProps({
-  videoId: Number,
-  open: Boolean
-})
+const props = defineProps<{
+  videoId: number,
+  open: boolean,
+  videoinfo: VideoInfo
+}>();
 
 // 根评论数组
 const commentsArray = ref<CommentListResponse>({
@@ -202,12 +204,17 @@ const handleDelete = async (status: commentStatus) => {
 // 评论点赞处理方法
 const handleLike = (status: commentStatus) => {
   const targetComment = status.commentObject;
-  handleRequest(commentService.likeComment, {
+  handleRequest(commentService.likeCommentV2, {
     onSuccess(_) {
       targetComment.comments.likeCount += (targetComment.liked ? -1 : 1);
       targetComment.liked = !targetComment.liked;
     },
-    params: targetComment.comments.id
+    params: {
+      commentId: targetComment.comments.id,
+      videoId: props.videoinfo.id,
+      commentSender: targetComment.comments.userId,
+      content: targetComment.comments.content
+    }
   })
 }
 

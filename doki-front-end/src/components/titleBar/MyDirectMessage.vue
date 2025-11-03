@@ -3,7 +3,6 @@
 import { ref, watch, onMounted, nextTick, reactive } from "vue";
 import { ArrowCircleUp, Picture, MenuFold, MenuUnfold, More } from "@icon-park/vue-next";
 import { IconCloseCircleFill } from "@arco-design/web-vue/es/icon";
-import { getConversations, getMessages, sendMessage, delMessage } from "../../api/messsageService.ts";
 import { dayUtils } from "../../utils/dayUtils.ts";
 import { Modal } from 'ant-design-vue';
 import { createVNode } from 'vue';
@@ -13,8 +12,9 @@ import notification_dmService from "../../api/notification_dmService.ts";
 import type { Conversation, Message, MessageDTO } from '../../api/notification_dmService.ts'
 import { handleRequest } from "../../api/handleRequest.ts";
 import DokiLoading from "../Doki-Loading.vue";
+import { useShareData } from "./shareData.ts";
 const userStore = useUserStore();
-
+const shareData = useShareData();
 // 页面加载后，获取聊天列表
 const isConversationsLoading = ref(false);
 const conversations = ref<Conversation[]>([]);
@@ -27,6 +27,25 @@ onMounted(async () => {
       console.log(data);
       conversations.value = data;
       isConversationsLoading.value = false;
+
+      // 监听shareData中的创建新消息标记
+      watch(
+        () => shareData.requestCreatConversationUID, async (newVal) => {
+          if (newVal > 0) {
+            isHidden.value = true;
+            await handleRequest(notification_dmService.createConversation, {
+              onSuccess(data) {
+
+                conversations.value = conversations.value.filter(c => c.id !== data.id)
+                conversations.value.unshift(data);
+              }, params: newVal
+            })
+            await handleClickConversation(conversations.value[0], 0);
+          }
+        }, {
+        immediate: true
+      }
+      )
     }
   })
 })
@@ -40,13 +59,18 @@ const conversationsShow = ref(false);
 const isHidden = ref(false);
 // 聊天区域盒子引用
 const messageItems = ref<HTMLElement | null>(null);
-
-const handleClickConversation = async (conversationId: string, activeIndex: number) => {
-  activeConversationIndex.value = activeIndex;
+const handleClickConversation = async (item: Conversation, index: number) => {
+  activeConversationIndex.value = index;
   await handleRequest(notification_dmService.getMessages, {
     onSuccess(data) {
       messagesList.value = data;
-    }, params: conversationId
+      handleRequest(notification_dmService.delUnreadMessageCount, {
+        onSuccess(_) {
+          shareData.messageUnread -= item.unread;
+          item.unread = 0;
+        }, params: item.id
+      })
+    }, params: item.id
   })
   conversationsShow.value = true;
   isHidden.value = true;
@@ -101,16 +125,13 @@ const handlePictureUpload = (event: Event) => {
 const shouldShowTime = (index: number) => {
   const currentMsg = messagesList.value[index];
   const lastMsg = messagesList.value[index - 1];
-
   // 如果是第一条消息，一定显示时间
   if (index === 0) {
     return true;
   }
-
   const currentTime = new Date(currentMsg.timestamp).getTime();
   const lastTime = new Date(lastMsg.timestamp).getTime();
   const diffInMinutes = (currentTime - lastTime) / 1000 / 60;
-
   return diffInMinutes > 10;
 }
 // 发送消息方法
@@ -144,21 +165,25 @@ const handleDeleteConversation = () => {
     okType: 'danger',
     cancelText: '取消',
     maskClosable: true,
-    getContainer: () => more.value,
+    getContainer: () => more.value!,
     async onOk() {
-      await delMessage(conversations.value[activeConversationIndex.value].id)
-      // 更新会话列表
-      conversations.value.splice(activeConversationIndex.value, 1);
-      // 如果没有任何会话了，就退出会话详情界面
-      if (conversations.value.length == 0) {
-        handleExitClick();
-      } else {
-        // 把当前会话重置回第一个
-        await handleClickConversation(conversations.value[0].id, 0);
-      }
+      handleRequest(notification_dmService.delConversation, {
+        onSuccess: async () => {
+          conversations.value.splice(activeConversationIndex.value, 1);
+          if (conversations.value.length == 0) {
+            // 更新会话列表
+            // 如果没有任何会话了，就退出会话详情界面
+            handleExitClick();
+          } else {
+            // 把当前会话重置回第一个
+            await handleClickConversation(conversations.value[0], 0);
+          }
+        }, params: conversations.value[activeConversationIndex.value].id
+      })
     }
   });
 }
+
 </script>
 
 <template>
@@ -196,12 +221,13 @@ const handleDeleteConversation = () => {
       <!--  会话列表区域  -->
       <div class="conversations" :class="{ 'hidden': isHidden }">
         <div v-if="!isConversationsLoading" class="conversation" v-for="(item, index) in conversations"
-          @click="handleClickConversation(item.id, index)">
+          @click="handleClickConversation(item, index)">
           <a-avatar :src="item.userinfo.avatarUrl" size="large"></a-avatar>
           <div style="margin-left: 10px">
             <div class="user-name" style="margin-bottom: 5px">{{ item.userinfo.username }}</div>
-            <div class="last-message">{{ item.lastMessage.content }}</div>
+            <div class="last-message">{{ item.lastMessage === null ? '' : item.lastMessage.content }}</div>
           </div>
+          <div class="unread-wrapper flex-center" v-if="item.unread > 0">{{ item.unread }}</div>
         </div>
         <div v-else style="text-align: center">
           <DokiLoading></DokiLoading>
@@ -215,12 +241,16 @@ const handleDeleteConversation = () => {
         <div class="chat-list" :class="{ expansion: isExpansion }">
           <div class="message">
             <div class="message-item" :class="{ active: index == activeConversationIndex }"
-              v-for="(item, index) in conversations" @click="handleClickConversation(item.id, index)">
+              v-for="(item, index) in conversations" @click="handleClickConversation(item, index)">
               <a-avatar size="large" :src="item.userinfo.avatarUrl"></a-avatar>
-              <div class="message-content" style="margin-left: 10px" v-if="isMessageContentShow">
-                <div class="message-user-name">{{ item.userinfo.username }}</div>
-                <div class="message-text">{{ item.lastMessage.content }}</div>
+              <div class="message-content" style="margin-left: 10px;display: flex;" v-if="isMessageContentShow">
+                <div>
+                  <div class="message-user-name">{{ item.userinfo.username }}</div>
+                  <div class="message-text">{{ item.lastMessage === null ? '' : item.lastMessage.content }}</div>
+                </div>
+                <div class="unread-wrapper flex-center" v-if="item.unread">{{ item.unread }}</div>
               </div>
+
             </div>
           </div>
         </div>
@@ -394,7 +424,7 @@ const handleDeleteConversation = () => {
           }
 
           .message-text {
-            width: 120px;
+            width: 100px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -434,6 +464,7 @@ const handleDeleteConversation = () => {
           margin-bottom: 20px;
 
           .message-content {
+            display: flex;
             margin-left: 10px;
             margin-right: 10px;
             padding: 10px;
@@ -498,5 +529,15 @@ const handleDeleteConversation = () => {
 
 .container-expansion {
   width: 600px;
+}
+
+.unread-wrapper {
+  margin-top: 10px;
+  color: white;
+  background-color: #fe2c55;
+  width: 20px;
+  height: 20px;
+  font-size: 15px;
+  border-radius: 50%;
 }
 </style>

@@ -1,4 +1,6 @@
+import type { VideoInfo } from "./feedService";
 import request from "./gateway";
+import type { userInfo } from "./userService";
 export interface Conversation {
   id: string;
   members: number[];
@@ -17,7 +19,8 @@ export interface Conversation {
     username: string;
     avatarUrl: string;
     bio: string;
-  }
+  },
+  unread: number
 }
 export interface Message {
   id: string;
@@ -39,6 +42,23 @@ export interface MessageDTO {
   content: string,
   imgUrl: string
 }
+
+export interface Notification {
+  id: string;
+  userId: number;
+  type: number;
+  content: string | null;
+  sourceVideoId: number | null;
+  sourceCommentId: number | null;
+  operatorId: number | null;
+  groupKey: string;
+  mergedCount: number;
+  isRead: number;
+  createdAt: number;
+  user: userInfo;
+  sourceInfo: VideoInfo
+}
+
 
 export default {
   /**
@@ -84,6 +104,31 @@ export default {
   delConversation: (cid: string) => request<void>('/message/delete', {
     method: 'DELETE',
     data: { cid }
-  })
+  }),
 
+  /**
+   * 获取私信未读数
+   * @returns 
+   */
+  getUnreadMessageCount: () => request<number>('/message/unread', {
+    method: 'GET'
+  }),
+  /**
+   * 清空未读数
+   * @param cid 会话id，不传入则清空全部未读。
+   * @returns
+   */
+  delUnreadMessageCount: (cid: string | null) => request<null>('/message/unread', {
+    method: 'DELETE',
+    data: { cid }
+  }),
+  /**
+   * 获取通知列表
+   * @param type  类型，不传入则获取所有。
+   * @returns 
+   */
+  getNotifications: (type: number | null) => request<Notification[]>('/notify', {
+    method: 'GET',
+    data: { type }
+  })
 }
