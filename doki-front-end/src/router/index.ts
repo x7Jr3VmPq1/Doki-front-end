@@ -15,6 +15,11 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/following',
+    component: () => import('../views/following/index.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/my',
     name: 'my',
     component: () => import('../views/profiles/index.vue'),

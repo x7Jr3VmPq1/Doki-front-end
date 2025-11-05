@@ -4,3 +4,8 @@
   align-items: center;
   justify-content: center;
 }
+
+em {
+  color: #ff4d4f !important;
+  font-style: normal !important;
+}

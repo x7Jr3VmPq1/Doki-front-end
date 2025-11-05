@@ -3,43 +3,27 @@
   <div class="search-container">
     <!-- 搜索框 -->
     <div class="search-box">
-      <input
-          v-model="searchQuery"
-          @input="onInput"
-          @focus="onFocus"
-          @blur="onBlur"
-          @keydown="onKeyDown"
-          @keyup.enter="handleSearch"
-          placeholder="请输入搜索内容"
-          class="search-input"
-          ref="searchInputRef"
-      />
+      <input v-model="searchQuery" @input="onInput" @focus="onFocus" @blur="onBlur" @keydown="onKeyDown"
+        @keyup.enter="handleSearch" placeholder="请输入搜索内容" class="search-input" ref="searchInputRef" />
       <button v-if="searchQuery" @click="clearSearch" class="clear-btn">✕</button>
       <button class="search-btn" @click="handleSearch">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
           <path
-              d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         搜索
       </button>
     </div>
 
     <!-- 搜索建议列表 -->
-    <div
-        v-if="showSuggestions && (suggestions.length > 0 || showHotTopics)"
-        class="suggestions-dropdown"
-        @mousedown.prevent
-    >
+    <div v-if="showSuggestions && (suggestions.length > 0 || showHotTopics)" class="suggestions-dropdown"
+      @mousedown.prevent>
       <!-- 搜索建议 -->
       <div v-if="suggestions.length > 0" class="suggestions-section">
-        <div
-            v-for="(suggestion, index) in suggestions"
-            :key="index"
-            :class="['suggestion-item', { active: index === activeIndex }]"
-            @click="selectSuggestion(suggestion)"
-            @mouseenter="activeIndex = index"
-        >
+        <div v-for="(suggestion, index) in suggestions" :key="index"
+          :class="['suggestion-item', { active: index === activeIndex }]" @click="selectSuggestion(suggestion)"
+          @mouseenter="activeIndex = index">
           <span class="suggestion-text" v-html="highlightText(suggestion.text)"></span>
         </div>
       </div>
@@ -53,26 +37,22 @@
             <button class="clear-history-btn" @click.stop="clearHistory">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path
-                    d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
               清空
             </button>
           </div>
 
           <div class="history-list">
-            <div
-                v-for="(item, index) in searchHistory"
-                :key="index"
-                class="history-item"
-                @click="selectSuggestion(item)"
-            >
+            <div v-for="(item, index) in searchHistory" :key="index" class="history-item"
+              @click="selectSuggestion(item)">
 
               <span class="history-text">{{ item }}</span>
               <button class="remove-history-btn" @click.stop="removeHistory(index)">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round"/>
+                    stroke-linejoin="round" />
                 </svg>
               </button>
             </div>
@@ -105,19 +85,15 @@
         <div class="trending-section">
           <div class="trending-header">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#ff6b6b"/>
+              <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#ff6b6b" />
             </svg>
             <span>热点</span>
           </div>
 
-          <div
-              v-for="(item, index) in trendingTopics"
-              :key="index"
-              class="trending-item"
-              @click="selectSuggestion(item)"
-          >
+          <div v-for="(item, index) in trendingTopics" :key="index" class="trending-item"
+            @click="selectSuggestion(item.keyword)">
             <span class="trending-rank">{{ index + 1 }}</span>
-            <span class="trending-text">{{ item }}</span>
+            <span class="trending-text">{{ item.keyword }}</span>
           </div>
         </div>
       </div>
@@ -126,9 +102,11 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed, onMounted, onUnmounted} from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import router from "../../router/index.ts";
-import {getHotSearchList} from "../../api/searchService.ts";
+import searchService from "../../api/searchService.ts";
+import type { searchHistory } from '../../api/searchService.ts';
+import { handleRequest } from '../../api/handleRequest.ts';
 
 // 类型定义
 interface Suggestion {
@@ -173,41 +151,41 @@ const searchHistory = ref<string[]>(JSON.parse(localStorage.getItem('searchHisto
 
 // 模拟搜索建议数据
 const mockSuggestions: Suggestion[] = [
-  {text: '123木头人'},
-  {text: '123fit健身'},
-  {text: '123'},
-  {text: '123123'},
-  {text: '12306'},
-  {text: '123烧烤'},
-  {text: '12345'},
-  {text: '12389'},
-  {text: '12333是什么电话'},
-  {text: '123456生成视频ai软件'},
-  {text: '郭德纲单口相声'},
-  {text: '郭德纲开场江山父...'},
-  {text: '郭德纲于谦相声动画'}
+  { text: '123木头人' },
+  { text: '123fit健身' },
+  { text: '123' },
+  { text: '123123' },
+  { text: '12306' },
+  { text: '123烧烤' },
+  { text: '12345' },
+  { text: '12389' },
+  { text: '12333是什么电话' },
+  { text: '123456生成视频ai软件' },
+  { text: '郭德纲单口相声' },
+  { text: '郭德纲开场江山父...' },
+  { text: '郭德纲于谦相声动画' }
 ]
 
 // 热点推荐数据
 const hotTopicsData: HotTopic[] = [
-  {text: '韦东奕', badge: 'hot', badgeText: '热'},
-  {text: '赌神3'},
-  {text: '悠悠球探哥'},
-  {text: '世预赛中国1-0巴林'},
-  {text: '清朝最后一次早朝'}
+  { text: '韦东奕', badge: 'hot', badgeText: '热' },
+  { text: '赌神3' },
+  { text: '悠悠球探哥' },
+  { text: '世预赛中国1-0巴林' },
+  { text: '清朝最后一次早朝' }
 ]
 
-const trendingTopics = ref(['']);
+const trendingTopics = ref<searchHistory[]>([]);
 
 // 计算属性
 const suggestions = computed(() => {
   if (!searchQuery.value.trim()) return []
 
   return mockSuggestions
-      .filter(item =>
-          item.text.toLowerCase().includes(searchQuery.value.toLowerCase())
-      )
-      .slice(0, props.maxSuggestions)
+    .filter(item =>
+      item.text.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+    .slice(0, props.maxSuggestions)
 })
 
 const showHotTopics = computed(() => {
@@ -225,7 +203,11 @@ const onInput = () => {
 }
 
 const onFocus = async () => {
-  trendingTopics.value = await getHotSearchList();
+  handleRequest(searchService.getSearchHistoryList, {
+    onSuccess(data) {
+      trendingTopics.value = data;
+    }
+  })
   showSuggestions.value = true
 }
 
@@ -640,7 +622,7 @@ onUnmounted(() => {
 }
 
 .trending-item:hover {
-  color: #0969da;
+  color: red;
 }
 
 .trending-rank {
@@ -661,5 +643,4 @@ onUnmounted(() => {
   font-size: 12px;
   margin-left: 4px;
 }
-
 </style>

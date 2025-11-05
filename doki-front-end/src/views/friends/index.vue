@@ -1,42 +1,52 @@
 <script setup lang="ts">
 
-import Player from "../../components/player/index.vue";
-import instance from "../../api/axiosInstance.ts";
-import {ref, onMounted} from "vue";
-import type {Video} from "../../store/videoStore.ts";
-import axios from "../../api/axiosInstance.ts";
+import SwiperPlayer from "../../components/player/index.vue";
+import { onMounted, ref } from "vue";
 
-const videos = ref<Video[]>([]);
+import feedService from '../../api/feedService.ts'
+import type { VideoInfo } from '../../api/feedService.ts'
+import { handleRequest } from '../../api/handleRequest.ts'
+import videoProcessingService from '../../api/videoInfoService.ts'
+import DokiLoading from "../../components/Doki-Loading.vue";
+const emit = defineEmits(['_virtualUpdated'])
 
+const isLoading = ref(true);
+const videos = ref<VideoInfo[]>([]);
 onMounted(async () => {
-  await axios.get('/videos')
-      .then(Response => {
-        // 保留完整的视频信息，同时处理 videoUrl
-        videos.value = Response.data.data.map((item: any) => ({
-          ...item,
-          videoUrl: item.videoUrl.replace(/^"|"$/g, '').replace(/\\/g, '/')
-        }));
-      })
-      .catch(Error => console.dir(Error));
 
-  console.log(videos)
+  await handleRequest(feedService.getRandomVideos, {
+    onSuccess(data) {
+      videos.value = data;
+      console.log(data);
+    },
+  })
+
+  // await handleRequest(videoProcessingService.getVideoInfo, {
+  //   onSuccess(data) {
+  //     videos.value[0] = data; // ID为10的视频用来测试
+  //   },
+  //   params: 10
+  // })
+
+  isLoading.value = false;
+
 })
 </script>
 
 <template>
-  <div v-for="(item,index) in 3" v-if="videos.length > 0">
-    <div v-if="index == 0" class="friends">
-      <Player></Player>
-    </div>
+  <swiper-player :mode="0" :start-with="0" :videos="videos" v-if="videos.length > 0">
+  </swiper-player>
+  <!-- 加载动画 -->
+  <div class="loading">
+    <DokiLoading v-if="isLoading"></DokiLoading>
   </div>
 </template>
 
 <style scoped>
-.friends {
-  width: 90vw;
-  height: 90vh;
-  overflow-y: hidden;
+.loading {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
-
 </style>

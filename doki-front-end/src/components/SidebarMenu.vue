@@ -38,7 +38,7 @@ interface MenuItem {
 const menuItemsTop: MenuItem[] = [{ key: 'home', label: '推荐', icon: Fireworks }];
 // 中部菜单
 const menuItemsMiddle: MenuItem[] = [
-  { key: 'followed', label: '关注', icon: PeoplePlus },
+  { key: 'following', label: '关注', icon: PeoplePlus },
   { key: 'friends', label: '朋友', icon: PersonalCollection },
   { key: 'my', label: '我的', icon: Me },
 ];

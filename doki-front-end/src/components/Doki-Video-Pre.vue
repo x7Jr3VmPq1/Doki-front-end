@@ -37,7 +37,7 @@ const handleMouseLeave = () => {
   <div @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
     <div v-if="!isPre || props.manage" class="image-container">
       <img :src=item.coverName class="work-image">
-      <span class="like-count">
+      <span class="like-count" v-if="item.statistics">
         <Like />
         {{ item.statistics.likeCount }}
       </span>

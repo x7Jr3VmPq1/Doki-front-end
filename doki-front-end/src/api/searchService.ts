@@ -1,10 +1,39 @@
-import instance from './axiosInstance'; // 引入axios实例
+import request from './gateway';
+import type { VideoInfo } from './feedService'
+import type { VideoStatistics } from './analyticsService'
+import type { userInfo } from './userService';
 
-const getHotSearchList = async () => {
-    const res = await instance.get('/search/hot')
-    return res.data.data
+export interface searchHistory {
+  id: number;
+  keyword: string;
+  count: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
-export {
-    getHotSearchList
+export interface searchResult {
+  video: VideoInfo,
+  statistics: VideoStatistics,
+  user: userInfo,
+  highlight: string | null,
+}
+
+
+export default {
+  /**
+   * 获取搜索历史记录
+   * @returns 
+   */
+  getSearchHistoryList: () => request<searchHistory[]>('/search/history', {
+    method: 'GET',
+  }),
+  /**
+   * 搜索
+   * @param keyword 
+   * @returns 
+   */
+  search: (keyword: string) => request<searchResult[]>('/search', {
+    method: 'GET',
+    data: { keyword },
+  }),
 }

@@ -167,6 +167,8 @@ const changeNotice = (type: number) => {
 
 .notification-list {
   padding: 15px 20px;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .notification-item {
