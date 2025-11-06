@@ -35,6 +35,11 @@ const routes = [
     component: () => import('../views/search/index.vue'),
   },
   {
+    path: '/xiaomeng',
+    name: 'xiaomeng',
+    component: () => import('../views/xiaomeng/index.vue'),
+  },
+  {
     path: '/404',
     component: () => import('../views/404/index.vue'),
     meta: { fullPage: true }

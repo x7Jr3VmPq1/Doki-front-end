@@ -66,6 +66,4 @@ onMounted(async () => {
   background-color: skyblue;
   transition: width 0.3s ease;
 }
-
-
 </style>

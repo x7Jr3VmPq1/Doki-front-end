@@ -19,6 +19,16 @@
     </div>
 
     <div class="divider"></div>
+
+    <div v-for="item in menuItemsBottom" :key="item.key"
+      :class="['menu-item', { 'is-selected': selectedKey === item.key }]" @click="selectItem(item.key)">
+      <div class="icon-placeholder">
+        <component :is="item.icon" :size="24"></component>
+      </div>
+      <span class="menu-label">{{ item.label }}</span>
+    </div>
+
+    <div class="divider"></div>
   </div>
 </template>
 
@@ -26,7 +36,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import router from '../router';
-import { Fireworks, PeoplePlus, PersonalCollection, Me } from '@icon-park/vue-next';
+import { Fireworks, PeoplePlus, PersonalCollection, Me, Effects } from '@icon-park/vue-next';
 
 interface MenuItem {
   key: string;
@@ -41,6 +51,10 @@ const menuItemsMiddle: MenuItem[] = [
   { key: 'following', label: '关注', icon: PeoplePlus },
   { key: 'friends', label: '朋友', icon: PersonalCollection },
   { key: 'my', label: '我的', icon: Me },
+];
+// 底部菜单
+const menuItemsBottom: MenuItem[] = [
+  { key: 'xiaomeng', label: '小梦', icon: Effects },
 ];
 
 const selectedKey = ref<string>('');

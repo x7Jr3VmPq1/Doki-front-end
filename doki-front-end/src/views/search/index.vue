@@ -23,10 +23,11 @@
         </div>
       </div> -->
     </header>
+
     <div class="content-wrapper">
       <div class="main-content">
         <div v-if="activeNavId == 1">
-          <div class="tag-filters">
+          <!-- <div class="tag-filters">
             <span :class="['tag-item', { active: activeTagId === 0 }]" @click="setActiveTag(0)">
               全部
             </span>
@@ -38,7 +39,7 @@
             </div>
             <button class="scroll-btn scroll-left-btn" @click="scrollTags('left')">&lt;</button>
             <button class="scroll-btn scroll-right-btn" @click="scrollTags('right')">&gt;</button>
-          </div>
+          </div> -->
           <div class="video-grid">
             <div v-for="(item, index) in videos" :key="item.video.id" class="video-card" @click="goToVideo(index)">
               <div class="video-thumbnail">

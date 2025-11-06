@@ -474,7 +474,7 @@ onUnmounted(() => {
 }
 
 .history-item:hover {
-  color: #0969da;
+  color:  #ff6b6b;
 }
 
 .history-text {
