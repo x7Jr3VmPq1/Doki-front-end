@@ -1,8 +1,7 @@
 <template>
   <!-- 全屏对话框位置 -->
-  <div class="fullscreen-modal" v-if="isModalVisible">
-    <!--  左上角关闭图标  -->
-    <SwiperPlayer :start-with="startWith" :videos="works.list" :mode="1" @close="isModalVisible = false">
+  <div v-if="isModalVisible" class="fullscreen-box">
+    <SwiperPlayer :start-with="state.startWith" :videos="videoInfos" :mode="1" @close="isModalVisible = false">
     </SwiperPlayer>
   </div>
   <div class="search-page">
@@ -43,7 +42,8 @@
           <div class="video-grid">
             <div v-for="(item, index) in videos" :key="item.video.id" class="video-card" @click="goToVideo(index)">
               <div class="video-thumbnail">
-                <DokiVideoPre :manage="false" :item="item.video as videoInfoWithStat"></DokiVideoPre>
+                <DokiVideoPre @click="handleClickVideo(index)" :manage="false" :item="item.video as videoInfoWithStat">
+                </DokiVideoPre>
                 <div class="duration">{{ dayUtils.formatSecondsToHHMMSS(item.video.videoDuration) }}</div>
                 <div class="likes">
                   <Like></Like>
@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch, reactive } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, watch, reactive, computed } from 'vue';
 import Users from "./User.vue";
 import { useRoute } from 'vue-router'
 import { dayUtils } from "../../utils/dayUtils.ts";
@@ -149,7 +149,6 @@ watch(
     await handleRequest(searchService.search, {
       onSuccess: (data) => {
         videos.value = data;
-        console.log(videos.value);
       },
       params: newKeyword as string
     })
@@ -159,16 +158,25 @@ watch(
 )
 const activeNavId = ref(1);
 const activeTagId = ref(0);
-const searchQuery = ref('');
 
 const navItems = ref<NavItem[]>([]);
 const tagFilters = ref<TagFilter[]>([]);
 const videos = ref<searchResult[]>([]);
 const relatedSearches = ref<RelatedSearch[]>([]);
 
+const videoInfos = computed(() => {
+  return videos.value.map(item => item.video)
+})
+
 const tagGroupRef = ref<HTMLElement | null>(null);
 const showScrollLeft = ref(false);
 const showScrollRight = ref(false);
+
+
+const handleClickVideo = (index: number) => {
+  state.startWith = index;
+  isModalVisible.value = true;
+};
 
 const checkScrollButtonsVisibility = () => {
   if (tagGroupRef.value) {
@@ -674,5 +682,20 @@ const handleClose = () => {
   .scroll-btn {
     display: none;
   }
+}
+
+.fullscreen-box {
+  position: fixed;
+  /* 固定在窗口，不随滚动移动 */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  /* 覆盖整个宽度 */
+  height: 100vh;
+  /* 覆盖整个高度 */
+  z-index: 20;
+  /* 确保在最上层 */
+  background-color: white;
+  /* 可选，避免透明背景显示 */
 }
 </style>

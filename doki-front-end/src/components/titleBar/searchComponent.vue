@@ -24,7 +24,7 @@
         <div v-for="(suggestion, index) in suggestions" :key="index"
           :class="['suggestion-item', { active: index === activeIndex }]" @click="selectSuggestion(suggestion)"
           @mouseenter="activeIndex = index">
-          <span class="suggestion-text" v-html="highlightText(suggestion.text)"></span>
+          <span class="suggestion-text" v-html="highlightText(suggestion)"></span>
         </div>
       </div>
 
@@ -108,22 +108,6 @@ import searchService from "../../api/searchService.ts";
 import type { searchHistory } from '../../api/searchService.ts';
 import { handleRequest } from '../../api/handleRequest.ts';
 
-// 类型定义
-interface Suggestion {
-  text: string
-  type?: string
-}
-
-interface HotTopic {
-  text: string
-  badge?: string
-  badgeText?: string
-}
-
-interface TrendingTopic {
-  text: string
-  warning?: boolean
-}
 
 // Props
 interface Props {
@@ -139,7 +123,6 @@ const props = withDefaults(defineProps<Props>(), {
 // Emits
 const emit = defineEmits<{
   search: [query: string]
-  select: [suggestion: Suggestion]
 }>()
 
 // 响应式数据
@@ -149,57 +132,25 @@ const activeIndex = ref(-1)
 const searchInputRef = ref<HTMLInputElement>()
 const searchHistory = ref<string[]>(JSON.parse(localStorage.getItem('searchHistory') || '[]'))
 
-// 模拟搜索建议数据
-const mockSuggestions: Suggestion[] = [
-  { text: '123木头人' },
-  { text: '123fit健身' },
-  { text: '123' },
-  { text: '123123' },
-  { text: '12306' },
-  { text: '123烧烤' },
-  { text: '12345' },
-  { text: '12389' },
-  { text: '12333是什么电话' },
-  { text: '123456生成视频ai软件' },
-  { text: '郭德纲单口相声' },
-  { text: '郭德纲开场江山父...' },
-  { text: '郭德纲于谦相声动画' }
-]
-
-// 热点推荐数据
-const hotTopicsData: HotTopic[] = [
-  { text: '韦东奕', badge: 'hot', badgeText: '热' },
-  { text: '赌神3' },
-  { text: '悠悠球探哥' },
-  { text: '世预赛中国1-0巴林' },
-  { text: '清朝最后一次早朝' }
-]
+// 建议数据
+const suggestions = ref<string[]>([]);
 
 const trendingTopics = ref<searchHistory[]>([]);
-
-// 计算属性
-const suggestions = computed(() => {
-  if (!searchQuery.value.trim()) return []
-
-  return mockSuggestions
-    .filter(item =>
-      item.text.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-    .slice(0, props.maxSuggestions)
-})
 
 const showHotTopics = computed(() => {
   return !searchQuery.value.trim()
 })
 
-const displayHotTopics = computed(() => {
-  return hotTopicsData.slice(0, 6)
-})
-
 // 方法
-const onInput = () => {
+const onInput = async () => {
   activeIndex.value = -1
   showSuggestions.value = true
+  await handleRequest(searchService.suggest, {
+    params: searchQuery.value,
+    onSuccess(data) {
+      suggestions.value = data;
+    }
+  })
 }
 
 const onFocus = async () => {
@@ -213,6 +164,7 @@ const onFocus = async () => {
 
 const onBlur = () => {
   setTimeout(() => {
+    suggestions.value = []
     showSuggestions.value = false
   }, 200)
 }
@@ -474,7 +426,7 @@ onUnmounted(() => {
 }
 
 .history-item:hover {
-  color:  #ff6b6b;
+  color: #ff6b6b;
 }
 
 .history-text {

@@ -1,7 +1,7 @@
 import request from './gateway';
 import type { VideoInfo } from './feedService'
 import type { VideoStatistics } from './analyticsService'
-import type { userInfo } from './userService';
+import type { userInfo,userProfile } from './userService';
 
 export interface searchHistory {
   id: number;
@@ -33,6 +33,25 @@ export default {
    * @returns 
    */
   search: (keyword: string) => request<searchResult[]>('/search', {
+    method: 'GET',
+    data: { keyword },
+  }),
+  /**
+   * 搜索建议
+   * @param pre 
+   * @returns 
+   */
+  suggest: (pre: string) => request<string[]>('/search/suggest', {
+    method: 'GET',
+    data: { pre }
+  }),
+
+  /**
+   * 搜索用户
+   * @param keyword 
+   * @returns 
+   */
+  searchUser: (keyword: string) => request<userProfile[]>('/search/user', {
     method: 'GET',
     data: { keyword },
   }),

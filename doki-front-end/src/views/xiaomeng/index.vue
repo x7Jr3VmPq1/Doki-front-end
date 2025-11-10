@@ -16,20 +16,19 @@ const sendMessage = async () => {
     response.value = response.value + content; // 追加内容
   });
 };
+
+
+
 </script>
 
 <template>
-  <div>
-    <h1>小梦</h1>
-    <p>欢迎来到小梦的世界！</p>
-  </div>
 
   <!-- 输出显示区域 -->
   <div id="output-display" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; min-height: 100px;">
     <!-- 这里将显示小梦的回复内容 -->
     <p>小梦的回复将显示在这里。</p>
     <div class="response-area">
-      <p class="response">{{ response }}</p>
+      <div class="response">{{ response }}</div>
     </div>
   </div>
 
@@ -48,7 +47,7 @@ const sendMessage = async () => {
 }
 
 .response {
-  /* 过渡效果 */
-  transition: all 0.3s ease;
+  transition: opacity 1s ease, filter 1s ease;
 }
+
 </style>

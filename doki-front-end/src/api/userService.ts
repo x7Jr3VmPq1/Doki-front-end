@@ -8,6 +8,14 @@ export interface userInfo {
   followed?: boolean,
 }
 
+export interface userProfile extends userInfo {
+  followingCount: number,
+  followerCount: number,
+  likeCount: number,
+}
+
+
+
 export interface loginSuccessData {
   token: string,
   hasPassword: boolean
