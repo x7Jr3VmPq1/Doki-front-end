@@ -27,8 +27,6 @@
       </div>
       <span class="menu-label">{{ item.label }}</span>
     </div>
-
-    <div class="divider"></div>
   </div>
 </template>
 

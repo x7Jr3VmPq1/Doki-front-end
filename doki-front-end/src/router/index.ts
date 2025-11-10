@@ -35,6 +35,11 @@ const routes = [
     component: () => import('../views/search/index.vue'),
   },
   {
+    path: '/video/:id',
+    name: 'video',
+    component: () => import('../views/video_detail/index.vue'),
+  },
+  {
     path: '/xiaomeng',
     name: 'xiaomeng',
     component: () => import('../views/xiaomeng/index.vue'),

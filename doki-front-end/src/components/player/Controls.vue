@@ -181,16 +181,6 @@ const handleClickFullScreen = () => {
           <path d="M15 9h4v4h-4V9z" />
         </svg>
       </div>
-      <div class="web-fullscreen-control bounce-on-click">
-        <svg v-if="true" width="20" height="20" viewBox="0 0 24 24" fill="white">
-          <!-- 退出网页全屏图标 -->
-          <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z" />
-        </svg>
-        <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="white">
-          <!-- 网页全屏图标 -->
-          <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
-        </svg>
-      </div>
       <div class="fullScreen-control" @click="handleClickFullScreen">
         <icon-fullscreen-exit v-if="!state.isFullScreen"></icon-fullscreen-exit>
         <icon-fullscreen v-else></icon-fullscreen>
@@ -244,7 +234,6 @@ const handleClickFullScreen = () => {
 }
 
 .player-controls .player-others .clear-screen-button {
-  font-size: 1.1em;
   gap: 5px;
   display: flex;
 }

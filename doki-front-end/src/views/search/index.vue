@@ -39,7 +39,7 @@
             <button class="scroll-btn scroll-left-btn" @click="scrollTags('left')">&lt;</button>
             <button class="scroll-btn scroll-right-btn" @click="scrollTags('right')">&gt;</button>
           </div> -->
-          <div class="video-grid">
+          <div class="video-grid" v-if="videos.length > 0">
             <div v-for="(item, index) in videos" :key="item.video.id" class="video-card" @click="goToVideo(index)">
               <div class="video-thumbnail">
                 <DokiVideoPre @click="handleClickVideo(index)" :manage="false" :item="item.video as videoInfoWithStat">
@@ -59,6 +59,9 @@
                 </div>
               </div>
             </div>
+          </div>
+          <div class="flex-center empty" v-else>
+            暂无更多
           </div>
         </div>
         <div v-if="activeNavId == 2">
@@ -511,7 +514,6 @@ const handleClose = () => {
 
 .video-card {
   flex: 0 0 calc(25% - 15px);
-  height: 230px;
   flex-basis: calc(25% - 15px);
   background-color: #fff;
   border-radius: 8px;
@@ -697,5 +699,11 @@ const handleClose = () => {
   /* 确保在最上层 */
   background-color: white;
   /* 可选，避免透明背景显示 */
+}
+
+.empty {
+  text-align: center;
+  color: #888;
+  margin-top: 20px;
 }
 </style>

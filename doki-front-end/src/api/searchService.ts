@@ -1,7 +1,8 @@
 import request from './gateway';
 import type { VideoInfo } from './feedService'
 import type { VideoStatistics } from './analyticsService'
-import type { userInfo,userProfile } from './userService';
+import type { userInfo } from './userService';
+import type { UserStatistics } from './analyticsService'
 
 export interface searchHistory {
   id: number;
@@ -16,6 +17,15 @@ export interface searchResult {
   statistics: VideoStatistics,
   user: userInfo,
   highlight: string | null,
+}
+
+export interface userSearchResult {
+  id: number,
+  username: string,
+  avatarUrl: string,
+  bio: string,
+  stat: UserStatistics,
+  followed: boolean,
 }
 
 
@@ -51,7 +61,7 @@ export default {
    * @param keyword 
    * @returns 
    */
-  searchUser: (keyword: string) => request<userProfile[]>('/search/user', {
+  searchUser: (keyword: string) => request<userSearchResult[]>('/search/user', {
     method: 'GET',
     data: { keyword },
   }),

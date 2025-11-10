@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { HeartFilled, MessageFilled, PlusCircleFilled, StarFilled } from "@ant-design/icons-vue";
-import { IconMore, IconShareInternal } from '@arco-design/web-vue/es/icon';
+import { ShareOne, More, Back } from '@icon-park/vue-next'
 import type { VideoInfo } from '../../api/feedService.ts'
 import { onMounted } from 'vue';
 import analyticsService from '../../api/analyticsService.ts';
@@ -135,7 +135,7 @@ const onLike = async (videoId: number) => {
           收藏
           <div
             style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 30%;text-align: center;line-height: 1.2em;margin-left: 5px">
-            X
+            V
           </div>
         </div>
       </template>
@@ -149,30 +149,22 @@ const onLike = async (videoId: number) => {
     <a-tooltip placement="left" color="grey">
       <template #title>
         <div style="display: flex;line-height: 1.2em;padding: 8px">
-          进入作者首页
-          <div
-            style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
-            F
-          </div>
+          分享
         </div>
       </template>
-      <div class="share bounce-on-click">
-        <icon-share-internal />
+      <div class="share bounce-on-click" style="transform: scaleX(-1)">
+        <Back theme="filled" fill="#fff" />
       </div>
     </a-tooltip>
 
     <a-tooltip placement="left" color="grey">
       <template #title>
         <div style="display: flex;line-height: 1.2em;padding: 8px">
-          进入作者首页
-          <div
-            style="width: 1.2em;height: 1.2em;background-color: white;color: grey;font-size: 1em;border-radius: 10%;text-align: center;line-height: 1.2em;margin-left: 5px">
-            F
-          </div>
+          更多
         </div>
       </template>
-      <div class="more bounce-on-click">
-        <icon-more />
+      <div class="more bounce-on-click flex-center">
+        <More />
       </div>
     </a-tooltip>
   </div>

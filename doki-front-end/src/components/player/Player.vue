@@ -14,6 +14,7 @@ const props = defineProps<{
   video: VideoInfo,
   index: number,
   active: number,
+  mode: number // 模式 0=主页无限加载模式，1=有限列表模式，2=详情页模式
 }>();
 // 获取播放器HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
@@ -60,6 +61,9 @@ const handleSpaceUp = (event: KeyboardEvent) => {
 // 评论区抽屉控制
 const open = ref(false)
 const showDrawer = () => {
+  if (props.mode === 2) {
+    return;
+  }
   open.value = !open.value;
 }
 
@@ -78,7 +82,7 @@ const activeKey = ref('2');
 // 打开用户信息选项卡
 const openUserPage = () => {
   // TODO 后续在这里发异步请求获取用户信息
-  if (open.value && activeKey.value == '2') {
+  if (open.value && activeKey.value == '2' && props.mode != 2) {
     activeKey.value = '1';
     return;
   }
@@ -88,7 +92,7 @@ const openUserPage = () => {
 // 打开评论选项卡
 const openComments = async () => {
 
-  if (open.value && activeKey.value == '1') {
+  if (open.value && activeKey.value == '1' && props.mode != 2) {
     activeKey.value = '2';
     return;
   }
@@ -107,17 +111,17 @@ const openComments = async () => {
       <div class="video-wrapper" @click="isPlaying = !isPlaying">
         <video :src="video.videoFilename" ref="videoRef" loop preload="auto"></video>
         <!-- 交互按钮 -->
-        <InteractionButtons @click.stop :video="video" :onOpenComments="openComments" />
+        <InteractionButtons v-if="props.mode !== 2" @click.stop :video="video" :onOpenComments="openComments" />
       </div>
       <!-- 视频主信息 -->
-      <VideoInfoComponent :video="video" />
+      <VideoInfoComponent v-if="props.mode !== 2" :video="video" />
       <!--  遮罩层    -->
       <div class="cover"></div>
       <!--  控件，传入视频的引用  -->
       <Controls :video="videoRef!" :is-playing="isPlaying" :shrink="open" />
     </div>
     <!-- 评论区抽屉 -->
-    <div class="other-draw" :class="['other-draw', { shrink: open }]" @wheel.stop>
+    <div v-if="props.mode !== 2" class="other-draw" :class="['other-draw', { shrink: open }]" @wheel.stop>
       <a-tabs v-model:activeKey="activeKey" size="large">
         <a-tab-pane key="1" tab="TA的作品">
           <div style="display: flex;flex-direction: column;width: 100%;height: 100%">

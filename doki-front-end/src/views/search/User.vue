@@ -1,20 +1,35 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { userProfile } from '../../api/userService'
 import { onMounted } from 'vue';
 import searchService from '../../api/searchService';
+import type { userSearchResult } from '../../api/searchService';
+import socialService from '../../api/socialService.ts';
 import { handleRequest } from '../../api/handleRequest';
 import { useRoute } from 'vue-router';
 import toProfiles from '../../utils/toProfiles.ts'
+import { useUserStore } from '../../store/userInfoStore.ts';
 
-const userProfiles = ref<userProfile[]>([]);
+const userStore = useUserStore();
+
+const userProfiles = ref<userSearchResult[]>([]);
 
 // 从地址栏上获取搜索关键词
 const route = useRoute();
 const keyword = route.query.keyword as string;
 
-const handleFollow = (userId: string) => {
-  console.log(`Following user: ${userId}`);
+const handleFollow = (userId: number) => {
+  const user = userProfiles.value.find(u => u.id === userId);
+  if (!user) return;
+  handleRequest(user.followed ? socialService.followUser : socialService.unFollowUser, {
+    onSuccess: () => {
+      if (user) {
+        user.followed = !user.followed;
+      }
+    },
+    onError: (error) => {
+      console.error('Failed to follow user:', error);
+    }, params: userId
+  });
 };
 
 onMounted(() => {
@@ -39,15 +54,18 @@ onMounted(() => {
             <span class="user-name" @click="toProfiles(user.id)">{{ user.username }}</span>
           </div>
           <div class="user-stats">
-            <span>{{ user.likeCount ?? ' - ' }}获赞</span>
-            <span>{{ user.followerCount ?? ' - ' }}粉丝</span>
+            <span>{{ user.stat.likeCount ?? ' - ' }}获赞</span>
+            <span>{{ user.stat.followerCount ?? ' - ' }}粉丝</span>
           </div>
 
           <div v-if="user.bio" class="user-bio">
             {{ user.bio }}
           </div>
         </div>
-        <button class="follow-button">关注</button>
+        <button v-if="user.id !== userStore.userInfo.id" class="follow-button" @click="handleFollow(user.id)"
+          :class="{ followed: user.followed }">
+          {{ user.followed ? '已关注' : '关注' }}
+        </button>
       </div>
     </div>
   </div>
@@ -58,12 +76,10 @@ onMounted(() => {
 
 <style scoped>
 .user-profiles-container {
-  height: 70vh;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
-  padding: 20px;
 }
 
 .user-card {
@@ -71,12 +87,7 @@ onMounted(() => {
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.3s ease-in-out;
   min-width: 320px;
-}
-
-.user-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .user-header {
@@ -116,7 +127,7 @@ onMounted(() => {
 }
 
 .user-name:hover {
-  text-decoration: underline;
+  color: #fe2c55;
 }
 
 .vip-tag {
@@ -154,6 +165,7 @@ onMounted(() => {
 }
 
 .follow-button {
+  /* 红色 */
   background-color: #fe2c55;
   color: white;
   border: none;
@@ -166,9 +178,10 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.follow-button:hover {
-  background-color: #e0294c;
+.followed {
+  background-color: #ccc;
 }
+
 
 .empty {
   text-align: center;

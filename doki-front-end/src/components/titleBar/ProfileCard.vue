@@ -153,6 +153,7 @@ import { createVNode, ref, onMounted } from 'vue';
 import FollowModal from "../FollowModal.vue";
 import { useUserStore } from "../../store/userInfoStore.ts";
 import analyticsService from '../../api/analyticsService.ts';
+import videoInfoService from '../../api/videoInfoService.ts';
 import { handleRequest } from '../../api/handleRequest.ts'
 import { Modal } from "ant-design-vue";
 import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
@@ -192,6 +193,7 @@ const placeholderItems: LikedItem[] = [
 ];
 
 const expandSection = (sectionName: string) => {
+  console.log('Expanding section:', sectionName);
   // 检查鼠标是否在当前的 expandedSection 上，如果是，则不改变
   // 否则，如果是一个新的 section，就展开它
   // 如果是同一个 section，这行代码不会改变 expandedSection.value

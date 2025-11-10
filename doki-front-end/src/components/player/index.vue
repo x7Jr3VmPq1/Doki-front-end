@@ -7,7 +7,7 @@
         <div class="close-button flex-center" v-if="props.mode == 1" @click="handleClose">
           <Close></Close>
         </div>
-        <Player :video="video" :index="index" :active="state.active" v-if="videos.length > 0"></Player>
+        <Player :mode="props.mode" :video="video" :index="index" :active="state.active" v-if="videos.length > 0"></Player>
       </swiper-slide>
     </swiper>
   </div>
@@ -28,7 +28,7 @@ import { handleRequest } from '../../api/handleRequest.ts';
 
 const props = defineProps<{
   videos: VideoInfo[],
-  mode: number,  // 模式 0=主页无限加载模式，1=其它有限列表模式
+  mode: number,  // 模式 0=主页无限加载模式，1=有限列表模式，2=详情页模式
   startWith: number // 从哪个索引位置开始播放
 }>()
 
