@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { HeartFilled, MessageFilled, PlusCircleFilled, StarFilled } from "@ant-design/icons-vue";
-import { ShareOne, More, Back } from '@icon-park/vue-next'
+import { More, Back } from '@icon-park/vue-next'
 import type { VideoInfo } from '../../api/feedService.ts'
 import { onMounted } from 'vue';
 import analyticsService from '../../api/analyticsService.ts';
