@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Progress from './Progress.vue';
-import { nextTick, onMounted, reactive, watch } from 'vue';
+import { nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { IconPause, IconPlayArrowFill, IconMuteFill, IconSound, IconSoundFill, IconFullscreen, IconFullscreenExit } from '@arco-design/web-vue/es/icon';
 import formatTime from '../../utils/formatTime.ts'
 const props = defineProps<{
@@ -117,7 +117,7 @@ const handleClickFullScreen = () => {
 </script>
 
 <template>
-  <div class="player-controls" :class="{ shrink: shrink }" @click.stop>
+  <div class="player-controls" ref="controllerRef" tabindex="-1" :class="{ shrink: shrink }" @click.stop>
     <!-- 进度条 -->
     <Progress :current="(state.currentTime / state.duration) * 100" :bufferd="state.bufferd"
       @changeProgress="handleChangeTime"></Progress>

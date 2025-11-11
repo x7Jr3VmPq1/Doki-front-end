@@ -18,6 +18,7 @@ const props = defineProps<{
 }>();
 // 获取播放器HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
+const containerRef = ref<HTMLDivElement | null>(null);
 // 传递给控件的播放/赞停属性
 const isPlaying = ref(true);
 // 用来判断用户有没有实际看到这个视频。
@@ -34,10 +35,10 @@ watch(() => props.active, async (newIndex) => {
   immediate: true
 })
 onMounted(() => {
-  document.addEventListener('keyup', handleSpaceUp)
+  containerRef.value?.addEventListener('keydown', handleSpacedown)
 })
 onBeforeUnmount(() => {
-  document.removeEventListener('keyup', handleSpaceUp);
+  containerRef.value?.removeEventListener('keydown', handleSpacedown);
   if (watched && videoRef.value?.currentTime! > 1) {
     // 组件卸载时上传播放记录
     handleRequest(analyticsService.updateVideoHistory, {
@@ -49,7 +50,7 @@ onBeforeUnmount(() => {
   }
 });
 
-const handleSpaceUp = (event: KeyboardEvent) => {
+const handleSpacedown = (event: KeyboardEvent) => {
   if (event.code === 'Space') {
     event.preventDefault(); // 阻止页面滚动
     if (props.index === props.active) {
@@ -103,9 +104,10 @@ const openComments = async () => {
 
 
 <template>
-  <div class="player-container" tabindex="-1" @keyup.x.stop="openComments" @keyup.f.stop="openUserPage" :style="{
-    '--bg-url': `url(${video.coverName})`
-  }">
+  <div class="player-container" ref="containerRef" tabindex="-1" @keyup.x.stop="openComments"
+    @keyup.f.stop="openUserPage" :style="{
+      '--bg-url': `url(${video.coverName})`
+    }">
     <!-- 视频区域绑定动态 class 控制宽度 -->
     <div :class="['player-video', { shrink: open }]">
       <div class="video-wrapper" @click="isPlaying = !isPlaying">

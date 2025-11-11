@@ -37,6 +37,13 @@ onMounted(async () => {
   }
 });
 
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Tab') {
+    event.preventDefault();   // 禁用焦点跳转
+  }
+});
+
+
 </script>
 <style scoped>
 .app-container {

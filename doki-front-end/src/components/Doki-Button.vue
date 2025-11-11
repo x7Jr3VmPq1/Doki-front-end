@@ -18,7 +18,7 @@ defineProps({
 
 <style scoped>
 .button {
-  padding: 12px 30px;
+  padding: 12px 20px;
   border: none;
   border-radius: 8px;
   font-size: 16px;

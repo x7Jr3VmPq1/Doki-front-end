@@ -1,5 +1,5 @@
 <template>
-  <div class="video-container">
+  <div class="video-container" tabindex="-1" ref="containerRef">
     <swiper ref="swiperRef" direction="vertical" :modules="[Pagination, Virtual]" :allowTouchMove="false" virtual
       class="video-swiper" @slide-change="handleSlideChange" @wheel.passive="handleWheel" @swiper="onSwiperInit">
       <swiper-slide v-for="(video, index) in props.videos" :key="index" :virtualIndex="index">
@@ -7,7 +7,8 @@
         <div class="close-button flex-center" v-if="props.mode == 1" @click="handleClose">
           <Close></Close>
         </div>
-        <Player :mode="props.mode" :video="video" :index="index" :active="state.active" v-if="videos.length > 0"></Player>
+        <Player :mode="props.mode" :video="video" :index="index" :active="state.active" v-if="videos.length > 0">
+        </Player>
       </swiper-slide>
     </swiper>
   </div>
@@ -31,6 +32,8 @@ const props = defineProps<{
   mode: number,  // 模式 0=主页无限加载模式，1=有限列表模式，2=详情页模式
   startWith: number // 从哪个索引位置开始播放
 }>()
+
+const containerRef = ref<HTMLElement | null>(null);
 
 
 const emit = defineEmits(['close'])
@@ -65,14 +68,11 @@ const onSwiperInit = (swiper: SwiperType) => {
 }
 
 onMounted(() => {
-  document.addEventListener('keyup', handleKeyUp)
+  containerRef.value?.addEventListener('keyup', handleKeyUp)
 })
-onBeforeUnmount(() => {
-  document.removeEventListener('keyup', handleKeyUp)
-})
-
 
 watch(() => props.startWith, async (newIndex) => {
+  containerRef.value?.focus();
   await nextTick()
   swiperObject?.slideTo(newIndex, 0);
   state.active = newIndex;
