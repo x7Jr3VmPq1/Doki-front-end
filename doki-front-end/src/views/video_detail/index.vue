@@ -98,7 +98,7 @@ const replyComments: VideoCommentsVO[] = Array(5).fill(null).map((_, index) => {
       videoId: 5001,
       content: `这是第${index + 1}条回复，感谢分享！`,
       imgUrl: "",
-      createdAt: Date.now(),
+      createdAt: Date.now() - Math.floor(Math.random() * 36000000), // 随机减去几个小时
       likeCount: Math.floor(Math.random() * 20),
       childCount: 0,
       parentCommentId: "cmt_001",
@@ -175,7 +175,7 @@ commentsList.value[0].replies.list = replyComments;
             <PageController v-if="comment.replies.list.length > 0" :currentPage="1" :totalCount="100" />
           </div>
           <!-- 评论回复框 -->
-          <div v-if="index === state.activeInput" style="padding-left: 40px;">
+          <div v-if="rootIndex === state.activeInput" style="padding-left: 40px;">
             <Input />
           </div>
         </div>

@@ -1,15 +1,16 @@
 <script lang="ts" setup>
 
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
 
 // 分页控制器
 const props = defineProps<{
-  currentPage: number,
   totalCount: number,
 }>()
 
-// 计算总页数，每页十条。
-const totalPages = Math.ceil(props.totalCount / 10);
+const state = reactive({
+  totalPages: Math.ceil(props.totalCount / 10),
+  currentPage: 1,
+});
 
 // 处理页码点击
 const handleChangePage = (page: number) => {
@@ -27,8 +28,8 @@ const handleChangePage = (page: number) => {
 <template>
   <div class="page-controller">
     <!-- 渲染页码，只显示当前页附近的页码 -->
-    <span v-for="page in totalPages" :key="page">
-      <a :class="{ active: page === props.currentPage }" @click="handleChangePage(page)">
+    <span v-for="page in state.totalPages" :key="page">
+      <a @click="handleChangePage(page)">
         {{ page }}
       </a>
     </span>
