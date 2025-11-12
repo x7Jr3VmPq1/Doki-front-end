@@ -92,7 +92,8 @@ const changeNotice = (type: number) => {
 
 const handleJump = (n: Notification) => {
   if (n.sourceVideoId) {
-    toVideoDetail(n.sourceVideoId);
+  
+    toVideoDetail(n.sourceVideoId,n.sourceCommentId);
   }
 }
 </script>

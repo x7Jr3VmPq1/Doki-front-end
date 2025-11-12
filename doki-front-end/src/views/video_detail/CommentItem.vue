@@ -202,6 +202,7 @@ const toProfiles = (uid: number) => {
 }
 
 .user-name {
+  cursor: pointer;
   display: flex;
   line-height: 14px;
   height: 20px;
@@ -211,7 +212,7 @@ const toProfiles = (uid: number) => {
   }
 
   a:hover {
-    color: black;
+    color: #ff3c69;
   }
 }
 

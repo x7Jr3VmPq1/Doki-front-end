@@ -18,6 +18,7 @@ import DokiLoading from "../../components/Doki-Loading.vue";
 const state = reactive({
   videoId: '',
   activeInput: -1, // 当前激活的评论输入框索引，-1表示没有激活
+  target: null as VideoCommentsVO | null, // 回复目标评论
   loading: false,
   cursor: null as string | null,
   hasMore: true
@@ -30,7 +31,37 @@ const videos = ref<VideoInfo[]>([]);
 // 从路径参数中获取视频id
 const route = useRoute();
 const videoId = route.params.id as string;
-onMounted(() => {
+
+const fetchComments = () => {
+  state.loading = true;
+  handleRequest(commentService.getComments, {
+    onSuccess(data) {
+      // 给每个元素加一个可能存在的回复列表
+      data.list.forEach(comment => {
+        comment.replies = {
+          list: [],
+          hasMore: false,
+          cursor: ''
+        } as CommentListResponse;
+      });
+      commentsList.value.push(...data.list);
+      state.cursor = data.cursor;
+      state.hasMore = data.hasMore;
+    }, params: {
+      videoId: Number(videoId),
+      cursor: state.cursor,
+    },
+    delay: 500,
+  })
+  state.loading = false;
+}
+
+
+
+onMounted(async () => {
+  // 加载初始评论
+  fetchComments();
+  // 获取视频信息
   handleRequest(videoInfoService.getVideoInfo, {
     params: Number(videoId), // 转换为number
     onSuccess: (data) => {
@@ -40,30 +71,12 @@ onMounted(() => {
       console.error('Failed to fetch video details:', error);
     }
   });
-
   // 设置无限加载
-  useInfiniteScroll(() => {
-    state.loading = true;
-    handleRequest(commentService.getComments, {
-      onSuccess(data) {
-        // 给每个元素加一个可能存在的回复列表
-        data.list.forEach(comment => {
-          comment.replies = {} as CommentListResponse;
-        });
-        commentsList.value.push(...data.list);
-        state.cursor = data.cursor;
-        state.hasMore = data.hasMore;
-      }, params: {
-        videoId: Number(videoId),
-        cursor: state.cursor,
-      },
-      delay: 500,
-    })
-    state.loading = false;
-  }, loadMoreRef, mainRef);
+  useInfiniteScroll(fetchComments, loadMoreRef, mainRef);
 });
 
-const showInput = (index: number) => {
+const showInput = (index: number, target: VideoCommentsVO) => {
+  state.target = target;
   // 如果已经是激活状态，把它关闭
   if (state.activeInput === index) {
     return;
@@ -87,10 +100,22 @@ const handleGetReplies = (page: number, comment: VideoCommentsVO) => {
   })
 }
 const handleChangePage = (page: number, comment: VideoCommentsVO) => {
+  state.activeInput = -1;
   handleGetReplies(page, comment);
 }
 
+const handleSendComment = (newComment: VideoCommentsVO) => {
+  commentsList.value.unshift(newComment);
+}
 
+const handleSendReply = (target: VideoCommentsVO, newComment: VideoCommentsVO) => {
+  target.replies.list.push(newComment);
+}
+
+const clearReplies = (target: VideoCommentsVO) => {
+  state.activeInput = -1;
+  target.replies.list = [];
+}
 </script>
 
 <template>
@@ -136,25 +161,28 @@ const handleChangePage = (page: number, comment: VideoCommentsVO) => {
         <div class="comments-count">评论( 10 )</div>
         <!-- 评论输入框 -->
         <div style="margin: 20px 0;">
-          <Input />
+          <Input @send="handleSendComment" :video-id="Number(videoId)" />
         </div>
         <div class="comment-item" v-if="commentsList.length > 0" v-for="(comment, rootIndex) in commentsList">
-          <CommentItem :comment-object="comment" @click-reply="showInput(rootIndex)" />
-          <span @click="handleGetReplies(1, comment)" v-if="comment.comments.childCount > 0 && !comment.replies.list"
-            class="has-replies-notice">
+          <CommentItem :comment-object="comment" @click-reply="showInput(rootIndex, comment)" />
+          <span @click="handleGetReplies(1, comment)"
+            v-if="comment.comments.childCount > 0 && comment.replies.list.length === 0" class="has-replies-notice">
             ——展开{{ comment.comments.childCount }}条回复
           </span>
+          <span v-if="comment.replies.list.length > 0" class="has-replies-notice"
+            @click="clearReplies(comment)">——收起</span>
           <div v-if="comment.replies.list" class="replies-area">
             <div v-for="(reply, index) in comment.replies.list" :key="index">
-              <CommentItem :comment-object="reply" :key="index" @click-reply="showInput(rootIndex)" />
+              <CommentItem :comment-object="reply" :key="index" @click-reply="showInput(rootIndex, reply)" />
             </div>
             <!-- 分页 -->
-            <PageController @change-page="(page) => handleChangePage(page, comment)"
-              :totalCount="comment.comments.childCount" />
+            <PageController v-if="comment.replies.list.length > 0 && comment.comments.childCount > 5"
+              @change-page="(page) => handleChangePage(page, comment)" :totalCount="comment.comments.childCount" />
           </div>
           <!-- 评论回复框 -->
           <div v-if="rootIndex === state.activeInput" style="padding-left: 40px;">
-            <Input />
+            <Input :target-comment="state.target" :video-id="Number(videoId)"
+              @send="(inputSring) => handleSendReply(comment, inputSring)" />
           </div>
         </div>
       </div>
@@ -286,6 +314,6 @@ const handleChangePage = (page: number, comment: VideoCommentsVO) => {
 .no-more-comments {
   font-size: 14px;
   color: grey;
-  height: 50px;
+  height: 200px;
 }
 </style>

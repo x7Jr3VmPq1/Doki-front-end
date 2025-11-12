@@ -81,6 +81,7 @@ const loadMore = async () => {
       delay: 500,
       async onSuccess(data) {
         if (commentsArray.value) {
+          data.list.forEach(c => c.replies = { list: [], hasMore: c.comments.childCount > 0, cursor: '' })
           // 去重
           data.list = data.list.filter(c => !userAddedComments.some(u => u.comments.id === c.comments.id));
           // 追加更多评论
@@ -124,11 +125,11 @@ const handleDeleteReply = () => {
 // 获取回复方法
 const isRepliesLoading = ref(''); // 空串代表加载完毕，如果正在加载中，它的值是根评论的id
 const handleGetReplies = async (rootComment: VideoCommentsVO) => {
+  console.log(rootComment);
+
   // 模拟加载效果
   isRepliesLoading.value = rootComment.comments.id;
-  if (!rootComment.replies.hasMore) {
-    return;
-  }
+
   await handleRequest(commentService.getComments, {
     delay: 500,
     onSuccess(data) {
