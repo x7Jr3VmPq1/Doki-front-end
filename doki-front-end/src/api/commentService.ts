@@ -78,5 +78,13 @@ export default {
   likeCommentV2: (params: { commentId: string, videoId: number, commentSender: number, content: string }) => request<void>('/comment/action/like/v2', {
     method: 'GET',
     data: params
-  })
+  }),
+  // 分页加载回复
+  getRepliesByPage: (params: {
+    pid: string;
+    page: number;
+  }) => request<VideoCommentsVO[]>('/comment/page', {
+    method: 'GET',
+    data: params
+  }),
 }

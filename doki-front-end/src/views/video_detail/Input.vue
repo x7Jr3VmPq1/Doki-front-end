@@ -35,6 +35,7 @@ const randomPlaceholder = placeholders[Math.floor(Math.random() * placeholders.l
 .comment-input {
   display: flex;
   align-items: center;
+  padding: 10px;
   gap: 10px;
   width: 80%;
 }

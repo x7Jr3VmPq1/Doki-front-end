@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import {GrinningFace, AtSign, Picture, ArrowCircleUp, Delete, CloseOne} from '@icon-park/vue-next'
-import {ref, type Ref, defineProps, defineEmits, reactive, watch} from 'vue';
-import {handleRequest} from "../../api/handleRequest.ts";
+import { GrinningFace, AtSign, Picture, ArrowCircleUp, Delete, CloseOne } from '@icon-park/vue-next'
+import { ref, type Ref, defineProps, defineEmits, reactive, watch } from 'vue';
+import { handleRequest } from "../../api/handleRequest.ts";
 import commentService from "../../api/commentService.ts";
-import type {commentStatus} from './CommentItem.vue'
-import type {VideoCommentDTO, VideoComments, User} from '../../api/commentService.ts'
+import type { commentStatus } from './CommentItem.vue'
+import type { VideoCommentDTO, VideoComments, User } from '../../api/commentService.ts'
 
 const props = defineProps<{
   status: commentStatus | null, // 父组件传递的被点击回复按钮评论的对象引用
@@ -73,19 +73,19 @@ const handleClickSend = async () => {
     isOverLimit.value = true;
     return;
   }
-  
+
   // 如果存在回复目标，添加根评论ID和目标评论ID
   if (targetComment) {
     // 从status中获取回复目标评论对象
     commentForm.parentCommentId = targetComment.isRoot ?
-        targetComment.id : targetComment.parentCommentId
+      targetComment.id : targetComment.parentCommentId
     commentForm.replyTargetId = targetComment.id;
   }
   // 发送请求
   await handleRequest(commentService.addComment, {
     onSuccess(data) {
       // 把添加的评论发回父组件
-      emit('addComment', {newComment: data, userInfo: userInfo})
+      emit('addComment', { newComment: data, userInfo: userInfo })
     },
     params: commentForm
   })
@@ -99,51 +99,50 @@ const handleClickSend = async () => {
 </script>
 
 <template>
-  <div class="comment-input" style="max-height: 50%;display: flex;flex-direction: column">
+  <div @keydown.stop @keyup.stop class="comment-input" style="max-height: 50%;display: flex;flex-direction: column">
     <div class="reply-target" v-if="status">
       <div class="reply-target-content">{{
-          '回复@' + (userInfo?.username + ': ' + targetComment.content) + (targetComment.imgUrl ? '[图片]' : '')
-        }}
+        '回复@' + (userInfo?.username + ': ' + targetComment.content) + (targetComment.imgUrl ? '[图片]' : '')
+      }}
       </div>
       <Delete class="delete-btn" @click="onClickDeleteReply"></Delete>
     </div>
     <div style="flex: 1">
       <!-- 评论输入框 -->
-      <a-textarea :auto-size="{ minRows: 1, maxRows: 8 }" @keyup.stop
-                  v-model:value="commentForm.content"
-                  :maxlength="MAX_CHARS"
-                  style="background-color: transparent;color: white;border: none;outline: none;box-shadow: none;"
-                  placeholder="留下你的评论吧~"/>
+      <a-textarea :auto-size="{ minRows: 1, maxRows: 8 }" v-model:value="commentForm.content" :maxlength="MAX_CHARS"
+        style="background-color: transparent;color: white;border: none;outline: none;box-shadow: none;"
+        placeholder="留下你的评论吧~" />
     </div>
     <div class="functions">
       <!-- 提交评论按钮 -->
-      <div class="send-button" @click="handleClickSend" v-if="(commentForm.content || commentForm.image) && !isOverLimit">
-        <arrow-circle-up/>
+      <div class="send-button" @click="handleClickSend"
+        v-if="(commentForm.content || commentForm.image) && !isOverLimit">
+        <arrow-circle-up />
       </div>
       <!-- 表情选择器（暂不可用） -->
       <div class="emoji-picker">
         <a-popover trigger="click">
           <template #content>
           </template>
-          <GrinningFace/>
+          <GrinningFace />
         </a-popover>
       </div>
       <!-- @其他用户 -->
-      <AtSign/>
+      <AtSign />
       <!-- 上传图片按钮 -->
       <div @click="triggerFileSelect">
-        <Picture/>
-        <input type="file" ref="fileInput" accept="image/*" @change="handlePictureUpload" style="display: none"/>
+        <Picture />
+        <input type="file" ref="fileInput" accept="image/*" @change="handlePictureUpload" style="display: none" />
       </div>
       <!-- 字符计数器 -->
       <div class="char-counter" :class="{ 'over-limit': isOverLimit }" v-if="commentForm.content">
         {{ commentForm.content.length }}/{{ MAX_CHARS }}
       </div>
-      <div class="upload-picture" v-if="commentForm.image!=''">
+      <div class="upload-picture" v-if="commentForm.image != ''">
         <a-image :src="commentForm.image" :height="80" :width="80" :preview-mask="false"
-                 style="object-fit: cover;border-radius: 10px;"/>
-        <div class="delete-btn" @click="commentForm.image=''">
-          <CloseOne/>
+          style="object-fit: cover;border-radius: 10px;" />
+        <div class="delete-btn" @click="commentForm.image = ''">
+          <CloseOne />
         </div>
       </div>
     </div>
@@ -209,12 +208,12 @@ const handleClickSend = async () => {
   color: red;
 }
 
-.comment-input .functions > div {
+.comment-input .functions>div {
   cursor: pointer;
   color: rgba(255, 255, 255, 0.5);
 }
 
-.comment-input .functions > div:hover {
+.comment-input .functions>div:hover {
   color: white;
 }
 

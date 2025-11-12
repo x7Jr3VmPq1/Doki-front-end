@@ -17,13 +17,13 @@
     </div>
 
     <div class="notification-list">
-      <div v-for="item in list" class="notification-item">
-        <div class="user-avatar" @click="toProfiles(item.user.id)">
+      <div @click="handleJump(item)" v-for="item in list" class="notification-item">
+        <div class="user-avatar" @click.stop="toProfiles(item.user.id)">
           <img :src="item.user.avatarUrl" alt="User Avatar" />
         </div>
         <div class="message-content">
           <div class="user-info">
-            <span class="username" @click="toProfiles(item.user.id)">{{ item.user.username }}</span>
+            <span class="username" @click.stop="toProfiles(item.user.id)">{{ item.user.username }}</span>
             <!-- <span class="author-tag">作者</span> -->
           </div>
           <div class="reply-timestamp">{{ changeNotice(item.type) }}</div>
@@ -49,6 +49,7 @@ import type { Notification } from '../../api/notification_dmService';
 import notification_dmService from '../../api/notification_dmService';
 import toProfiles from '../../utils/toProfiles';
 import { dayUtils } from '../../utils/dayUtils';
+import toVideoDetail from '../../utils/toVideoDetail';
 const showDropdown = ref(false);
 const dropdownOptions = ref([
   '全部消息',
@@ -87,6 +88,12 @@ const changeNotice = (type: number) => {
       break;
   }
   return str;
+}
+
+const handleJump = (n: Notification) => {
+  if (n.sourceVideoId) {
+    toVideoDetail(n.sourceVideoId);
+  }
 }
 </script>
 
