@@ -65,8 +65,6 @@ const list = ref<Notification[]>([]);
 onMounted(async () => {
   await handleRequest(notification_dmService.getNotifications, {
     onSuccess(data) {
-      console.log(data);
-
       list.value = data;
     }
   })
@@ -92,8 +90,11 @@ const changeNotice = (type: number) => {
 
 const handleJump = (n: Notification) => {
   if (n.sourceVideoId) {
-  
-    toVideoDetail(n.sourceVideoId,n.sourceCommentId);
+    if (n.sourceCommentId) {
+      toVideoDetail(n.sourceVideoId, n.sourceCommentId);
+    } else {
+      toVideoDetail(n.sourceVideoId);
+    }
   }
 }
 </script>

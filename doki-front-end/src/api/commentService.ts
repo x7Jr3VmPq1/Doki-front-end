@@ -43,6 +43,9 @@ export interface VideoCommentsVO {
   user: User;
   replies: CommentListResponse; // 额外的属性，可选的子评论列表
 }
+export interface SingleComment extends VideoCommentsVO {
+  page: number // 如果这条评论不是根评论，这个数字表示它在回复列表的页码位置
+}
 
 
 export default {
@@ -87,4 +90,9 @@ export default {
     method: 'GET',
     data: params
   }),
+  // 获取单条评论
+  getSingle: (cid: string) => request<SingleComment>('/comment/single', {
+    method: 'GET',
+    data: { cid }
+  })
 }

@@ -49,7 +49,7 @@ export interface Notification {
   type: number;
   content: string | null;
   sourceVideoId: number | null;
-  sourceCommentId: number | null;
+  sourceCommentId: string | null;
   operatorId: number | null;
   groupKey: string;
   mergedCount: number;

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { HeartFilled, StarFilled } from "@ant-design/icons-vue";
 import { More, Back } from '@icon-park/vue-next'
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, nextTick } from 'vue';
 import SwiperPlayer from '../../components/player/index.vue';
 import { handleRequest } from '../../api/handleRequest';
 import type { VideoInfo } from '../../api/feedService';
@@ -19,23 +19,34 @@ const state = reactive({
   videoId: '',
   activeInput: -1, // 当前激活的评论输入框索引，-1表示没有激活
   target: null as VideoCommentsVO | null, // 回复目标评论
+  currentPage: 1,
   loading: false,
   cursor: null as string | null,
-  hasMore: true
+  hasMore: true,
+  cacheCommentIds: new Set<string>() // 本地缓存，用来去重评论
 });
 
 const loadMoreRef = ref<HTMLElement | null>(null);
 const mainRef = ref<HTMLElement | null>(null);
+const commentsRef = ref<HTMLElement | null>(null);
 
 const videos = ref<VideoInfo[]>([]);
 // 从路径参数中获取视频id
 const route = useRoute();
 const videoId = route.params.id as string;
+const cid = route.query.cid as string;
 
-const fetchComments = () => {
+// 评论列表
+const commentsList = ref<VideoCommentsVO[]>([]);
+
+const fetchComments = async () => {
   state.loading = true;
+
   handleRequest(commentService.getComments, {
     onSuccess(data) {
+
+      data.list = data.list.filter(c => !state.cacheCommentIds.has(c.comments.id))
+
       // 给每个元素加一个可能存在的回复列表
       data.list.forEach(comment => {
         comment.replies = {
@@ -51,16 +62,53 @@ const fetchComments = () => {
       videoId: Number(videoId),
       cursor: state.cursor,
     },
-    delay: 500,
   })
   state.loading = false;
 }
 
-
-
 onMounted(async () => {
+
+  if (cid) {
+    await handleRequest(commentService.getSingle, {
+      async onSuccess(data) {
+        data.replies = {
+          list: [],
+          hasMore: false,
+          cursor: ''
+        } as CommentListResponse;
+        commentsList.value.push(data);
+        state.cacheCommentIds.add(data.comments.id)// 保存这条评论ID用于去重
+        if (data.page >= 0) {
+          handleGetReplies(data.page, data);
+        }
+        // TODO: 如果接口反应慢，这个方法不可靠，待优化。
+        await new Promise(resolve => setTimeout(resolve, 500));
+        nextTick(() => {
+          const el = document.getElementById(`comment-${cid}`)
+          console.log(el);
+
+          if (el) {
+            el.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            })
+            // 添加高亮样式
+            el.classList.add('highlight-comment');
+            // 一秒后移除
+            setTimeout(() => {
+              el.classList.remove('highlight-comment');
+            }, 1000);
+          }
+        })
+      },
+      params: cid
+    })
+  }
+
   // 加载初始评论
-  fetchComments();
+  await fetchComments();
+
+
   // 获取视频信息
   handleRequest(videoInfoService.getVideoInfo, {
     params: Number(videoId), // 转换为number
@@ -85,10 +133,9 @@ const showInput = (index: number, target: VideoCommentsVO) => {
   // 激活指定索引的输入框
   state.activeInput = index;
 }
-// 评论列表
-const commentsList = ref<VideoCommentsVO[]>([]);
 
-const handleGetReplies = (page: number, comment: VideoCommentsVO) => {
+const handleGetReplies = async (page: number, comment: VideoCommentsVO) => {
+  state.currentPage = page;
   handleRequest(commentService.getRepliesByPage, {
     params: {
       pid: comment.comments.id,
@@ -157,14 +204,15 @@ const clearReplies = (target: VideoCommentsVO) => {
         </div>
       </div>
       <!-- 评论区 -->
-      <div class="comments">
+      <div class="comments" ref="commentsRef">
         <div class="comments-count">评论( 10 )</div>
         <!-- 评论输入框 -->
         <div style="margin: 20px 0;">
           <Input @send="handleSendComment" :video-id="Number(videoId)" />
         </div>
         <div class="comment-item" v-if="commentsList.length > 0" v-for="(comment, rootIndex) in commentsList">
-          <CommentItem :comment-object="comment" @click-reply="showInput(rootIndex, comment)" />
+          <CommentItem :id="`comment-${comment.comments.id}`" :comment-object="comment"
+            @click-reply="showInput(rootIndex, comment)" />
           <span @click="handleGetReplies(1, comment)"
             v-if="comment.comments.childCount > 0 && comment.replies.list.length === 0" class="has-replies-notice">
             ——展开{{ comment.comments.childCount }}条回复
@@ -173,10 +221,12 @@ const clearReplies = (target: VideoCommentsVO) => {
             @click="clearReplies(comment)">——收起</span>
           <div v-if="comment.replies.list" class="replies-area">
             <div v-for="(reply, index) in comment.replies.list" :key="index">
-              <CommentItem :comment-object="reply" :key="index" @click-reply="showInput(rootIndex, reply)" />
+              <CommentItem :id="`comment-${reply.comments.id}`" :comment-object="reply" :key="index"
+                @click-reply="showInput(rootIndex, reply)" />
             </div>
             <!-- 分页 -->
-            <PageController v-if="comment.replies.list.length > 0 && comment.comments.childCount > 5"
+            <PageController :current-page="state.currentPage"
+              v-if="comment.replies.list.length > 0 && comment.comments.childCount > 5"
               @change-page="(page) => handleChangePage(page, comment)" :totalCount="comment.comments.childCount" />
           </div>
           <!-- 评论回复框 -->
@@ -315,5 +365,22 @@ const clearReplies = (target: VideoCommentsVO) => {
   font-size: 14px;
   color: grey;
   height: 200px;
+}
+
+
+@keyframes highlightFade {
+  0% {
+    background-color: #e8f4ff;
+  }
+
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.highlight-comment {
+  animation: highlightFade 4s ease forwards;
+  border-radius: 8px;
 }
 </style>
