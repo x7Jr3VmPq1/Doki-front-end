@@ -1,6 +1,37 @@
 import request from './gateway.ts'
-import type { VideoInfo } from './feedService.ts'
 import type { VideoStatistics } from './analyticsService.ts'
+import type { userInfo } from './userService.ts';
+export interface VideoInfo {
+  id: number;
+  uploaderId: number;
+  title: string;
+  description: string;
+  tags: string;
+  categoryId: number | null;
+  videoFilename: string;
+  videoSize: number;
+  videoDuration: number;
+  videoFormat: string;
+  videoWidth: number;
+  videoHeight: number;
+  videoBitrate: number;
+  publishTime: number;
+  permission: number;
+  allowComment: number;
+  createdTime: number;
+  updatedTime: number;
+  coverName: string;
+}
+
+export interface VideoVO extends VideoInfo {
+  user: userInfo,
+  liked: boolean,
+  statistics: VideoStatistics
+  followed: boolean,
+  watchedTime: number,
+  watchedAt: number
+}
+
 export interface videoInfoWithStat extends VideoInfo {
   statistics: VideoStatistics
 }
@@ -35,6 +66,15 @@ export default {
     data: { videoId }
   }),
   /**
+  * 根据视频ID获取视频元数据 v2
+  * @param videoId  视频ID
+  * @returns  视频元数据
+  */
+  getVideoInfoV2: (vid: number) => request<VideoVO>('/video/info/v2', {
+    method: 'GET',
+    data: { vid }
+  }),
+  /**
    * 根据用户ID获取该用户的所有视频元数据
    * @param userId  用户ID
    * @returns  视频元数据列表
@@ -63,5 +103,19 @@ export default {
   getHistory: (params: { tid: number, cursor: string | null }) => request<VideoCursorLoad>('/video/info/history', {
     method: 'GET',
     data: { cursor: params.cursor }
-  })
+  }),
+
+  /**
+   * 获取用户最近的点赞记录
+   * @param count 数量
+   * @returns 
+   */
+  getRecentLikes: (count: number) => request<VideoInfo[]>('/video/info/recent/likes', {
+    method: 'GET',
+    data: { count }
+  }),
+   getRecentHistories: (count: number) => request<VideoInfo[]>('/video/info/recent/histories', {
+    method: 'GET',
+    data: { count }
+  }),
 }

@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import { Close } from '@icon-park/vue-next';
-import { reactive, watch, nextTick, ref, onMounted, onBeforeUnmount } from 'vue'
+import { reactive, watch, nextTick, ref, onMounted } from 'vue'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import type { Swiper as SwiperType } from 'swiper';
 import { Pagination, Virtual } from 'swiper/modules'
@@ -34,7 +34,6 @@ const props = defineProps<{
 }>()
 
 const containerRef = ref<HTMLElement | null>(null);
-
 
 const emit = defineEmits(['close'])
 

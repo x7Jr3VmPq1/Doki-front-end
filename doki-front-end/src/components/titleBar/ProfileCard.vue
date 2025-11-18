@@ -22,15 +22,14 @@
           我的喜欢
         </div>
         <div class="section-count">
-          {{ 123 }}
           <span class="arrow-right" :class="{ 'rotated': expandedSection === 'likes' }"></span>
         </div>
       </div>
       <transition name="expand">
         <div v-if="expandedSection === 'likes'" class="likes-grid-wrapper">
           <div class="likes-grid">
-            <div v-for="item in placeholderItems" :key="item.id" class="like-item">
-              <img :src="item.image" :alt="item.title" class="like-item-image" />
+            <div v-for="item in state.recentLikes" :key="item.id" class="like-item">
+              <img :src="item.coverName" :alt="item.title" class="like-item-image" />
               <div class="like-item-title">{{ item.title }}</div>
             </div>
           </div>
@@ -46,15 +45,14 @@
             我的收藏
           </div>
           <div class="section-count">
-            {{ user.collectionsCount }}
             <span class="arrow-right" :class="{ 'rotated': expandedSection === 'collections' }"></span>
           </div>
         </div>
         <transition name="expand">
           <div v-if="expandedSection === 'collections'" class="likes-grid-wrapper">
             <div class="likes-grid">
-              <div v-for="item in placeholderItems" :key="item.id" class="like-item">
-                <img :src="item.image" :alt="item.title" class="like-item-image" />
+              <div v-for="item in state.recentLikes" :key="item.id" class="like-item">
+                <img :src="item.coverName" :alt="item.title" class="like-item-image" />
                 <div class="like-item-title">{{ item.title }}</div>
               </div>
             </div>
@@ -76,8 +74,8 @@
         <transition name="expand">
           <div v-if="expandedSection === 'watchHistory'" class="likes-grid-wrapper">
             <div class="likes-grid">
-              <div v-for="item in placeholderItems" :key="item.id" class="like-item">
-                <img :src="item.image" :alt="item.title" class="like-item-image" />
+              <div v-for="item in state.recentLikes" :key="item.id" class="like-item">
+                <img :src="item.coverName" :alt="item.title" class="like-item-image" />
                 <div class="like-item-title">{{ item.title }}</div>
               </div>
             </div>
@@ -115,15 +113,14 @@
             我的作品
           </div>
           <div class="section-count">
-            {{ user.myWorksCount }}
             <span class="arrow-right" :class="{ 'rotated': expandedSection === 'myWorks' }"></span>
           </div>
         </div>
         <transition name="expand">
           <div v-if="expandedSection === 'myWorks'" class="likes-grid-wrapper">
             <div class="likes-grid">
-              <div v-for="item in placeholderItems" :key="item.id" class="like-item">
-                <img :src="item.image" :alt="item.title" class="like-item-image" />
+              <div v-for="item in state.recentLikes" :key="item.id" class="like-item">
+                <img :src="item.coverName" :alt="item.title" class="like-item-image" />
                 <div class="like-item-title">{{ item.title }}</div>
               </div>
             </div>
@@ -149,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { createVNode, ref, onMounted } from 'vue';
+import { createVNode, ref, reactive, onMounted } from 'vue';
 import FollowModal from "../FollowModal.vue";
 import { useUserStore } from "../../store/userInfoStore.ts";
 import analyticsService from '../../api/analyticsService.ts';
@@ -157,6 +154,12 @@ import videoInfoService from '../../api/videoInfoService.ts';
 import { handleRequest } from '../../api/handleRequest.ts'
 import { Modal } from "ant-design-vue";
 import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
+
+import type { VideoInfo } from '../../api/videoInfoService.ts';
+
+const state = reactive({
+  recentLikes: [] as VideoInfo[]
+});
 
 onMounted(async () => {
   await handleRequest(analyticsService.getUserStatById, {
@@ -178,27 +181,39 @@ const user = userStore.userInfo!;
 
 const container = ref(null); // 卡片容器引用，用于指定对话框的挂载点
 
-const followingList = ref([]); // 关注列表
-const fansList = ref([]); // 粉丝列表
-
 const openFollowingList = ref(false); // 控制 FollowModal 的显示/隐藏
 
 const rememberLogin = ref(false);
 const expandedSection = ref<string | null>(null); // State to track which section is expanded
 
-const placeholderItems: LikedItem[] = [
-  { id: 101, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容一' },
-  { id: 102, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容二' },
-  { id: 103, image: 'http://localhost:8081/videos/defaultCover.jpg', title: '占位内容三' },
-];
-
-const expandSection = (sectionName: string) => {
+const expandSection = async (sectionName: string) => {
   console.log('Expanding section:', sectionName);
   // 检查鼠标是否在当前的 expandedSection 上，如果是，则不改变
   // 否则，如果是一个新的 section，就展开它
   // 如果是同一个 section，这行代码不会改变 expandedSection.value
   // 如果你需要点击同一个 section 来关闭它，这里需要额外的逻辑
   // 比如：expandedSection.value = expandedSection.value === sectionName ? null : sectionName;
+  let fun;
+
+  switch (sectionName) {
+    case 'likes': fun = videoInfoService.getRecentLikes
+      break;
+    case 'collections': fun = videoInfoService.getRecentLikes
+      break;
+    case 'myWorks': fun = videoInfoService.getRecentLikes
+      break;
+    case 'watchHistory': fun = videoInfoService.getRecentHistories
+      break
+    default: return;
+  }
+
+  if (fun) {
+    await handleRequest(fun, {
+      onSuccess(data) {
+        state.recentLikes = data;
+      }, params: 3
+    })
+  }
   expandedSection.value = sectionName;
 };
 
@@ -248,7 +263,6 @@ const handleLogout = () => {
   margin-right: 15px;
   object-fit: cover;
   border: 2px solid #fff;
-  /* White border for avatar */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -351,7 +365,6 @@ const handleLogout = () => {
   background-position: center;
 }
 
-/* Specific icon styles (from previous code) */
 .red-heart {
   background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FE2C55"%3e%3cpath d="M12 21.35l-1.84-1.69C4.04 15.36 2 13.05 2 10.5 2 7.42 4.42 5 7.5 5c1.74 0 3.41.81 4.5 2.09C13.09 5.81 14.76 5 16.5 5 19.58 5 22 7.42 22 10.5c0 2.55-2.04 4.86-8.16 10.16L12 21.35z"/%3e%3c/svg%3e');
 }
@@ -385,15 +398,12 @@ const handleLogout = () => {
 }
 
 
-/* My Likes Specific Styling */
 .my-likes {
   margin-bottom: 0;
-  /* Ensures it sits tightly with other sections when collapsed */
 }
 
 .likes-grid-wrapper {
   padding: 0 20px 15px;
-  /* Padding for the content inside the expanded section */
 }
 
 .likes-grid {
@@ -408,12 +418,12 @@ const handleLogout = () => {
   align-items: center;
   text-align: center;
   cursor: pointer;
+  min-width: 0;
 }
 
 .like-item-image {
   width: 100%;
   height: 100px;
-  /* Fixed height for images */
   object-fit: cover;
   border-radius: 8px;
 }
@@ -462,7 +472,6 @@ const handleLogout = () => {
   flex-direction: column;
   gap: 15px;
   margin-bottom: 20px;
-  /* Space at the bottom */
 }
 
 .logout-button {
@@ -483,7 +492,6 @@ const handleLogout = () => {
   color: #333;
 }
 
-/* Toggle Switch Styling (from previous code) */
 .switch {
   position: relative;
   display: inline-block;
@@ -544,12 +552,10 @@ input:checked+.slider:before {
 }
 
 
-/* Transition Styles for Expansion */
 .expand-enter-active,
 .expand-leave-active {
   transition: all 0.3s ease-out;
   max-height: 200px;
-  /* Adjust max-height based on content height */
   overflow: hidden;
 }
 

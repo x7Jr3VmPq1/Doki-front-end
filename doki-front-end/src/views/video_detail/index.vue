@@ -4,7 +4,7 @@ import { More, Back } from '@icon-park/vue-next'
 import { ref, onMounted, reactive, nextTick } from 'vue';
 import SwiperPlayer from '../../components/player/index.vue';
 import { handleRequest } from '../../api/handleRequest';
-import type { VideoInfo } from '../../api/feedService';
+import type { VideoVO } from "../../api/videoInfoService";
 import videoInfoService from '../../api/videoInfoService';
 import { useRoute } from 'vue-router';
 import DokiButton from "../../components/Doki-Button.vue";
@@ -15,8 +15,62 @@ import commentService from "../../api/commentService.ts";
 import type { VideoCommentsVO, CommentListResponse } from '../../api/commentService.ts'
 import { useInfiniteScroll } from '../../utils/infiniteScroll.ts'
 import DokiLoading from "../../components/Doki-Loading.vue";
+import { useUserStore } from "../../store/userInfoStore.ts";
+import toProfiles from '../../utils/toProfiles.ts'
+
+const userStore = useUserStore();
 const state = reactive({
   videoId: '',
+  videoInfo: {
+    id: 0,
+    uploaderId: 0,
+    title: "",
+    description: "",
+    tags: "",
+    categoryId: null,
+    videoFilename: "",
+    videoSize: 0,
+    videoDuration: 0,
+    videoFormat: "",
+    videoWidth: 0,
+    videoHeight: 0,
+    videoBitrate: 0,
+    publishTime: 0,
+    permission: 0,
+    allowComment: 0,
+    createdTime: 0,
+    updatedTime: 0,
+    coverName: "",
+
+    user: {
+      id: 0,
+      username: "",
+      avatarUrl: "",
+      bio: "",
+      followed: false,
+    },
+
+    liked: false,
+
+    statistics: {
+      id: 0,
+      videoId: 0,
+      viewCount: 0,
+      likeCount: 0,
+      dislikeCount: 0,
+      commentCount: 0,
+      shareCount: 0,
+      favoriteCount: 0,
+      downloadCount: 0,
+      createdTime: 0,
+      updatedTime: 0,
+      deleted: 0,
+      userLiked: false,
+    },
+    followed: false,
+    watchedTime: 0,
+    watchedAt: 0
+  } as VideoVO,
   activeInput: -1, // 当前激活的评论输入框索引，-1表示没有激活
   target: null as VideoCommentsVO | null, // 回复目标评论
   currentPage: 1,
@@ -30,7 +84,7 @@ const loadMoreRef = ref<HTMLElement | null>(null);
 const mainRef = ref<HTMLElement | null>(null);
 const commentsRef = ref<HTMLElement | null>(null);
 
-const videos = ref<VideoInfo[]>([]);
+const videos = ref<VideoVO[]>([]);
 // 从路径参数中获取视频id
 const route = useRoute();
 const videoId = route.params.id as string;
@@ -67,6 +121,7 @@ const fetchComments = async () => {
 }
 
 onMounted(async () => {
+  state.loading = true;
 
   if (cid) {
     await handleRequest(commentService.getSingle, {
@@ -108,19 +163,33 @@ onMounted(async () => {
   // 加载初始评论
   await fetchComments();
 
-
-  // 获取视频信息
-  handleRequest(videoInfoService.getVideoInfo, {
-    params: Number(videoId), // 转换为number
-    onSuccess: (data) => {
+  await handleRequest(videoInfoService.getVideoInfoV2, {
+    onSuccess(data) {
+      state.videoInfo = data;
       videos.value[0] = data;
+      console.log(state.videoInfo);
     },
-    onError: (error) => {
-      console.error('Failed to fetch video details:', error);
-    }
-  });
+    params: Number(videoId)
+  })
+
+
+  // // 获取视频信息
+  // handleRequest(videoInfoService.getVideoInfo, {
+  //   params: Number(videoId), // 转换为number
+  //   onSuccess: (data) => {
+  //     videos.value[0] = data;
+  //   },
+  //   onError: (error) => {
+  //     console.error('Failed to fetch video details:', error);
+  //   }
+  // });
+
+
+  state.loading = false;
+
   // 设置无限加载
   useInfiniteScroll(fetchComments, loadMoreRef, mainRef);
+
 });
 
 const showInput = (index: number, target: VideoCommentsVO) => {
@@ -167,13 +236,13 @@ const clearReplies = (target: VideoCommentsVO) => {
 
 <template>
   <div class="main" ref="mainRef">
-    <div class="video-detail-view">
+    <div v-if="state.videoInfo" class="video-detail-view">
       <div class="player-wapper">
         <!-- 视频播放器 -->
         <SwiperPlayer :mode="2" :start-with="0" :videos="videos" />
       </div>
       <div class="video-info">
-        <span class="video-title">{{ "震惊！这个人居然..." }}</span>
+        <span class="video-title">{{ state.videoInfo.title }}</span>
         <!-- 交互按钮 -->
         <div class="operation">
           <div>
@@ -184,28 +253,28 @@ const clearReplies = (target: VideoCommentsVO) => {
           </div>
           <div>
             <StarFilled />
-            <span>{{ 50 }}</span>
+            <span>{{ state.videoInfo.statistics.favoriteCount }}</span>
           </div>
           <div>
             <HeartFilled />
-            <span>{{ 100 }}</span>
+            <span>{{ state.videoInfo.statistics.likeCount }}</span>
           </div>
         </div>
       </div>
       <div class="user-info">
         <!-- 用户信息 -->
         <div class="uploader">
-          <div class="avatar"></div>
-          <div class="user-name">用户名</div>
-          <div class="follow-button">
-            <DokiButton buttonType="confirm">关注</DokiButton>
-            <!-- <DokiButton buttonType="cancel">已关注</DokiButton> -->
+          <img class="avatar" @click="toProfiles(state.videoInfo.user.id)" :src="state.videoInfo.user.avatarUrl"></img>
+          <div class="user-name" @click="toProfiles(state.videoInfo.user.id)">{{ state.videoInfo.user.username }}</div>
+          <div class="follow-button" v-if="state.videoInfo.user.id !== userStore.userInfo.id">
+            <DokiButton v-if="state.videoInfo.followed" buttonType="cancel">已关注</DokiButton>
+            <DokiButton v-else buttonType="confirm">关注</DokiButton>
           </div>
         </div>
       </div>
       <!-- 评论区 -->
       <div class="comments" ref="commentsRef">
-        <div class="comments-count">评论( 10 )</div>
+        <div class="comments-count">评论( {{ state.videoInfo.statistics.commentCount }} )</div>
         <!-- 评论输入框 -->
         <div style="margin: 20px 0;">
           <Input @send="handleSendComment" :video-id="Number(videoId)" />
