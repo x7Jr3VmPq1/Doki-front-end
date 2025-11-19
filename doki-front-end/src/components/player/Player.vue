@@ -397,17 +397,22 @@ const openComments = async () => {
 
 }
 
+.player-container {
+  position: relative;
+  background: none;
+ background-color: #fff;
+}
+
 .player-container::before {
   content: "";
   position: absolute;
   inset: 0;
-  /* top:0; right:0; bottom:0; left:0 */
+  background: var(--bg-color, #000);
+  /* 原先的背景色 */
   background-image: var(--bg-url);
-  /* 使用 CSS 变量 */
   background-size: cover;
   background-position: center;
   filter: blur(80px);
-  /* 高斯模糊 */
   z-index: -1;
 }
 </style>
