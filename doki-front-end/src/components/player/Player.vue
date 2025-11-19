@@ -400,7 +400,7 @@ const openComments = async () => {
 .player-container {
   position: relative;
   background: none;
- background-color: #fff;
+  background-color: #fff;
 }
 
 .player-container::before {

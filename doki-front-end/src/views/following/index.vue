@@ -81,6 +81,9 @@ const handleClickUser = async (user: userInfo) => {
   console.log(user);
   await handleRequest(videoInfoService.getVideosInfoByUserId, {
     onSuccess(data) {
+      if (data.list.length === 0) {
+        return;
+      }
       state.activeUserList = data;
       state.isModalVisible = true;
     },
@@ -89,6 +92,7 @@ const handleClickUser = async (user: userInfo) => {
       cursor: null
     }
   })
+
 }
 
 const handleFold = () => {
@@ -105,7 +109,7 @@ const handleFold = () => {
         <menu-fold theme="outline" size="35" fill="#c7c8ca" v-else />
       </span>
       <!-- 关注列表 -->
-      <div v-for="(user, index) in state.followList.list" class="user" @click="handleClickUser(user)">
+      <div v-for="(user) in state.followList.list" class="user" @click="handleClickUser(user)">
         <img :src="user.avatarUrl" alt="">
         <div class="flex-center username">{{ user.username }}</div>
       </div>
