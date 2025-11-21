@@ -37,7 +37,7 @@ export interface videoInfoWithStat extends VideoInfo {
 }
 
 export interface VideoCursorLoad {
-  list: videoInfoWithStat[],
+  list: VideoVO[],
   hasMore: boolean,
   cursor: string | null
 }
@@ -47,7 +47,7 @@ export interface videoInfoWithStatAndWatched extends videoInfoWithStat {
 }
 
 export interface HistoryCursorLoad {
-  list: videoInfoWithStat[],
+  list: VideoVO[],
   hasMore: boolean,
   cursor: string
 }
@@ -114,8 +114,14 @@ export default {
     method: 'GET',
     data: { count }
   }),
-   getRecentHistories: (count: number) => request<VideoInfo[]>('/video/info/recent/histories', {
+  getRecentHistories: (count: number) => request<VideoInfo[]>('/video/info/recent/histories', {
     method: 'GET',
     data: { count }
   }),
+  getRandom: () => request<VideoVO[]>('/video/info/random', {
+    method: 'GET',
+  }),
+  getFollowTimeline: () => request<VideoVO[]>('/video/info/timeline/follow', {
+    method: 'GET'
+  })
 }

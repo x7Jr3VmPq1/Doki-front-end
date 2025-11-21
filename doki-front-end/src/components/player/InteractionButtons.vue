@@ -1,65 +1,18 @@
 <script setup lang="ts">
 import { HeartFilled, MessageFilled, PlusCircleFilled, StarFilled } from "@ant-design/icons-vue";
 import { More, Back } from '@icon-park/vue-next'
-import type { VideoInfo } from '../../api/feedService.ts'
-import { onMounted } from 'vue';
-import analyticsService from '../../api/analyticsService.ts';
-import userService from '../../api/userService.ts'
-import type { VideoStatistics } from '../../api/analyticsService.ts'
-import type { userInfo } from '../../api/userService.ts'
-import { ref } from 'vue'
 import LikeFavoriteService from "../../api/likeFavoriteService.ts";
 import { handleRequest } from '../../api/handleRequest.ts'
+import { useUserStore } from "../../store/userInfoStore.ts";
+import type { VideoVO } from '../../api/videoInfoService.ts';
+import { computed } from "vue";
 
+const userStore = useUserStore();
 const props = defineProps<{
-  video: VideoInfo,
+  video: VideoVO,
   onOpenComments: () => void,
 }>()
 
-// 视频统计信息
-const stat = ref<VideoStatistics>({
-  id: 0,
-  videoId: 0,
-  viewCount: 0,
-  likeCount: 0,
-  dislikeCount: 0,
-  commentCount: 0,
-  shareCount: 0,
-  favoriteCount: 0,
-  downloadCount: 0,
-  createdTime: 0,
-  updatedTime: 0,
-  deleted: 0,
-  userLiked: false
-});
-// 上传者信息
-const uploaderInfo = ref<userInfo>({
-  id: 0,
-  username: '',
-  avatarUrl: '',
-  bio: '',
-})
-
-const loaded = ref(false);
-onMounted(() => {
-  // 获取视频统计信息
-  handleRequest(analyticsService.getVideoStatById, {
-    onSuccess(data) {
-      stat.value = data[0];
-    },
-    params: [props.video.id]
-  })
-  // 获取上传者信息
-  handleRequest(userService.getUserinfoById, {
-    onSuccess(data) {
-      uploaderInfo.value = data[0];
-    },
-    params: [props.video.uploaderId]
-  })
-
-  loaded.value = true;
-
-})
 
 // 视频交互按钮方法
 // 给视频点赞
@@ -67,17 +20,21 @@ const onLike = async (videoId: number) => {
   await handleRequest(LikeFavoriteService.videoLike, {
     onSuccess(_) {
       // 更改点赞的状态
-      stat.value.userLiked = !stat.value.userLiked;
+      props.video.liked = !props.video.liked;
       // 增减或减少点赞数
-      stat.value.likeCount += (stat.value.userLiked ? 1 : -1);
+      props.video.statistics.likeCount += (props.video.liked ? 1 : -1);
     },
     params: videoId
   })
 }
+
+const videoInfo = computed(() => {
+  return props.video
+})
 </script>
 
 <template>
-  <div v-if="loaded" class="interaction-buttons" @click.stop>
+  <div class="interaction-buttons" @click.stop>
     <a-tooltip placement="left" color="grey">
       <template #title>
         <div style="display: flex;line-height: 1.2em;padding: 8px">
@@ -89,10 +46,10 @@ const onLike = async (videoId: number) => {
         </div>
       </template>
       <div class="user-avatar">
-        <div class="follow-button">
+        <div v-if="!videoInfo.followed && videoInfo.user.id !== userStore.userInfo.id" class="follow-button">
           <PlusCircleFilled />
         </div>
-        <a-avatar :src="uploaderInfo.avatarUrl" size="large" class="bounce-on-click" />
+        <a-avatar :src="videoInfo.user.avatarUrl" size="large" class="bounce-on-click" />
       </div>
     </a-tooltip>
 
@@ -107,9 +64,9 @@ const onLike = async (videoId: number) => {
         </div>
       </template>
       <div class="like bounce-on-click" @click="onLike(props.video.id)">
-        <heart-filled v-if="stat.userLiked" style="color: red" />
+        <heart-filled v-if="videoInfo.liked" style="color: red" />
         <heart-filled v-else />
-        <div style="font-size: 20px;padding-top: 5px">{{ stat.likeCount }}</div>
+        <div style="font-size: 20px;padding-top: 5px">{{videoInfo.statistics.likeCount }}</div>
       </div>
     </a-tooltip>
 
@@ -125,7 +82,7 @@ const onLike = async (videoId: number) => {
       </template>
       <div class="comment bounce-on-click" @click="props.onOpenComments">
         <message-filled />
-        <div style="font-size: 20px;padding-top: 5px">{{ stat.commentCount }}</div>
+        <div style="font-size: 20px;padding-top: 5px">{{ videoInfo.statistics.commentCount }}</div>
       </div>
     </a-tooltip>
 
@@ -142,7 +99,7 @@ const onLike = async (videoId: number) => {
       <div class="star bounce-on-click">
         <star-filled v-if="false" style="color: goldenrod" />
         <star-filled v-else />
-        <div style="font-size: 20px;padding-top: 5px">{{ stat.favoriteCount }}</div>
+        <div style="font-size: 20px;padding-top: 5px">{{ videoInfo.statistics.favoriteCount }}</div>
       </div>
     </a-tooltip>
 

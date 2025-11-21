@@ -45,16 +45,16 @@
                 <DokiVideoPre @click="handleClickVideo(index)" :manage="false" :item="item.video as videoInfoWithStat">
                 </DokiVideoPre>
                 <div class="duration">{{ dayUtils.formatSecondsToHHMMSS(item.video.videoDuration) }}</div>
-                <div class="likes">
+                <!-- <div class="likes">
                   <Like></Like>
-                  {{ item.statistics.likeCount }}
-                </div>
-                <div class="views">{{ item.statistics.viewCount }}</div>
+                  {{ item.video.statistics.likeCount }}
+                </div> -->
+                <div class="views">{{ item.video.statistics.viewCount }}</div>
               </div>
               <div class="video-info">
                 <p class="title" v-html="item.highlight ?? item.video.title"></p>
                 <div class="meta">
-                  <span class="author">@ {{ item.user.username }}</span>
+                  <span class="author">@ {{ item.video.user.username }}</span>
                   <span class="date">{{ dayUtils.formatTimestamp(item.video.publishTime) }}</span>
                 </div>
               </div>
@@ -111,27 +111,6 @@ interface NavItem {
 interface TagFilter {
   id: number;
   name: string;
-}
-
-interface Video {
-  id: number;
-  userId: number;
-  userName: string;
-  avatarUrl: string;
-  title: string; // HTML 字符串
-  description: string;
-  tags: string[];
-  videoUrl: string;
-  thumbnailUrl: string;
-  duration: number;
-  views: number;
-  createdAt: string;
-  category: string;
-  likeCount: number;
-  commentCount: number;
-  favoriteCount: number;
-  liked: boolean;
-  favorited: boolean;
 }
 
 interface RelatedSearch {

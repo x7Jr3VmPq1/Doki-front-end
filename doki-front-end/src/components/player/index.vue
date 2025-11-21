@@ -23,12 +23,14 @@ import { Pagination, Virtual } from 'swiper/modules'
 import "swiper/css"
 import "swiper/css/pagination"
 import Player from "./Player.vue";
-import type { VideoInfo } from '../../api/feedService.ts'
+// import type { VideoInfo } from '../../api/feedService.ts'
+import type { VideoVO } from '../../api/videoInfoService.ts';
+import videoInfoService from '../../api/videoInfoService.ts';
 import feedService from '../../api/feedService.ts'
 import { handleRequest } from '../../api/handleRequest.ts';
 
 const props = defineProps<{
-  videos: VideoInfo[],
+  videos: VideoVO[],
   mode: number,  // 模式 0=主页无限加载模式，1=有限列表模式，2=详情页模式
   startWith: number // 从哪个索引位置开始播放
 }>()
@@ -47,12 +49,12 @@ const swiperRef = ref<HTMLElement | null>(null);
 
 watch(() => state.active, async (newValue) => {
   // 如果是有限模式，不再追加。
-  if (props.mode === 1) {
+  if (props.mode !== 0) {
     return;
   }
   // 即将触底，加载下一批视频。
   if (newValue > props.videos.length - 2) {
-    await handleRequest(feedService.getRandomVideos, {
+    await handleRequest(videoInfoService.getRandom, {
       onSuccess(data) {
         props.videos.push(...data);
       }

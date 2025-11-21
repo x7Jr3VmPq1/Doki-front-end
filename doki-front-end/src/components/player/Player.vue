@@ -9,9 +9,12 @@ import Controls from './Controls.vue'
 import CommentsPanel from './CommentsPanel.vue'
 import analyticsService from '../../api/analyticsService.ts';
 import { handleRequest } from '../../api/handleRequest.ts';
+
+import type { VideoVO } from '../../api/videoInfoService.ts';
+
 // 获取视频数据
 const props = defineProps<{
-  video: VideoInfo,
+  video: VideoVO,
   index: number,
   active: number,
   mode: number // 模式 0=主页无限加载模式，1=有限列表模式，2=详情页模式

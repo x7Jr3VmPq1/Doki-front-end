@@ -52,7 +52,7 @@ const menuItemsMiddle: MenuItem[] = [
 ];
 // 底部菜单
 const menuItemsBottom: MenuItem[] = [
-  { key: 'xiaomeng', label: '小梦', icon: Effects },
+  // { key: 'xiaomeng', label: '小梦', icon: Effects },
 ];
 
 const selectedKey = ref<string>('');

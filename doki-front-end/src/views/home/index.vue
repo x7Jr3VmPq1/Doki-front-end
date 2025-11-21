@@ -3,18 +3,19 @@
 import SwiperPlayer from "../../components/player/index.vue";
 import { onMounted, ref } from "vue";
 
-import feedService from '../../api/feedService.ts'
-import type { VideoInfo } from '../../api/feedService.ts'
 import { handleRequest } from '../../api/handleRequest.ts'
-import videoProcessingService from '../../api/videoInfoService.ts'
 import DokiLoading from "../../components/Doki-Loading.vue";
 const emit = defineEmits(['_virtualUpdated'])
 
+import videoInfoService from "../../api/videoInfoService.ts";
+
+import type { VideoVO } from "../../api/videoInfoService.ts";
+
 const isLoading = ref(true);
-const videos = ref<VideoInfo[]>([]);
+const videos = ref<VideoVO[]>([]);
 onMounted(async () => {
 
-  await handleRequest(feedService.getRandomVideos, {
+  await handleRequest(videoInfoService.getRandom, {
     onSuccess(data) {
       videos.value = data;
       console.log(data);

@@ -1,7 +1,5 @@
 import request from './gateway';
-import type { VideoInfo } from './feedService'
-import type { VideoStatistics } from './analyticsService'
-import type { userInfo } from './userService';
+import type { VideoVO } from './videoInfoService';
 import type { UserStatistics } from './analyticsService'
 
 export interface searchHistory {
@@ -13,9 +11,7 @@ export interface searchHistory {
 }
 
 export interface searchResult {
-  video: VideoInfo,
-  statistics: VideoStatistics,
-  user: userInfo,
+  video: VideoVO,
   highlight: string | null,
 }
 
