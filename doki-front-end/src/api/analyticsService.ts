@@ -27,6 +27,11 @@ export interface UserStatistics {
   updatedAt: number
 }
 
+export interface VideoWatched {
+  videoId: number,
+  time: number
+}
+
 const analyticsService = {
   // 获取指定视频的统计信息
   getVideoStatById: async (ids: number[]) =>
@@ -58,6 +63,15 @@ const analyticsService = {
   clearVideoHistory: async (close: number) => await request<void>('/analytics/history/clear', {
     method: 'DELETE',
     data: { close }
+  }),
+  /**
+   * 获取上次的播放时长
+   * @param vid 视频ID
+   * @returns 
+   */
+  getVideoWatched: async (params: { videoId: number, userId: number }) => await request<VideoWatched[]>('/analytics/history/watched', {
+    method: 'GET',
+    data: params
   })
 
 }

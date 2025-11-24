@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
-import { Close } from '@icon-park/vue-next';
+
+// 这个播放器和常规的播放器不同
+// 在点击"TA的作品"或"相关推荐"视频时，会激活这个播放器
+// 在这个播放器下，切换视频会从有限的列表中切换，原地切换视频。
+// 没有滑动效果，从左上角点击BACK可以返回到激活它的位置。
+
+import { nextTick, onMounted, onBeforeUnmount, ref, reactive } from 'vue'
+import { Left } from '@icon-park/vue-next';
 import { watch } from 'vue';
-import { useUserStore } from '../../store/userInfoStore.ts';
 import InteractionButtons from './InteractionButtons.vue';
 import VideoInfoComponent from './VideoInfo.vue'
 import Controls from './Controls.vue'
@@ -11,77 +16,46 @@ import analyticsService from '../../api/analyticsService.ts';
 import { handleRequest } from '../../api/handleRequest.ts';
 import type { VideoVO } from '../../api/videoInfoService.ts';
 import UserWorks from './UserWorks.vue';
-const userStore = useUserStore();
+
+const emit = defineEmits(['close'])
 
 // 获取视频数据
 const props = defineProps<{
-  video: VideoVO,
-  index: number,
-  active: number,
-  mode: number // 模式 0=主页无限加载模式，1=有限列表模式，2=详情页模式
+  videos: VideoVO[],
+  mode: number
 }>();
+
+const video = props.videos[0];
+
 // 获取播放器HTML元素
 const videoRef = ref<HTMLVideoElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
 // 传递给控件的播放/赞停属性
 const isPlaying = ref(true);
 // 用来判断用户有没有实际看到这个视频。
-let watched = false;
 
-watch(() => props.active, async (newIndex) => {
-  await nextTick();
-  // 判断当前激活的视频是不是这个视频，如果是，改变播放状态。
-  isPlaying.value = props.index === newIndex;
-  if (isPlaying.value) {
-    watched = true;
-  }
-}, {
-  immediate: true
-})
-onMounted(async () => {
-  handleRequest(analyticsService.getVideoWatched, {
-    onSuccess(data) {
-      if (videoRef.value)
-        videoRef.value.currentTime = data[0].time;
-    },
-    params: { videoId: props.video.id, userId: userStore.userInfo.id }
-  })
-
-  if (props.video.watchedTime > 10 && videoRef.value) {
-    videoRef.value.currentTime = props.video.watchedTime;
-  }
-  containerRef.value?.addEventListener('keydown', handleSpacedown)
-})
-onBeforeUnmount(() => {
-  containerRef.value?.removeEventListener('keydown', handleSpacedown);
-  if (watched && videoRef.value?.currentTime! > 1) {
-    // 组件卸载时上传播放记录
-    handleRequest(analyticsService.updateVideoHistory, {
-      params: {
-        videoId: props.video.id,
-        time: videoRef.value?.currentTime!
-      }
-    })
-  }
-});
 
 const handleSpacedown = (event: KeyboardEvent) => {
   if (event.code === 'Space') {
     event.preventDefault(); // 阻止页面滚动
-    if (props.index === props.active) {
-      isPlaying.value = !isPlaying.value;
-    }
+
+    isPlaying.value = !isPlaying.value;
+
   }
 };
 
 // 评论区抽屉控制
 const open = ref(false)
 const showDrawer = () => {
-  if (props.mode === 2) {
-    return;
-  }
   open.value = !open.value;
 }
+
+onMounted(() => {
+  nextTick();
+  setTimeout(() => {
+    openUserPage();
+  }, 100)
+})
 
 // 拓展面板key
 const activeKey = ref('2');
@@ -89,7 +63,7 @@ const activeKey = ref('2');
 // 打开用户信息选项卡
 const openUserPage = () => {
   // TODO 后续在这里发异步请求获取用户信息
-  if (open.value && activeKey.value == '2' && props.mode != 2) {
+  if (open.value && activeKey.value == '2') {
     activeKey.value = '1';
     return;
   }
@@ -99,7 +73,7 @@ const openUserPage = () => {
 // 打开评论选项卡
 const openComments = async () => {
 
-  if (open.value && activeKey.value == '1' && props.mode != 2) {
+  if (open.value && activeKey.value == '1') {
     activeKey.value = '2';
     return;
   }
@@ -107,13 +81,8 @@ const openComments = async () => {
   showDrawer();
 }
 
-const handleUserWorksClose = () => {
-  isPlaying.value = true;
-  showDrawer();
-}
-
-const handleUserWorksPause = () => {
-  isPlaying.value = false;
+const handleClose = () => {
+  emit('close');
 }
 
 </script>
@@ -127,33 +96,33 @@ const handleUserWorksPause = () => {
     <!-- 视频区域绑定动态 class 控制宽度 -->
     <div :class="['player-video', { shrink: open }]">
       <div class="video-wrapper" @click="isPlaying = !isPlaying">
+
+        <div class="close-button flex-center" v-if="props.mode == 2" @click="handleClose">
+          <Left size="40"></Left>
+        </div>
+
         <video :src="video.videoFilename" ref="videoRef" loop preload="auto"></video>
         <!-- 交互按钮 -->
-        <InteractionButtons v-if="props.mode !== 2" @click.stop :video="video" :onOpenComments="openComments"
-          @openUserPage="openUserPage" />
+        <InteractionButtons @click.stop :video="video" :onOpenComments="openComments" @openUserPage="openUserPage" />
       </div>
       <!-- 视频主信息 -->
-      <VideoInfoComponent v-if="props.mode !== 2" :video="video" />
+      <VideoInfoComponent :video="video" />
       <!--  遮罩层    -->
       <div class="cover"></div>
       <!--  控件，传入视频的引用  -->
       <Controls :video="videoRef!" :is-playing="isPlaying" :shrink="open" />
     </div>
     <!-- 评论区抽屉 -->
-    <div v-if="props.mode !== 2" class="other-draw" :class="['other-draw', { shrink: open }]" @wheel.stop>
+    <div class="other-draw" :class="['other-draw', { shrink: open }]" @wheel.stop>
       <a-tabs v-model:activeKey="activeKey" size="large">
         <a-tab-pane key="1" tab="TA的作品">
-          <UserWorks :video="video" @close="handleUserWorksClose" @pause="handleUserWorksPause"></UserWorks>
+          <UserWorks :video="video"></UserWorks>
         </a-tab-pane>
         <a-tab-pane key="2" :tab='`评论`' force-render>
-          <CommentsPanel :videoinfo="props.video" :videoId="video.id" :open="open" />
+          <CommentsPanel :videoinfo="video" :videoId="video.id" :open="open" />
         </a-tab-pane>
         <a-tab-pane key="3" tab="相关推荐">Content...</a-tab-pane>
       </a-tabs>
-      <!-- 关闭按钮 -->
-      <div class="close-button" @click="showDrawer">
-        <close></close>
-      </div>
     </div>
   </div>
 </template>
@@ -310,17 +279,6 @@ const handleUserWorksPause = () => {
     right: -30%;
     background-color: rgba(0, 0, 0, 0.5);
     /* 半透明黑色 */
-
-
-    .close-button {
-      cursor: pointer;
-      height: 25px;
-      position: absolute;
-      color: #ffffff;
-      font-size: 25px;
-      top: -25px;
-      right: 30px;
-    }
   }
 
   .other-draw.shrink {
@@ -346,5 +304,30 @@ const handleUserWorksPause = () => {
   background-position: center;
   filter: blur(80px);
   z-index: -1;
+}
+
+
+.close-button {
+  opacity: 0;
+  z-index: 100;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: rgba(0, 0, 0, 0.2);
+  font-size: 30px;
+  position: absolute;
+  top: 3%;
+  left: 3%;
+}
+
+.player-container:hover .close-button {
+  opacity: 1;
+}
+
+.close-button:hover {
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.4);
 }
 </style>

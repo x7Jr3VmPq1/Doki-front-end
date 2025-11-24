@@ -26,7 +26,6 @@ import Player from "./Player.vue";
 // import type { VideoInfo } from '../../api/feedService.ts'
 import type { VideoVO } from '../../api/videoInfoService.ts';
 import videoInfoService from '../../api/videoInfoService.ts';
-import feedService from '../../api/feedService.ts'
 import { handleRequest } from '../../api/handleRequest.ts';
 
 const props = defineProps<{
@@ -81,6 +80,7 @@ watch(() => props.startWith, async (newIndex) => {
   immediate: true
 })
 
+// 响应键盘翻页
 const handleKeyUp = (event: KeyboardEvent) => {
   if (getLock()) {
     setLock();
@@ -97,6 +97,7 @@ const handleKeyUp = (event: KeyboardEvent) => {
   state.active = swiperObject?.activeIndex ?? 0;
 }
 
+// 响应滑轮翻页
 const handleWheel = (event: WheelEvent) => {
   if (getLock()) {
     setLock();
@@ -167,8 +168,7 @@ const handleClose = () => {
   height: 80px;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.2);
-  ;
+  color: rgba(0, 0, 0, 0.2);
   font-size: 30px;
   position: absolute;
   top: 3%;
