@@ -1,12 +1,13 @@
 <script setup lang="ts">
 
-import type {VideoInfo} from '../../api/feedService.ts'
-import type {userInfo} from '../../api/userService.ts'
-import {handleRequest} from '../../api/handleRequest.ts'
+import type { VideoInfo } from '../../api/feedService.ts'
+import type { userInfo } from '../../api/userService.ts'
+import { handleRequest } from '../../api/handleRequest.ts'
 import userService from '../../api/userService.ts'
 
-import {dayUtils} from '../../utils/dayUtils.ts'
-import {onMounted, ref} from "vue";
+import { dayUtils } from '../../utils/dayUtils.ts'
+import { onMounted, ref } from "vue";
+import toProfiles from '../../utils/toProfiles.ts'
 
 const props = defineProps<{ video: VideoInfo }>();
 
@@ -35,7 +36,7 @@ onMounted(() => {
 <template>
   <div class="video-info">
     <div style="display: flex">
-      <div class="user-name">{{ '@' + uploaderInfo.username }}</div>
+      <div class="user-name" @click="toProfiles(uploaderInfo.id)">{{ '@' + uploaderInfo.username }}</div>
       <div class="upload-time">{{ dayUtils.formatTimestamp(video.publishTime) }}</div>
     </div>
     <div style="display: flex;flex-wrap: wrap;width: 100%">
@@ -60,6 +61,11 @@ onMounted(() => {
 .video-info .user-name {
   font-size: 1.5em;
   margin-right: 1em;
+  cursor: pointer;
+}
+
+.video-info .user-name:hover {
+  color: #f5f5f5;
 }
 
 .video-info .upload-time {
@@ -81,5 +87,3 @@ onMounted(() => {
   color: orange;
 }
 </style>
-
-

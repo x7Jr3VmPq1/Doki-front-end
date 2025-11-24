@@ -1,17 +1,28 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
+import { nextTick, onMounted, onBeforeUnmount, ref, reactive } from 'vue'
 import { Close, Like } from '@icon-park/vue-next';
 import { watch } from 'vue';
+import { useUserStore } from '../../store/userInfoStore.ts';
 import type { VideoInfo } from '../../api/feedService.ts';
 import InteractionButtons from './InteractionButtons.vue';
 import VideoInfoComponent from './VideoInfo.vue'
 import Controls from './Controls.vue'
 import CommentsPanel from './CommentsPanel.vue'
 import analyticsService from '../../api/analyticsService.ts';
+import socialService from '../../api/socialService.ts';
 import { handleRequest } from '../../api/handleRequest.ts';
+import videoInfoService from '../../api/videoInfoService.ts';
 
 import type { VideoVO } from '../../api/videoInfoService.ts';
+import type { userInfo } from '../../api/userService.ts';
+import toProfiles from '../../utils/toProfiles.ts';
 
+
+const state = reactive({
+  userWorks: [] as VideoVO[]
+})
+
+const userStore = useUserStore();
 // 获取视频数据
 const props = defineProps<{
   video: VideoVO,
@@ -101,7 +112,30 @@ const openComments = async () => {
     return;
   }
   activeKey.value = '2';
+
+  await fetchUserWorks();
   showDrawer();
+}
+
+const handleFollow = async (user: userInfo) => {
+  const fn = !user.followed ? socialService.followUser : socialService.unFollowUser;
+
+  await handleRequest(fn, {
+    onSuccess() {
+      user.followed = !user.followed;
+    },
+    params: user.id
+  })
+
+}
+
+const fetchUserWorks = async () => {
+  await handleRequest(videoInfoService.getVideosInfoByUserId, {
+    onSuccess(data) {
+      console.log(data);
+    },
+    params: { tid: props.video.user.id, cursor: null }
+  })
 }
 </script>
 
@@ -116,7 +150,8 @@ const openComments = async () => {
       <div class="video-wrapper" @click="isPlaying = !isPlaying">
         <video :src="video.videoFilename" ref="videoRef" loop preload="auto"></video>
         <!-- 交互按钮 -->
-        <InteractionButtons v-if="props.mode !== 2" @click.stop :video="video" :onOpenComments="openComments" />
+        <InteractionButtons v-if="props.mode !== 2" @click.stop :video="video" :onOpenComments="openComments"
+          @openUserPage="openUserPage" />
       </div>
       <!-- 视频主信息 -->
       <VideoInfoComponent v-if="props.mode !== 2" :video="video" />
@@ -132,17 +167,19 @@ const openComments = async () => {
           <div style="display: flex;flex-direction: column;width: 100%;height: 100%">
             <div class="title" style="display: flex">
               <div class="user-info" style="flex: 1">
-                <div class="user-name" style="font-size: 20px;display: flex;margin-left: 10%">
-                  <a style="color: white">@admin</a>
+                <div @click="toProfiles(video.user.id)" class="user-name"
+                  style="font-size: 20px;display: flex;margin-left: 10%">
+                  <a style="color: white">@{{ video.user.username }}</a>
                 </div>
-                <div class="user-like-number" style="font-size: 15px;display: flex;margin-left: 10%;color: white">
+                <!-- <div class="user-like-number" style="font-size: 15px;display: flex;margin-left: 10%;color: white">
                   <span>1000粉丝 | </span>
                   <span>1000获赞</span>
-                </div>
+                </div> -->
               </div>
               <div>
-                <div style="margin-right: 50px">
-                  <button class="followed-button" v-if="false">已关注
+                <div v-if="video.user.id !== userStore.userInfo.id" @click="handleFollow(video.user)"
+                  style="margin-right: 50px">
+                  <button class="followed-button" v-if="video.user.followed">已关注
                   </button>
                   <button class="follow-button" v-else>关注</button>
                 </div>

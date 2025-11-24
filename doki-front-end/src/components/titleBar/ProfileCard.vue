@@ -134,13 +134,13 @@
         <span class="icon red-logout"></span>
         退出登录
       </div>
-      <div class="remember-login">
+      <!-- <div class="remember-login">
         <span>保存登录信息</span>
         <label class="switch">
           <input type="checkbox" v-model="rememberLogin" />
           <span class="slider round"></span>
         </label>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

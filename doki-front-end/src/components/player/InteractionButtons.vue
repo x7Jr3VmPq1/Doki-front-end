@@ -2,9 +2,11 @@
 import { HeartFilled, MessageFilled, PlusCircleFilled, StarFilled } from "@ant-design/icons-vue";
 import { More, Back } from '@icon-park/vue-next'
 import LikeFavoriteService from "../../api/likeFavoriteService.ts";
+import socialService from "../../api/socialService.ts";
 import { handleRequest } from '../../api/handleRequest.ts'
 import { useUserStore } from "../../store/userInfoStore.ts";
 import type { VideoVO } from '../../api/videoInfoService.ts';
+import type { userInfo } from "../../api/userService.ts";
 import { computed } from "vue";
 
 const userStore = useUserStore();
@@ -13,6 +15,22 @@ const props = defineProps<{
   onOpenComments: () => void,
 }>()
 
+const emit = defineEmits<{
+  (e: 'openUserPage', value: void): void
+}>();
+
+
+const handleFollow = async (user: userInfo) => {
+  const fn = !user.followed ? socialService.followUser : socialService.unFollowUser;
+
+  await handleRequest(fn, {
+    onSuccess() {
+      user.followed = !user.followed;
+    },
+    params: user.id
+  })
+
+}
 
 // 视频交互按钮方法
 // 给视频点赞
@@ -31,6 +49,10 @@ const onLike = async (videoId: number) => {
 const videoInfo = computed(() => {
   return props.video
 })
+
+const handleOpenUserPage = () => {
+  emit('openUserPage');
+}
 </script>
 
 <template>
@@ -45,8 +67,9 @@ const videoInfo = computed(() => {
           </div>
         </div>
       </template>
-      <div class="user-avatar">
-        <div v-if="!videoInfo.followed && videoInfo.user.id !== userStore.userInfo.id" class="follow-button">
+      <div class="user-avatar" @click.stop="handleOpenUserPage">
+        <div @click.stop="handleFollow(videoInfo.user)"
+          v-if="!video.user.followed && video.user.id !== userStore.userInfo.id" class="follow-button">
           <PlusCircleFilled />
         </div>
         <a-avatar :src="videoInfo.user.avatarUrl" size="large" class="bounce-on-click" />
@@ -66,7 +89,7 @@ const videoInfo = computed(() => {
       <div class="like bounce-on-click" @click="onLike(props.video.id)">
         <heart-filled v-if="videoInfo.liked" style="color: red" />
         <heart-filled v-else />
-        <div style="font-size: 20px;padding-top: 5px">{{videoInfo.statistics.likeCount }}</div>
+        <div style="font-size: 20px;padding-top: 5px">{{ videoInfo.statistics.likeCount }}</div>
       </div>
     </a-tooltip>
 
