@@ -132,7 +132,7 @@ const handleFollow = async (user: userInfo) => {
 const fetchUserWorks = async () => {
   await handleRequest(videoInfoService.getVideosInfoByUserId, {
     onSuccess(data) {
-      console.log(data);
+      state.userWorks.push(...data.list)
     },
     params: { tid: props.video.user.id, cursor: null }
   })
@@ -186,13 +186,11 @@ const fetchUserWorks = async () => {
               </div>
             </div>
             <div class="user-videos">
-              <div class="user-video-item" v-for="(item) in userItems">
-                <img style="object-fit: cover;width: 100%;height: 100%"
-                  :src="item.thumbnailUrl ?? 'http://localhost:8081/videos/defaultCover.jpg'"
-                  alt="http://localhost:8081/videos/defaultCover.jpg">
+              <div class="user-video-item" v-for="(item) in state.userWorks">
+                <img style="object-fit: cover;width: 100%;height: 100%" :src="item.coverName">
                 <div class="like-number">
                   <Like></Like>
-                  <span style="margin-left: 5px">{{ item.likeCount }}</span>
+                  <span style="margin-left: 5px">{{ item.statistics.likeCount }}</span>
                 </div>
               </div>
             </div>
@@ -386,38 +384,37 @@ const fetchUserWorks = async () => {
     }
 
     .user-videos {
-      flex: 1;
-      display: flex;
-      flex-wrap: wrap;
-      overflow-y: auto;
-      margin-top: 5%;
-      margin-left: 5%;
-      justify-content: flex-start;
+
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 10px;
+      overflow-y: auto;
+      padding: 10px;
+      align-content: start;
+    }
 
-      .user-video-item {
-        overflow: hidden;
-        width: 30%;
-        height: 25%;
-        background-color: #fff;
-        border-radius: 20px;
-        position: relative;
+    .user-video-item {
+      overflow: hidden;
+      background-color: #fff;
+      border-radius: 20px;
+      height: 150px;
+      position: relative;
 
-        .like-number {
-          font-size: 20px;
-          color: white;
-          position: absolute;
-          left: 20px;
-          bottom: 10px;
-        }
+      .like-number {
+        font-size: 20px;
+        color: white;
+        position: absolute;
+        left: 20px;
+        bottom: 10px;
       }
+    }
 
-      .user-video-item:hover {
-        cursor: pointer;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        transform: scale(1.05);
-        transition: all 0.3s ease-in-out;
-      }
+
+    .user-video-item:hover {
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      /* transform: scale(1.05);
+        transition: all 0.3s ease-in-out; */
     }
 
     .close-button {
