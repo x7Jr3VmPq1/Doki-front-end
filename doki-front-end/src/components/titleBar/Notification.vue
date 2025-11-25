@@ -50,6 +50,9 @@ import notification_dmService from '../../api/notification_dmService';
 import toProfiles from '../../utils/toProfiles';
 import { dayUtils } from '../../utils/dayUtils';
 import toVideoDetail from '../../utils/toVideoDetail';
+import { useShareData } from './shareData';
+
+const shareData = useShareData();
 const showDropdown = ref(false);
 const dropdownOptions = ref([
   '全部消息',
@@ -63,9 +66,16 @@ const dropdownOptions = ref([
 const list = ref<Notification[]>([]);
 
 onMounted(async () => {
+  // 获取通知列表
   await handleRequest(notification_dmService.getNotifications, {
-    onSuccess(data) {
+    async onSuccess(data) {
       list.value = data;
+      // 获取成功后，清空未读数
+      await handleRequest(notification_dmService.delUnreadNotifyCount, {
+        onSuccess() {
+          shareData.notificationUnread = 0;
+        }
+      });
     }
   })
 })

@@ -23,16 +23,24 @@ const state = reactive({
   notificationUnread: 0
 })
 
+const getUnread = async () => {
+  handleRequest(notification_dmService.getUnreadMessageCount, {
+    onSuccess(data) {
+      shareData.messageUnread = data;
+    }
+  })
+
+  handleRequest(notification_dmService.getUnreadNotifyCount, {
+    onSuccess(data) {
+      shareData.notificationUnread = data;
+    }
+  })
+}
+
 onMounted(async () => {
   watch(() => userStore.userInfo.isLogin, async (newValue) => {
     if (newValue) {
-      const getUnread = async () => {
-        handleRequest(notification_dmService.getUnreadMessageCount, {
-          onSuccess(data) {
-            shareData.messageUnread = data;
-          }
-        })
-      }
+
       await getUnread();
       setInterval(getUnread, 5000)
     }

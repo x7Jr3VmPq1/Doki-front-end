@@ -114,13 +114,27 @@ export default {
     method: 'GET'
   }),
   /**
-   * 清空未读数
+   * 清空清空未读数
    * @param cid 会话id，不传入则清空全部未读。
    * @returns
    */
   delUnreadMessageCount: (cid: string | null) => request<null>('/message/unread', {
     method: 'DELETE',
     data: { cid }
+  }),
+  /**
+   * 获取通知未读数
+   * @returns 
+   */
+  getUnreadNotifyCount: () => request<number>('/notify/unread', {
+    method: 'GET'
+  }),
+  /**
+   * 清空通知未读数
+   * @returns 
+   */
+  delUnreadNotifyCount: () => request<null>('/notify/unread', {
+    method: 'DELETE'
   }),
   /**
    * 获取通知列表

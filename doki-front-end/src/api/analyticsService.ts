@@ -23,8 +23,10 @@ export interface UserStatistics {
   followingCount: number,
   followerCount: number,
   likeCount: number,
-  createdAt: number,
-  updatedAt: number
+  likedCount: number,
+  worksCount: number,
+  favoriteCount: number,
+  historyCount: number,
 }
 
 export interface VideoWatched {

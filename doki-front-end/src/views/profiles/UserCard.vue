@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { reactive, onMounted, watch } from 'vue';
-import userService from '../../api/userService.ts';
-import analyticsService from '../../api/analyticsService.ts'
+import { reactive } from 'vue';
 import type { UserStatistics } from '../../api/analyticsService.ts'
 import type { userInfo } from '../../api/userService.ts'
-import { handleRequest } from '../../api/handleRequest.ts';
 import { useUserStore } from '../../store/userInfoStore.ts'
 import FollowModal from '../../components/FollowModal.vue';
 import EditProfileModal from './EditProfileModal.vue';
@@ -12,31 +9,17 @@ import { Edit } from '@icon-park/vue-next'
 const userStore = useUserStore();
 
 const props = defineProps<{
-  info: userInfo
+  info: userInfo,
+  stat: UserStatistics
 }>()
 
-const state = reactive({
+const state = reactive<{
+  followModal: boolean;
+  editModal: boolean;
+}>({
   followModal: false,
   editModal: false
 })
-// 创建userStat
-const userStat = reactive<UserStatistics>({
-  userId: 0,
-  followingCount: 0,
-  followerCount: 0,
-  likeCount: 0,
-  createdAt: 0,
-  updatedAt: 0
-});
-// 监听props.info的变化，获取用户统计数据
-watch(() => props.info, (newInfo) => {
-  handleRequest(analyticsService.getUserStatById, {
-    onSuccess(data: UserStatistics) {
-      Object.assign(userStat, data);
-    },
-    params: newInfo.id
-  });
-}, { immediate: false });
 
 // 处理编辑按钮点击
 const handleEditClick = () => {
@@ -70,10 +53,10 @@ const handleUpdateInfo = (_: userInfo) => {
       </div>
       <div class="stats">
         <div class="stat-item" @click="state.followModal = !state.followModal">关注 <span class="stat-value">{{
-          userStat.followingCount }}</span></div>
+          stat.followingCount }}</span></div>
         <div class="stat-item" @click="state.followModal = !state.followModal">粉丝 <span class="stat-value">{{
-          userStat.followerCount }}</span></div>
-        <div class="stat-item">获赞 <span class="stat-value">{{ userStat.likeCount }}</span></div>
+          stat.followerCount }}</span></div>
+        <div class="stat-item">获赞 <span class="stat-value">{{ stat.likeCount }}</span></div>
       </div>
       <div class="user-bio">
         {{ props.info.bio }}

@@ -484,7 +484,7 @@ const handleClose = () => {
 
 .video-grid {
   overflow-y: auto;
-  height: 70vh;
+  height: 75vh;
   display: flex;
   align-content: flex-start;
   flex-wrap: wrap;

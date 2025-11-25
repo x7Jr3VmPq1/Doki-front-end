@@ -144,7 +144,8 @@ const handleSendMessage = async () => {
   handleRequest(notification_dmService.sendMessage, {
     onSuccess(data) {
       messagesList.value.push(data);
-      activeConversation.lastMessage.content = previewUrl.value != '' ? '[图片]' + data.content : data.content;
+      if (activeConversation.lastMessage)
+        activeConversation.lastMessage.content = previewUrl.value != '' ? '[图片]' + data.content : data.content;
       messageContent.value = '';
       previewUrl.value = previewUrl.value;
     }, params: {

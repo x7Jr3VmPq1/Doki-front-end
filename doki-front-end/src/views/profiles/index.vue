@@ -6,12 +6,13 @@ import MainMenu from "./MainMenu.vue";
 import WorksFilters from "./WorksFilters.vue";
 import WorksGrid from "./WorksGrid.vue";
 import { useRoute } from 'vue-router'
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive } from "vue";
 import DokiLoading from "../../components/Doki-Loading.vue";
 import { handleRequest } from "../../api/handleRequest";
 import userService from "../../api/userService";
 import type { userInfo } from "../../api/userService";
 import { useUserStore } from "../../store/userInfoStore.ts";
+import analyticsService from '../../api/analyticsService.ts'
 
 const userStore = useUserStore();
 const route = useRoute()
@@ -30,9 +31,20 @@ const state = reactive({
   mode: '',// 页面的模式，分为当前用户和其它用户
   currentUid: 0,// 如果是其它用户，需要获取地址栏上的查询参数
   loading: true,
+  stat: {
+    userId: 0,
+    followingCount: 0,
+    followerCount: 0,
+    likeCount: 0,
+    likedCount: 0,
+    worksCount: 0,
+    favoriteCount: 0,
+    historyCount: 0,
+  },
   currentTab: 'works'
 })
 onMounted(async () => {
+
   // 等待一下。
   await new Promise(resolve => setTimeout(resolve, 500));
   state.loading = true;
@@ -44,6 +56,7 @@ onMounted(async () => {
   if (state.mode === 'my') {
     const store = useUserStore();
     Object.assign(userInfoData, store.userInfo);
+    fetchUserStat(userInfoData.id);
     state.loading = false;
     return;
   }
@@ -74,12 +87,23 @@ onMounted(async () => {
       window.location.href = '/404';
     }
   })
-  state.loading = false;
+
+  await fetchUserStat(state.currentUid);
 })
+
+async function fetchUserStat(uid: number) {
+  await handleRequest(analyticsService.getUserStatById, {
+    onSuccess(data) {
+      Object.assign(state.stat, data);
+    },
+    params: uid
+  });
+  state.loading = false;
+}
+
 const handleUpdateFollowState = (newState: boolean) => {
   userInfoData.followed = newState;
 }
-
 
 const handleChangeTab = (type: string) => {
   state.currentTab = type;
@@ -93,7 +117,7 @@ const handleChangeTab = (type: string) => {
   <div class="profile-page" v-if="!state.loading">
     <header class="header">
       <!-- 用户信息 -->
-      <user-card :info="userInfoData"></user-card>
+      <user-card :stat="state.stat" :info="userInfoData"></user-card>
       <!-- 用户操作 -->
       <header-actions :mode="state.mode"></header-actions>
       <!-- 关注/私信按钮 -->
@@ -101,7 +125,7 @@ const handleChangeTab = (type: string) => {
         :is-following="userInfoData.followed ?? false"></follow-and-d-m>
     </header>
     <!-- 菜单按钮 -->
-    <main-menu :user-id="userInfoData.id" @change-tab="handleChangeTab"></main-menu>
+    <main-menu :stat="state.stat" :user-id="userInfoData.id" @change-tab="handleChangeTab"></main-menu>
     <!-- 筛选作品类型按钮 -->
     <works-filters :tab="state.currentTab"
       v-if="userInfoData.id === userStore.userInfo.id && !state.loading"></works-filters>

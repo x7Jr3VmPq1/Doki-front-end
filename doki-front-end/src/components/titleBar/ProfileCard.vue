@@ -200,7 +200,7 @@ const expandSection = async (sectionName: string) => {
       break;
     case 'collections': fun = videoInfoService.getRecentLikes
       break;
-    case 'myWorks': fun = videoInfoService.getRecentLikes
+    case 'myWorks': fun = videoInfoService.getRecentWorks
       break;
     case 'watchHistory': fun = videoInfoService.getRecentHistories
       break

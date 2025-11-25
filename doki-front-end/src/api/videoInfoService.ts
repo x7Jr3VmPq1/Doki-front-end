@@ -118,6 +118,10 @@ export default {
     method: 'GET',
     data: { count }
   }),
+  getRecentWorks: (count: number) => request<VideoInfo[]>('/video/info/recent/works', {
+    method: 'GET',
+    data: { count }
+  }),
   getRandom: () => request<VideoVO[]>('/video/info/random', {
     method: 'GET',
   }),

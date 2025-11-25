@@ -39,9 +39,9 @@ watch(() => props.active, async (newIndex) => {
   immediate: true
 })
 onMounted(async () => {
-  handleRequest(analyticsService.getVideoWatched, {
+  await handleRequest(analyticsService.getVideoWatched, {
     onSuccess(data) {
-      if (videoRef.value)
+      if (videoRef.value && data.length > 0 && data[0].time > 10)
         videoRef.value.currentTime = data[0].time;
     },
     params: { videoId: props.video.id, userId: userStore.userInfo.id }

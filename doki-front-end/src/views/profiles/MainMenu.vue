@@ -2,29 +2,39 @@
 
 import locale from "ant-design-vue/es/date-picker/locale/zh_CN";
 import { useUserStore } from "../../store/userInfoStore";
-import { onMounted, reactive, ref, watch } from "vue";
+import { onMounted, reactive, computed, ref, watch } from "vue";
+import type { UserStatistics } from '../../api/analyticsService.ts'
+
 import 'dayjs/locale/zh-cn'
 const userStore = useUserStore();
 const props = defineProps<{
-  userId: number
+  userId: number,
+  stat: UserStatistics
 }>();
 
 const emit = defineEmits<{
   (e: 'changeTab', value: string): string
 }>();
-const pageData = reactive({
-  menu: [
-    { title: '作品', count: 330, type: 'works' },
-    { title: '喜欢', count: 123, type: 'likes' },
-    { title: '收藏', count: 12, type: 'favorites' },
-  ],
-});
+
+
+const baseMenu = computed(() => [
+  { title: '作品', count: props.stat?.worksCount ?? 0, type: 'works' },
+  { title: '喜欢', count: props.stat?.likeCount ?? 0, type: 'likes' },
+  { title: '收藏', count: props.stat?.favoriteCount ?? 0, type: 'favorites' },
+]);
+
+const extraMenu = ref<any>([]);
 
 onMounted(() => {
   if (props.userId === userStore.userInfo.id) {
-    pageData.menu.push({ title: '历史观看', count: 45, type: 'history' });
+    extraMenu.value.push({ title: '历史观看', count: 0, type: 'history' });
   }
 });
+
+const pageData = computed(() => ({
+  menu: [...baseMenu.value, ...extraMenu.value],
+}));
+
 const currentClick = ref("works")
 
 const searchInput = ref("")

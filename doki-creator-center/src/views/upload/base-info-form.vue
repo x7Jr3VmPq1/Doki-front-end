@@ -82,7 +82,7 @@ function onOk(dateString: string) {
         </div>
       </div>
     </div>
-    <div class="setting">
+    <!-- <div class="setting">
       <h3>发布设置</h3>
       <div class="permission">
         <h4 class="title">谁可以看</h4>
@@ -120,7 +120,7 @@ function onOk(dateString: string) {
       <div v-if="draftForm.isScheduled" style="margin-top: 10px;font-weight: bold">
         选择定时发布时，只能选择大于当前时间2小时且在14天内的时间。
       </div>
-    </div>
+    </div> -->
   </div>
 
 </template>
