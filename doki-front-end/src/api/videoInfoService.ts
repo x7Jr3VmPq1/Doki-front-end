@@ -80,7 +80,6 @@ export default {
    * @returns  视频元数据列表
    */
   getVideosInfoByUserId: (params: { tid: number, cursor: string | null }) => {
-    console.log(params);
     return request<VideoCursorLoad>('/video/info/all', {
       method: 'GET',
       data: params

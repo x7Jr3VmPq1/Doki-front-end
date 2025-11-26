@@ -9,15 +9,16 @@
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
         <div v-if="showDropdown" class="dropdown-content">
-          <div v-for="(option, index) in dropdownOptions" :key="index" class="dropdown-item">
-            {{ option }}
+          <div v-for="(option, index) in dropdownOptions" :key="index" class="dropdown-item"
+            @click="changeType(option)">
+            {{ option.text }}
           </div>
         </div>
       </div>
     </div>
 
     <div class="notification-list">
-      <div @click="handleJump(item)" v-for="item in list" class="notification-item">
+      <div v-if="!isLoading" @click="handleJump(item)" v-for="item in list" class="notification-item">
         <div class="user-avatar" @click.stop="toProfiles(item.user.id)">
           <img :src="item.user.avatarUrl" alt="User Avatar" />
         </div>
@@ -35,7 +36,10 @@
         </div>
       </div>
 
-      <div class="no-more-messages">
+      <div v-if="isLoading" class="loading flex-center">
+        <DokiLoading></DokiLoading>
+      </div>
+      <div v-if="!isLoading" class="no-more-messages">
         <span>暂时没有更多了</span>
       </div>
     </div>
@@ -51,21 +55,30 @@ import toProfiles from '../../utils/toProfiles';
 import { dayUtils } from '../../utils/dayUtils';
 import toVideoDetail from '../../utils/toVideoDetail';
 import { useShareData } from './shareData';
+import DokiLoading from '../Doki-Loading.vue';
 
 const shareData = useShareData();
 const showDropdown = ref(false);
-const dropdownOptions = ref([
-  '全部消息',
-  '粉丝',
-  // '@我的',
-  '评论',
-  '赞',
-  // '弹幕'
+
+const isLoading = ref(true);
+interface DropdownOption {
+  text: string;
+  type: number;
+}
+
+const dropdownOptions = ref<DropdownOption[]>([
+  { text: '全部消息', type: 0 },
+  { text: '粉丝', type: 1 },
+  { text: '赞', type: 2 },
+  { text: '评论', type: 3 },
+  // { text: '@我的',    type: 4 },
+  // { text: '弹幕',     type: 5 },
 ]);
 
 const list = ref<Notification[]>([]);
 
 onMounted(async () => {
+  isLoading.value = true;
   // 获取通知列表
   await handleRequest(notification_dmService.getNotifications, {
     async onSuccess(data) {
@@ -74,14 +87,16 @@ onMounted(async () => {
       await handleRequest(notification_dmService.delUnreadNotifyCount, {
         onSuccess() {
           shareData.notificationUnread = 0;
+          isLoading.value = false;
         }
       });
-    }
+    },
+    params: 0,
+    delay: 200
   })
 })
 
 const changeNotice = (type: number) => {
-
   let str = '';
   switch (type) {
     case 1: str = "关注了你"
@@ -106,6 +121,19 @@ const handleJump = (n: Notification) => {
       toVideoDetail(n.sourceVideoId);
     }
   }
+}
+
+const changeType = async (option: DropdownOption) => {
+  // 获取通知列表
+  isLoading.value = true;
+  await handleRequest(notification_dmService.getNotifications, {
+    async onSuccess(data) {
+      list.value = data;
+      isLoading.value = false;
+    },
+    params: option.type,
+    delay: 200
+  })
 }
 </script>
 
@@ -275,5 +303,9 @@ const handleJump = (n: Notification) => {
   padding: 20px 0;
   color: #999;
   font-size: 14px;
+}
+
+.loading {
+  height: 100%;
 }
 </style>
