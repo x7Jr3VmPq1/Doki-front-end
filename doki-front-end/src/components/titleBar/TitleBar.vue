@@ -8,7 +8,6 @@ import Notification from "./Notification.vue";
 import LoginRegisterDialog from "./LoginRegisterDialog.vue";
 import { Message, Remind, AddMusic } from '@icon-park/vue-next';
 import { ref, onMounted, watch, reactive } from "vue";
-import { getHotSearchList } from "../../api/searchService.ts";
 import notification_dmService from "../../api/notification_dmService.ts";
 import profileCard from "./ProfileCard.vue";
 import { useUserStore } from "../../store/userInfoStore.ts";

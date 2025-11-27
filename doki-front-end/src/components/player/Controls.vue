@@ -17,14 +17,18 @@ const state = reactive({
   currentSpeed: 1,
   isPlaying: true,
   isFullScreen: false,
-  bufferd: 0
+  bufferd: 0,
+  width: 0,
+  height: 0
 })
 // 初始化视频状态
 let videoObject: HTMLVideoElement | null = null;
 onMounted(async () => {
   await nextTick(); // 等待DOM更新
   props.video.addEventListener('loadedmetadata', () => {
-    state.duration = props.video.duration
+    state.duration = props.video.duration;
+    state.width = props.video.videoWidth;
+    state.height = props.video.videoHeight;
   })
   props.video.addEventListener('timeupdate', () => {
     state.currentTime = props.video.currentTime;
@@ -119,8 +123,8 @@ const handleClickFullScreen = () => {
 <template>
   <div class="player-controls" ref="controllerRef" tabindex="-1" :class="{ shrink: shrink }" @click.stop>
     <!-- 进度条 -->
-    <Progress :current="(state.currentTime / state.duration) * 100" :bufferd="state.bufferd"
-      @changeProgress="handleChangeTime"></Progress>
+    <Progress :duration="state.duration" :width="state.width" :height="state.height" :current="(state.currentTime / state.duration) * 100"
+      :bufferd="state.bufferd" @changeProgress="handleChangeTime"></Progress>
     <!-- 播放/暂停 + 时间显示 -->
     <div class="play-and-time-danmaku" style="display: flex">
       <div class="play-button bounce-on-click" @click="onClickPlayButton">
