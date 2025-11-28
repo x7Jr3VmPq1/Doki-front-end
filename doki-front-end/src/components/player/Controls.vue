@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import Progress from './Progress.vue';
-import { nextTick, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, reactive, watch } from 'vue';
 import { IconPause, IconPlayArrowFill, IconMuteFill, IconSound, IconSoundFill, IconFullscreen, IconFullscreenExit } from '@arco-design/web-vue/es/icon';
 import formatTime from '../../utils/formatTime.ts'
 const props = defineProps<{
   video: HTMLVideoElement, // 视频引用
+  resolutions: number[], // 可选分辨率
   isPlaying: boolean, // 外部传入的暂停/播放请求
   shrink: boolean // 当评论区打开时，缩小控件
 }>()
@@ -19,7 +20,7 @@ const state = reactive({
   isFullScreen: false,
   bufferd: 0,
   width: 0,
-  height: 0
+  height: 0,
 })
 // 初始化视频状态
 let videoObject: HTMLVideoElement | null = null;
@@ -118,13 +119,43 @@ const handleEnterPictureInPicture = () => {
 const handleClickFullScreen = () => {
   console.log("这里发射一个事件，让播放器进入全屏状态。");
 }
+
+const getResolutionText = (resolution: number): string => {
+  if (resolution >= 1440) {
+    return '蓝光/2K' // 1440p 及以上
+  }
+  if (resolution >= 1080) {
+    return '超清' // 1080p
+  }
+  if (resolution >= 720) {
+    return '高清' // 720p
+  }
+  return '标清' // 小于 720p (如 480p, 360p)
+};
+
+const mapResolutions = (resolutions: number[]): { text: string, resolution: number }[] => {
+  // 使用 Array.prototype.map 进行映射转换
+  return resolutions.map((res: number) => ({
+    text: getResolutionText(res), // 调用转换函数获取文本
+    resolution: res                // 保留原始分辨率数值
+  }));
+};
+
+const resolutionOptions = mapResolutions(props.resolutions);
+
+watch(() => props.resolutions, (newValue) => {
+  console.log('子组件接收到的 resolutions:', newValue);
+  console.log('类型:', typeof newValue);
+}, { immediate: true });
+
 </script>
 
 <template>
   <div class="player-controls" ref="controllerRef" tabindex="-1" :class="{ shrink: shrink }" @click.stop>
     <!-- 进度条 -->
-    <Progress :duration="state.duration" :width="state.width" :height="state.height" :current="(state.currentTime / state.duration) * 100"
-      :bufferd="state.bufferd" @changeProgress="handleChangeTime"></Progress>
+    <Progress :duration="state.duration" :width="state.width" :height="state.height"
+      :current="(state.currentTime / state.duration) * 100" :bufferd="state.bufferd"
+      @changeProgress="handleChangeTime"></Progress>
     <!-- 播放/暂停 + 时间显示 -->
     <div class="play-and-time-danmaku" style="display: flex">
       <div class="play-button bounce-on-click" @click="onClickPlayButton">
@@ -141,6 +172,18 @@ const handleClickFullScreen = () => {
         <div>清屏</div>
         <a-switch size="small" />
       </div>
+      <div class="resolutions">
+        <a-popover :arrow="false" :overlayInnerStyle="{ backgroundColor: 'grey' }" style="user-select: none">
+          <template #content>
+            <div
+              style="color: white;width: 50px;display: flex;flex-direction: column;justify-content: space-between;user-select: none">
+              <div v-for="(item) in resolutionOptions" :key="item.resolution" class="player-speed-control-item">{{
+                item.text }}</div>
+            </div>
+          </template>
+          <div style="user-select: none"> {{ "自动" }}</div>
+        </a-popover>
+      </div>
       <div class="speed-control bounce-on-click" style="font-size: 15px">
         <a-popover :arrow="false" :overlayInnerStyle="{ backgroundColor: 'grey' }" style="user-select: none">
           <template #content>
@@ -150,7 +193,7 @@ const handleClickFullScreen = () => {
                 @click="handleChangeSpeed(item)">{{ item }}</div>
             </div>
           </template>
-          <div style="user-select: none"> {{ state.currentSpeed === 1 ? '倍速' : state.currentSpeed }}</div>
+          <div style="user-select: none"> {{ state.currentSpeed === 1 ? '倍速' : `${state.currentSpeed}x` }}</div>
         </a-popover>
       </div>
       <div class="volume-control" style="user-select: none">

@@ -21,6 +21,7 @@ export interface VideoInfo {
   createdTime: number;
   updatedTime: number;
   coverName: string;
+  resolutions: number[];
 }
 
 export interface VideoVO extends VideoInfo {

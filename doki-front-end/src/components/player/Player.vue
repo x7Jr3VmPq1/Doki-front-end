@@ -11,6 +11,7 @@ import analyticsService from '../../api/analyticsService.ts';
 import { handleRequest } from '../../api/handleRequest.ts';
 import type { VideoVO } from '../../api/videoInfoService.ts';
 import UserWorks from './UserWorks.vue';
+import Hls from 'hls.js';
 const userStore = useUserStore();
 
 // 获取视频数据
@@ -33,12 +34,27 @@ watch(() => props.active, async (newIndex) => {
   // 判断当前激活的视频是不是这个视频，如果是，改变播放状态。
   isPlaying.value = props.index === newIndex;
   if (isPlaying.value) {
+    console.log(props.video);
+
     watched = true;
   }
 }, {
   immediate: true
 })
 onMounted(async () => {
+  if (Hls.isSupported()) {
+    var hls = new Hls({
+      maxMaxBufferLength: 20, // 避免网络极佳时缓冲过多
+    });
+
+    if (videoRef.value) {
+      hls.attachMedia(videoRef.value);
+    }
+    hls.loadSource(`${props.video.videoFilename}/master.m3u8`);
+  }
+
+
+
   await handleRequest(analyticsService.getVideoWatched, {
     onSuccess(data) {
       if (videoRef.value && data.length > 0 && data[0].time > 10)
@@ -127,7 +143,8 @@ const handleUserWorksPause = () => {
     <!-- 视频区域绑定动态 class 控制宽度 -->
     <div :class="['player-video', { shrink: open }]">
       <div class="video-wrapper" @click="isPlaying = !isPlaying">
-        <video :src="video.videoFilename" ref="videoRef" loop preload="auto"></video>
+        <video ref="videoRef" loop preload="auto"></video>
+        <!-- <video ref="videoRef" loop preload="auto"></video> -->
         <!-- 交互按钮 -->
         <InteractionButtons v-if="props.mode !== 2" @click.stop :video="video" :onOpenComments="openComments"
           @openUserPage="openUserPage" />
@@ -137,7 +154,7 @@ const handleUserWorksPause = () => {
       <!--  遮罩层    -->
       <div class="cover"></div>
       <!--  控件，传入视频的引用  -->
-      <Controls :video="videoRef!" :is-playing="isPlaying" :shrink="open" />
+      <Controls :video="videoRef!" :resolutions="video.resolutions" :is-playing="isPlaying" :shrink="open" />
     </div>
     <!-- 评论区抽屉 -->
     <div v-if="props.mode !== 2" class="other-draw" :class="['other-draw', { shrink: open }]" @wheel.stop>

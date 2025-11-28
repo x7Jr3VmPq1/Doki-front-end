@@ -5,18 +5,16 @@
 // 在这个播放器下，切换视频会从有限的列表中切换，原地切换视频。
 // 没有滑动效果，从左上角点击BACK可以返回到激活它的位置。
 
-import { nextTick, onMounted, onBeforeUnmount, ref, reactive } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import { Left } from '@icon-park/vue-next';
-import { watch } from 'vue';
 import InteractionButtons from './InteractionButtons.vue';
 import VideoInfoComponent from './VideoInfo.vue'
 import Controls from './Controls.vue'
 import CommentsPanel from './CommentsPanel.vue'
-import analyticsService from '../../api/analyticsService.ts';
-import { handleRequest } from '../../api/handleRequest.ts';
+
 import type { VideoVO } from '../../api/videoInfoService.ts';
 import UserWorks from './UserWorks.vue';
-
+import Hls from 'hls.js';
 const emit = defineEmits(['close'])
 
 // 获取视频数据
@@ -51,6 +49,18 @@ const showDrawer = () => {
 }
 
 onMounted(() => {
+
+  if (Hls.isSupported()) {
+    var hls = new Hls({
+      maxMaxBufferLength: 20, // 避免网络极佳时缓冲过多
+    });
+
+    if (videoRef.value) {
+      hls.attachMedia(videoRef.value);
+    }
+    hls.loadSource(`${video.videoFilename}/master.m3u8`);
+  }
+
   nextTick();
   setTimeout(() => {
     openUserPage();
@@ -110,7 +120,7 @@ const handleClose = () => {
       <!--  遮罩层    -->
       <div class="cover"></div>
       <!--  控件，传入视频的引用  -->
-      <Controls :video="videoRef!" :is-playing="isPlaying" :shrink="open" />
+      <Controls :video="videoRef!" :resolutions="video.resolutions" :is-playing="isPlaying" :shrink="open" />
     </div>
     <!-- 评论区抽屉 -->
     <div class="other-draw" :class="['other-draw', { shrink: open }]" @wheel.stop>
