@@ -40,9 +40,9 @@
             <button class="scroll-btn scroll-right-btn" @click="scrollTags('right')">&gt;</button>
           </div> -->
           <div class="video-grid" v-if="videos.length > 0">
-            <div v-for="(item, index) in videos" :key="item.video.id" class="video-card" @click="goToVideo(index)">
+            <div v-for="(item, index) in videos" :key="item.video.id" class="video-card" @click="handleClickVideo(index)">
               <div class="video-thumbnail">
-                <DokiVideoPre @click="handleClickVideo(index)" :manage="false" :item="item.video as videoInfoWithStat">
+                <DokiVideoPre :manage="false" :item="item.video as videoInfoWithStat">
                 </DokiVideoPre>
                 <div class="duration">{{ dayUtils.formatSecondsToHHMMSS(item.video.videoDuration) }}</div>
                 <!-- <div class="likes">
@@ -220,7 +220,6 @@ const loadMockData = () => {
   ];
 };
 
-// Lifecycle hooks (unchanged)
 onMounted(() => {
   loadMockData();
   nextTick(() => {
@@ -251,12 +250,6 @@ const performSearch = () => {
 };
 
 const videoIndex = ref(0);
-const goToVideo = (index: number) => {
-  isModalVisible.value = true;
-  nextTick(() => {
-    videoIndex.value = index;
-  });
-};
 
 const handleClose = () => {
   isModalVisible.value = false;

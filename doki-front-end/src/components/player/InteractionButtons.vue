@@ -8,6 +8,7 @@ import { useUserStore } from "../../store/userInfoStore.ts";
 import type { VideoVO } from '../../api/videoInfoService.ts';
 import type { userInfo } from "../../api/userService.ts";
 import { computed } from "vue";
+import likeFavoriteService from "../../api/likeFavoriteService.ts";
 
 const userStore = useUserStore();
 const props = defineProps<{
@@ -29,8 +30,8 @@ const handleFollow = async (user: userInfo) => {
     },
     params: user.id
   })
-
 }
+
 
 // 视频交互按钮方法
 // 给视频点赞
@@ -41,6 +42,19 @@ const onLike = async (videoId: number) => {
       props.video.liked = !props.video.liked;
       // 增减或减少点赞数
       props.video.statistics.likeCount += (props.video.liked ? 1 : -1);
+    },
+    params: videoId
+  })
+}
+// 收藏
+const onFavorite = async (videoId: number) => {
+
+  await handleRequest(likeFavoriteService.videoFavorite, {
+    onSuccess() {
+      // 更改收藏的状态
+      props.video.favorited = !props.video.favorited;
+      // 增减或减少收藏数
+      props.video.statistics.favoriteCount += (props.video.favorited ? 1 : -1);
     },
     params: videoId
   })
@@ -119,8 +133,8 @@ const handleOpenUserPage = () => {
           </div>
         </div>
       </template>
-      <div class="star bounce-on-click">
-        <star-filled v-if="false" style="color: goldenrod" />
+      <div class="star bounce-on-click" @click.stop="onFavorite(props.video.id)">
+        <star-filled v-if="videoInfo.favorited" style="color: goldenrod" />
         <star-filled v-else />
         <div style="font-size: 20px;padding-top: 5px">{{ videoInfo.statistics.favoriteCount }}</div>
       </div>

@@ -41,7 +41,7 @@ onMounted(() => {
     </div>
     <div style="display: flex;flex-wrap: wrap;width: 100%">
       <div class="video-title">{{ video.title }}</div>
-      <div class="video-tags" @click.stop>#若干标签...</div>
+      <!-- <div class="video-tags" @click.stop>#若干标签...</div> -->
     </div>
   </div>
 </template>

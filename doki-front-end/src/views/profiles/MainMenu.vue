@@ -56,7 +56,8 @@ watch(() => currentClick.value, (newValue) => {
       <li v-for="item in pageData.menu" :key="item.type" class="menu-item"
         :class="{ active: item.type === currentClick }" @click="handleClickTab(item.type)">
         <div>
-          {{ item.title }} <span class="count">{{ item.count }}</span>
+          {{ item.title }} 
+          <!-- <span class="count">{{ item.count }}</span> -->
         </div>
       </li>
     </ul>

@@ -56,7 +56,9 @@ const handleUpdateInfo = (_: userInfo) => {
           stat.followingCount }}</span></div>
         <div class="stat-item" @click="state.followModal = !state.followModal">粉丝 <span class="stat-value">{{
           stat.followerCount }}</span></div>
-        <div class="stat-item">获赞 <span class="stat-value">{{ stat.likeCount }}</span></div>
+        <div class="stat-item">获赞 
+          <span class="stat-value">{{ stat.likeCount }}</span>
+        </div>
       </div>
       <div class="user-bio">
         {{ props.info.bio }}

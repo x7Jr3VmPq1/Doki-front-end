@@ -315,7 +315,7 @@ const clearReplies = (target: VideoCommentsVO) => {
       </div>
     </div>
 
-    <div class="recommand">推荐视频区域</div>
+    <!-- <div class="recommand">推荐视频区域</div> -->
   </div>
 </template>
 

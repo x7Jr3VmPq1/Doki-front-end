@@ -29,6 +29,7 @@ export interface VideoVO extends VideoInfo {
   liked: boolean,
   statistics: VideoStatistics
   followed: boolean,
+  favorited: boolean,
   watchedTime: number,
   watchedAt: number
 }
